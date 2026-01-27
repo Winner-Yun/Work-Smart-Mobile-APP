@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_worksmart_mobile_app/config/appcolor.dart'; // Added AppColors
 
 class TutorialContent extends StatelessWidget {
   final String imagePath;
@@ -16,8 +17,7 @@ class TutorialContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = Theme.of(context).primaryColor;
-
+    // DEV NOTE: Switched to AppColors.primary for consistency
     return Column(
       children: [
         const Spacer(flex: 1),
@@ -47,10 +47,10 @@ class TutorialContent extends StatelessWidget {
               Text(
                 title,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: primaryColor,
+                  color: AppColors.primary,
                 ),
               ),
               const SizedBox(height: 16),
@@ -59,7 +59,7 @@ class TutorialContent extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 14,
-                  color: Colors.grey,
+                  color: AppColors.textGrey, // Switched to AppColors
                   height: 1.5,
                 ),
               ),

@@ -13,13 +13,13 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Tutorial App',
+      title: 'WorkSmart',
       theme: ThemeData(
         textTheme: GoogleFonts.notoSansKhmerTextTheme(),
         primaryColor: const Color(0xFF004C4C),
         scaffoldBackgroundColor: Colors.white,
       ),
-      initialRoute: AppRoute.authScreen,
+      initialRoute: AppRoute.appmain,
       routes: AppRoute.routes,
     );
   }

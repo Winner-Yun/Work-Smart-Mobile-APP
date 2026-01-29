@@ -4,4 +4,5 @@ class AppImg {
   static String thirdScreen = 'assets/images/thirdScreenPic.png';
   static String authBackground = 'assets/images/loginBackground.png';
   static String appIcon = 'assets/icons/appIcon.png';
+  static String telegramIcon = 'assets/images/telegram.png';
 }

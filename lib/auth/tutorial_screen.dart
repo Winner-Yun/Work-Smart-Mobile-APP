@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/auth/tutorial_content.dart';
 import 'package:flutter_worksmart_mobile_app/config/appcolor.dart'; // Added AppColors
 import 'package:flutter_worksmart_mobile_app/constants/app_img.dart';
@@ -48,7 +49,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
   }
 
   void _startAutoScrollTimer() {
-    _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
+    _timer = Timer.periodic(const Duration(seconds: 10), (timer) {
       if (_currentPage < 2) {
         _pageController.nextPage(
           duration: const Duration(milliseconds: 300),
@@ -115,7 +116,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
                     title: AppStrings.tr(data['title']),
                     subtitle: AppStrings.tr(data['subtitle']),
                     isFirstScreen: data['isFirst'],
-                  );
+                  ).animate().fadeIn(delay: (200 + (index * 10)).ms);
                 },
               ),
             ),

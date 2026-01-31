@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_worksmart_mobile_app/config/appcolor.dart';
 import 'package:flutter_worksmart_mobile_app/constants/app_img.dart';
+import 'package:flutter_worksmart_mobile_app/translations/app_strings.dart';
 
 class Authscreen extends StatefulWidget {
   const Authscreen({super.key});
@@ -29,10 +31,10 @@ class _AuthscreenState extends State<Authscreen> {
         SnackBar(
           content: Text(
             isEmployee
-                ? "កំពុងចូលក្នុងគណនីបុគ្គលិក..."
-                : "កំពុងចូលក្នុងគណនីអ្នកគ្រប់គ្រង...",
+                ? AppStrings.tr('logging_in_employee')
+                : AppStrings.tr('logging_in_admin'),
           ),
-          backgroundColor: const Color(0xFF004C4C),
+          backgroundColor: AppColors.primary,
         ),
       );
     }
@@ -40,8 +42,7 @@ class _AuthscreenState extends State<Authscreen> {
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = const Color(0xFF004C4C);
-
+    // DEV NOTE: Replaced local primaryColor var with AppColors.primary
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -103,10 +104,10 @@ class _AuthscreenState extends State<Authscreen> {
                                 children: [
                                   Image.asset(AppImg.appIcon, width: 20),
                                   const SizedBox(width: 8),
-                                  Text(
+                                  const Text(
                                     "WorkSmart",
                                     style: TextStyle(
-                                      color: primaryColor,
+                                      color: AppColors.primary,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -117,8 +118,8 @@ class _AuthscreenState extends State<Authscreen> {
                           const SizedBox(height: 70),
                           Text(
                             isEmployee
-                                ? "ប្រព័ន្ធគ្រប់គ្រងបុគ្គលិកវ័យឆ្លាត"
-                                : "ផ្ទាំងគ្រប់គ្រងអ្នកគ្រប់គ្រង",
+                                ? AppStrings.tr('smart_hr_system')
+                                : AppStrings.tr('admin_dashboard'),
                             style: const TextStyle(
                               color: Colors.white70,
                               fontSize: 14,
@@ -126,7 +127,9 @@ class _AuthscreenState extends State<Authscreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            isEmployee ? "សូមស្វាគមន៍" : "ចូលជា Admin",
+                            isEmployee
+                                ? AppStrings.tr('welcome')
+                                : AppStrings.tr('admin_login_title'),
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 32,
@@ -160,24 +163,24 @@ class _AuthscreenState extends State<Authscreen> {
                             children: [
                               Text(
                                 isEmployee
-                                    ? "គ្រប់គ្រងធនធានមនុស្សបែបឆ្លាតវៃ"
-                                    : "ការចូលប្រើប្រាស់កម្រិតខ្ពស់",
+                                    ? AppStrings.tr('smart_hr_management')
+                                    : AppStrings.tr('advanced_access'),
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                   color: isEmployee
-                                      ? primaryColor
+                                      ? AppColors.primary
                                       : Colors.red[900],
                                 ),
                               ),
                               const SizedBox(height: 8),
                               Text(
                                 isEmployee
-                                    ? "ចូលប្រព័ន្ធដើម្បីគ្រប់គ្រងវត្តមាន និងប្រាក់បៀវត្សរ៍"
-                                    : "សូមផ្ទៀងផ្ទាត់អត្តសញ្ញាណអ្នកគ្រប់គ្រងរបស់អ្នក",
+                                    ? AppStrings.tr('login_subtitle_employee')
+                                    : AppStrings.tr('login_subtitle_admin'),
                                 textAlign: TextAlign.center,
                                 style: const TextStyle(
-                                  color: Colors.grey,
+                                  color: AppColors.textGrey,
                                   fontSize: 12,
                                 ),
                               ),
@@ -188,7 +191,7 @@ class _AuthscreenState extends State<Authscreen> {
                         Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: primaryColor,
+                            color: AppColors.primary,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
@@ -208,12 +211,12 @@ class _AuthscreenState extends State<Authscreen> {
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(
-                                      "បុគ្គលិក",
+                                      AppStrings.tr('employee_tab'),
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         color: isEmployee
-                                            ? primaryColor
+                                            ? AppColors.primary
                                             : Colors.white,
                                       ),
                                     ),
@@ -235,12 +238,12 @@ class _AuthscreenState extends State<Authscreen> {
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(
-                                      "អ្នកគ្រប់គ្រង",
+                                      AppStrings.tr('admin_tab'),
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         color: !isEmployee
-                                            ? primaryColor
+                                            ? AppColors.primary
                                             : Colors.white70,
                                       ),
                                     ),
@@ -253,17 +256,17 @@ class _AuthscreenState extends State<Authscreen> {
                         const SizedBox(height: 24),
                         Text(
                           isEmployee
-                              ? "ឈ្មោះគណនី ឬ លេខសម្គាល់"
-                              : "គណនីអ្នកគ្រប់គ្រង (Admin ID)",
+                              ? AppStrings.tr('username_or_id')
+                              : AppStrings.tr('admin_id'),
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 8),
                         Theme(
                           data: Theme.of(context).copyWith(
                             textSelectionTheme: TextSelectionThemeData(
-                              cursorColor: primaryColor,
-                              selectionHandleColor: primaryColor,
-                              selectionColor: primaryColor.withValues(
+                              cursorColor: AppColors.primary,
+                              selectionHandleColor: AppColors.primary,
+                              selectionColor: AppColors.primary.withValues(
                                 alpha: 0.2,
                               ),
                             ),
@@ -272,18 +275,18 @@ class _AuthscreenState extends State<Authscreen> {
                             controller: _usernameController,
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'សូមបញ្ចូលឈ្មោះគណនី ឬ លេខសម្គាល់';
+                                return AppStrings.tr('enter_id_error');
                               }
                               return null;
                             },
                             decoration: InputDecoration(
-                              hintText: "បញ្ចូលលេខសម្គាល់",
+                              hintText: AppStrings.tr('enter_id_hint'),
                               hintStyle: TextStyle(color: Colors.grey[400]),
                               prefixIcon: Icon(
                                 isEmployee
                                     ? Icons.person_outline
                                     : Icons.admin_panel_settings_outlined,
-                                color: primaryColor,
+                                color: AppColors.primary,
                               ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -299,27 +302,29 @@ class _AuthscreenState extends State<Authscreen> {
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: primaryColor),
+                                borderSide: BorderSide(
+                                  color: AppColors.primary,
+                                ),
                               ),
                               errorBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Colors.red),
+                                borderSide: const BorderSide(color: Colors.red),
                               ),
                             ),
                           ),
                         ),
                         const SizedBox(height: 16),
-                        const Text(
-                          "ពាក្យសម្ងាត់",
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                        Text(
+                          AppStrings.tr('password'),
+                          style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 8),
                         Theme(
                           data: Theme.of(context).copyWith(
                             textSelectionTheme: TextSelectionThemeData(
-                              cursorColor: primaryColor,
-                              selectionHandleColor: primaryColor,
-                              selectionColor: primaryColor.withValues(
+                              cursorColor: AppColors.primary,
+                              selectionHandleColor: AppColors.primary,
+                              selectionColor: AppColors.primary.withValues(
                                 alpha: 0.2,
                               ),
                             ),
@@ -329,22 +334,22 @@ class _AuthscreenState extends State<Authscreen> {
                             obscureText: obscurePassword,
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'សូមបញ្ចូលពាក្យសម្ងាត់';
+                                return AppStrings.tr('enter_password_error');
                               }
                               if (value.length < 6) {
-                                return 'ពាក្យសម្ងាត់ត្រូវមានយ៉ាងតិច ៦ ខ្ទង់';
+                                return AppStrings.tr('password_length_error');
                               }
                               return null;
                             },
                             decoration: InputDecoration(
-                              hintText: "បញ្ចូលពាក្យសម្ងាត់",
+                              hintText: AppStrings.tr('enter_password_hint'),
                               hintStyle: TextStyle(color: Colors.grey[400]),
                               suffixIcon: IconButton(
                                 icon: Icon(
                                   obscurePassword
                                       ? Icons.visibility_outlined
                                       : Icons.visibility_off_outlined,
-                                  color: Colors.grey,
+                                  color: AppColors.textGrey,
                                 ),
                                 onPressed: () {
                                   setState(() {
@@ -366,11 +371,13 @@ class _AuthscreenState extends State<Authscreen> {
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: primaryColor),
+                                borderSide: BorderSide(
+                                  color: AppColors.primary,
+                                ),
                               ),
                               errorBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Colors.red),
+                                borderSide: const BorderSide(color: Colors.red),
                               ),
                             ),
                           ),
@@ -381,9 +388,7 @@ class _AuthscreenState extends State<Authscreen> {
                           height: 50,
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: isEmployee
-                                  ? primaryColor
-                                  : primaryColor,
+                              backgroundColor: AppColors.primary,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -391,8 +396,8 @@ class _AuthscreenState extends State<Authscreen> {
                             onPressed: _handleLogin,
                             child: Text(
                               isEmployee
-                                  ? "ចូលប្រើប្រាស់"
-                                  : "ចូលក្នុងនាមជា Admin",
+                                  ? AppStrings.tr('login_button')
+                                  : AppStrings.tr('admin_login_button'),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 16,
@@ -406,9 +411,9 @@ class _AuthscreenState extends State<Authscreen> {
                           child: TextButton(
                             onPressed: () {},
                             child: Text(
-                              "ភ្លេចពាក្យសម្ងាត់?",
-                              style: TextStyle(
-                                color: primaryColor,
+                              AppStrings.tr('forgot_password'),
+                              style: const TextStyle(
+                                color: AppColors.primary,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -417,7 +422,7 @@ class _AuthscreenState extends State<Authscreen> {
                         const SizedBox(height: 30),
                         Center(
                           child: Text(
-                            "WorkSmart v1.0 • ",
+                            AppStrings.tr('app_version'),
                             style: TextStyle(
                               color: Colors.grey[400],
                               fontSize: 12,

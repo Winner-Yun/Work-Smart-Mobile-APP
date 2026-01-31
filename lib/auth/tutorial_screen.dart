@@ -2,7 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_worksmart_mobile_app/auth/tutorial_content.dart';
+import 'package:flutter_worksmart_mobile_app/config/appcolor.dart'; // Added AppColors
 import 'package:flutter_worksmart_mobile_app/constants/app_img.dart';
+import 'package:flutter_worksmart_mobile_app/routes/app_route.dart';
+import 'package:flutter_worksmart_mobile_app/translations/app_strings.dart'; // Added AppStrings
 
 class TutorialScreen extends StatefulWidget {
   const TutorialScreen({super.key});
@@ -16,24 +19,24 @@ class _TutorialScreenState extends State<TutorialScreen> {
   int _currentPage = 0;
   Timer? _timer;
 
+  // DEV NOTE: Converted Strings to AppStrings keys for dynamic translation
   final List<Map<String, dynamic>> _tutorialData = [
     {
       'image': AppImg.firstScreen,
-      'title': "គ្រប់គ្រងវត្តមានដោយឆ្លាតវៃ",
-      'subtitle': "តាមដានវត្តមានបុគ្គលិកដោយសុវត្ថិភាព និងប្រសិទ្ធភាព",
+      'title': "tutorial_title_1", // Key
+      'subtitle': "tutorial_subtitle_1", // Key
       'isFirst': true,
     },
     {
       'image': AppImg.secondScreen,
-      'title': "បច្ចេកវិទ្យាការពារការបន្លំ",
-      'subtitle':
-          "ផ្ទៀងផ្ទាត់ទីតាំង GPS និងថតរូបផ្ទាល់ ដើម្បីធានាភាពត្រឹមត្រូវ",
+      'title': "tutorial_title_2", // Key
+      'subtitle': "tutorial_subtitle_2", // Key
       'isFirst': false,
     },
     {
       'image': AppImg.thirdScreen,
-      'title': "បង្កើនប្រសិទ្ធភាពការងារ",
-      'subtitle': "ទទួលបានសមិទ្ធផល និងចំណាត់ថ្នាក់ល្អក្នុងក្រុមហ៊ុន",
+      'title': "tutorial_title_3", // Key
+      'subtitle': "tutorial_subtitle_3", // Key
       'isFirst': false,
     },
   ];
@@ -70,13 +73,13 @@ class _TutorialScreenState extends State<TutorialScreen> {
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeIn,
       );
-    } else {}
+    } else {
+      Navigator.pushReplacementNamed(context, AppRoute.authScreen);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = Theme.of(context).primaryColor;
-
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -84,8 +87,13 @@ class _TutorialScreenState extends State<TutorialScreen> {
             Align(
               alignment: Alignment.topRight,
               child: TextButton(
-                onPressed: () {},
-                child: const Text("រំលង", style: TextStyle(color: Colors.grey)),
+                onPressed: () {
+                  Navigator.pushReplacementNamed(context, AppRoute.authScreen);
+                },
+                child: Text(
+                  AppStrings.tr('skip'), // "រំលង"
+                  style: const TextStyle(color: AppColors.textGrey),
+                ),
               ),
             ),
             Expanded(
@@ -101,10 +109,11 @@ class _TutorialScreenState extends State<TutorialScreen> {
                 },
                 itemBuilder: (context, index) {
                   final data = _tutorialData[index];
+                  // DEV NOTE: We now translate keys here before passing to Widget
                   return TutorialContent(
                     imagePath: data['image'],
-                    title: data['title'],
-                    subtitle: data['subtitle'],
+                    title: AppStrings.tr(data['title']),
+                    subtitle: AppStrings.tr(data['subtitle']),
                     isFirstScreen: data['isFirst'],
                   );
                 },
@@ -122,7 +131,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
                       height: 8,
                       decoration: BoxDecoration(
                         color: index == _currentPage
-                            ? primaryColor
+                            ? AppColors.primary
                             : Colors.grey[300],
                         borderRadius: BorderRadius.circular(4),
                       ),
@@ -140,14 +149,16 @@ class _TutorialScreenState extends State<TutorialScreen> {
                     height: 50,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
+                        backgroundColor: AppColors.primary,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                       onPressed: _onNextPressed,
                       child: Text(
-                        _currentPage == 2 ? "ចាប់ផ្តើម" : "បន្ទាប់",
+                        _currentPage == 2
+                            ? AppStrings.tr('start') // "ចាប់ផ្តើម"
+                            : AppStrings.tr('next'), // "បន្ទាប់"
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 16,

@@ -19,7 +19,7 @@ class MainApp extends StatelessWidget {
         primaryColor: const Color(0xFF004C4C),
         scaffoldBackgroundColor: Colors.white,
       ),
-      initialRoute: AppRoute.appmain,
+      initialRoute: AppRoute.settingofsytem,
       routes: AppRoute.routes,
     );
   }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_worksmart_mobile_app/routes/app_route.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_worksmart_mobile_app/app/theme/theme.dart';
+import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
 
 void main() {
   runApp(const MainApp());
@@ -14,12 +14,11 @@ class MainApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'WorkSmart',
-      theme: ThemeData(
-        textTheme: GoogleFonts.notoSansKhmerTextTheme(),
-        primaryColor: const Color(0xFF004C4C),
-        scaffoldBackgroundColor: Colors.white,
-      ),
-      initialRoute: AppRoute.appmain,
+      theme: AppThemes.lightTheme,
+      darkTheme: AppThemes.darkTheme,
+      themeMode: ThemeMode.system,
+
+      initialRoute: AppRoute.tutorial,
       routes: AppRoute.routes,
     );
   }

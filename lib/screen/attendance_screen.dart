@@ -1,18 +1,15 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_worksmart_mobile_app/config/appcolor.dart';
 
-void main() {
-  runApp( MaterialApp(
-    debugShowCheckedModeBanner: false,
-    home: AttendanceScreen(),
-  ));
-}
-
-class AttendanceScreen extends StatelessWidget {
-   AttendanceScreen({super.key});
+class AttendanceScreen extends StatefulWidget {
+  const AttendanceScreen({super.key});
 
   @override
+  State<AttendanceScreen> createState() => _AttendanceScreenState();
+}
+
+class _AttendanceScreenState extends State<AttendanceScreen> {
+   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor:  Color(0xFFF8F9FA),
@@ -29,7 +26,7 @@ class AttendanceScreen extends StatelessWidget {
           ),
         ),
         icon: Icon(Icons.add, color: Colors.white),
-        backgroundColor:AppColors.primary, 
+        backgroundColor:AppColors.background,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(30),
         ),

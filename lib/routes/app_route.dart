@@ -21,6 +21,7 @@ class AppRoute {
     attendanceDetail: (context) => const AttendanceDetailScreen(),
     attendance_screen :(context)=> const AttendanceScreen(),
     achievement_screen :(context)=> const AchievementScreen(),
+    
 
 
   };

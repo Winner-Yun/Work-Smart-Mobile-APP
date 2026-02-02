@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
-import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/attendence_screens/attendance_stats_screen.dart';
-import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/homepage_screens/homepagescreen.dart';
-import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/attendence_screens/leave_attendance_screen.dart';
-import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/profile&setting_screens/profile_screens.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
+import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/attendence_screens/attendance_stats_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/attendence_screens/leave_attendance_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/homepage_screens/homepagescreen.dart';
+import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/profile&setting_screens/profile_screens.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -50,7 +49,7 @@ class _MainScreenState extends State<MainScreen> {
             onTap: (index) => setState(() => _currentIndex = index),
             type: BottomNavigationBarType.fixed,
             backgroundColor: Theme.of(context).cardTheme.color,
-            selectedItemColor: AppColors.primary,
+            selectedItemColor: Theme.of(context).colorScheme.primary,
             unselectedItemColor: Colors.grey,
             showUnselectedLabels: true,
             selectedFontSize: 12,

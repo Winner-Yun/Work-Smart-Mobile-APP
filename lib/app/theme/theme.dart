@@ -10,6 +10,10 @@ class AppThemes {
     useMaterial3: true,
     brightness: Brightness.light,
     textTheme: _khmerTextTheme,
+    primaryTextTheme: _khmerTextTheme.apply(
+      bodyColor: AppColors.primary,
+      displayColor: AppColors.primary,
+    ),
     primaryColor: AppColors.primary,
     scaffoldBackgroundColor: AppColors.lightBg,
     colorScheme: ColorScheme.fromSeed(
@@ -46,6 +50,10 @@ class AppThemes {
       bodyColor: AppColors.textLight,
       displayColor: AppColors.textLight,
     ),
+    primaryTextTheme: _khmerTextTheme.apply(
+      bodyColor: AppColors.primary,
+      displayColor: AppColors.primary,
+    ),
     scaffoldBackgroundColor: AppColors.darkBg,
 
     cardTheme: CardThemeData(
@@ -76,7 +84,7 @@ class AppThemes {
     ),
 
     colorScheme: const ColorScheme.dark(
-      primary: AppColors.primary,
+      primary: AppColors.tertiary,
       secondary: AppColors.secondary,
       surface: AppColors.darkSurface,
       error: AppColors.error,

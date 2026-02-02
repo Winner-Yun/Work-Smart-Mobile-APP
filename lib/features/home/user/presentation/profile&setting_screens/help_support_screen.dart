@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_img.dart';
+import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 
 class HelpSupportScreen extends StatelessWidget {
   const HelpSupportScreen({super.key});
@@ -11,7 +11,7 @@ class HelpSupportScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.primary,
+        backgroundColor: Theme.of(context).colorScheme.primary,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(
@@ -60,7 +60,7 @@ class HelpSupportScreen extends StatelessWidget {
             _buildFAQTile('តើធ្វើដូចម្តេចដើម្បីភ្ជាប់ Telegram?', context),
             _buildFAQTile('បញ្ហាការចុះឈ្មោះចូលប្រើប្រាស់', context),
             const SizedBox(height: 40),
-            _buildVersionInfo(),
+            _buildVersionInfo(context),
           ],
         ),
       ),
@@ -159,21 +159,27 @@ class HelpSupportScreen extends StatelessWidget {
       ),
       child: ListTile(
         title: Text(question, style: const TextStyle(fontSize: 14)),
-        trailing: const Icon(Icons.add, size: 20, color: AppColors.primary),
+        trailing: Icon(
+          Icons.add,
+          size: 20,
+          color: Theme.of(context).colorScheme.primary,
+        ),
         onTap: () {},
       ),
     ).animate().fadeIn(delay: 400.ms);
   }
 
-  Widget _buildVersionInfo() {
+  Widget _buildVersionInfo(BuildContext context) {
     return Center(
       child: Column(
         children: [
           Image.asset(
             AppImg.appIcon,
             height: 40,
-            errorBuilder: (c, e, s) =>
-                const Icon(Icons.business_center, color: AppColors.primary),
+            errorBuilder: (c, e, s) => Icon(
+              Icons.business_center,
+              color: Theme.of(context).colorScheme.primary,
+            ),
           ),
           const SizedBox(height: 10),
           const Text(

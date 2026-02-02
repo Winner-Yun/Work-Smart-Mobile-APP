@@ -16,9 +16,21 @@ class _TopEmployeesShowScreenState extends State<TopEmployeesShowScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {},
+        leading: IconButton.outlined(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          icon: const Icon(
+            Icons.chevron_left, // < icon
+            color: Colors.black,
+            size: 28,
+          ),
+          style: IconButton.styleFrom(
+            side: const BorderSide(color: Colors.teal),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
         ),
         title: Text(
           'ចំណាត់ថ្នាក់កំពូល',
@@ -29,12 +41,19 @@ class _TopEmployeesShowScreenState extends State<TopEmployeesShowScreen> {
         ),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.share, color: Colors.black),
+          IconButton.outlined(
             onPressed: () {},
+            icon: const Icon(Icons.share, color: Colors.black),
+            style: IconButton.styleFrom(
+              side: const BorderSide(color: Colors.teal),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
           ),
         ],
       ),
+
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -573,8 +592,8 @@ class _TopEmployeesShowScreenState extends State<TopEmployeesShowScreen> {
           right: 18,
           bottom: -22,
           child: Container(
-            width: 110, 
-            height: 44, 
+            width: 110,
+            height: 44,
             decoration: BoxDecoration(
               color: Colors.orange,
               borderRadius: BorderRadius.circular(20),

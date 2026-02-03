@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
 import 'package:flutter_worksmart_mobile_app/app/theme/theme.dart';
+import 'package:flutter_worksmart_mobile_app/config/language_manager.dart';
 import 'package:flutter_worksmart_mobile_app/config/theme_manager.dart'; // Import the manager
 
 void main() async {
-
   WidgetsFlutterBinding.ensureInitialized();
   await ThemeManager().loadSettings();
-  
-  runApp(const MainApp());
+  await LanguageManager().loadSettings();
 
+  runApp(const MainApp());
 }
 
 class MainApp extends StatelessWidget {

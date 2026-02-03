@@ -8,6 +8,7 @@ import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_img.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
+import 'package:flutter_worksmart_mobile_app/core/constants/map_styles.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -57,9 +58,16 @@ class _HomePageScreenState extends State<HomePageScreen> {
     _updateMapStyle(context);
   }
 
-  // 4. FUNCTION TO APPLY DARK MODE STYLE
   void _updateMapStyle(BuildContext context) {
     if (mapController == null) return;
+
+    bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    if (isDarkMode) {
+      mapController!.setMapStyle(MapStyles.dark);
+    } else {
+      mapController!.setMapStyle(null);
+    }
   }
 
   @override
@@ -437,9 +445,12 @@ class _HomePageScreenState extends State<HomePageScreen> {
                   child: GoogleMap(
                     initialCameraPosition: const CameraPosition(
                       target: _officeLocation,
-                      zoom: 16,
+                      zoom: 2,
                     ),
-                    onMapCreated: (c) => mapController = c,
+                    onMapCreated: (c) {
+                      mapController = c;
+                      _updateMapStyle(context);
+                    },
                     markers: _markers,
                     circles: _circles,
                     myLocationEnabled: false,
@@ -477,7 +488,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Theme.of(context).cardTheme.color,
                       borderRadius: BorderRadius.circular(30),
                       boxShadow: [
                         BoxShadow(
@@ -620,7 +631,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
                     borderRadius: BorderRadius.circular(16),
                     color: _isInRange
                         ? Theme.of(context).colorScheme.primary
-                        : Colors.grey[200],
+                        : Theme.of(context).cardTheme.color,
                     boxShadow: _isInRange
                         ? [
                             BoxShadow(

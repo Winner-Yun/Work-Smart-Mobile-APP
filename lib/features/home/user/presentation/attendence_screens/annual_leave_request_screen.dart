@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 
 class AnnualLeaveRequestScreen extends StatefulWidget {
   const AnnualLeaveRequestScreen({super.key});
@@ -162,7 +161,7 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
       child: ElevatedButton(
         onPressed: () {},
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
+          backgroundColor: Theme.of(context).colorScheme.primary,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
           ),

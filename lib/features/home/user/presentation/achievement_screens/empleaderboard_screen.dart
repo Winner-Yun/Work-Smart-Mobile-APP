@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
-import 'package:flutter_worksmart_mobile_app/core/constants/app_img.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
+import 'package:flutter_worksmart_mobile_app/core/constants/app_img.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
+import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 
 class LeaderboardScreen extends StatefulWidget {
   const LeaderboardScreen({super.key});
@@ -105,8 +105,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         ),
         title: Text(
           AppStrings.tr('top_rankings'),
-          style: const TextStyle(
-            color: AppColors.primary,
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.primary,
             fontWeight: FontWeight.bold,
             fontSize: 18,
           ),
@@ -216,7 +216,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         child: Text(
           title,
           style: TextStyle(
-            color: active ? AppColors.primary : AppColors.textGrey,
+            color: active
+                ? Theme.of(context).colorScheme.primary
+                : AppColors.textGrey,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -304,8 +306,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         ),
         Text(
           "${emp['score']}%",
-          style: const TextStyle(
-            color: AppColors.primary,
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.primary,
             fontWeight: FontWeight.bold,
             fontSize: 12,
           ),
@@ -412,9 +414,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                 children: [
                   Text(
                     "${emp['score']}%",
-                    style: const TextStyle(
+                    style:  TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
+                      color: Theme.of(context).colorScheme.primary,
                       fontSize: 14,
                     ),
                   ),
@@ -451,7 +453,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.primary,
+        color: Theme.of(context).colorScheme.primary,
         borderRadius: BorderRadius.circular(25),
       ),
       child: Column(

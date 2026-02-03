@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
+import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 
 class LeaveDetailScreen extends StatefulWidget {
   const LeaveDetailScreen({super.key});
@@ -109,7 +109,7 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: AppColors.primary,
+      backgroundColor: Theme.of(context).colorScheme.primary,
       elevation: 0,
       scrolledUnderElevation: 0,
       leading: IconButton(
@@ -131,8 +131,8 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
   Widget _buildDoubleOverviewCard() {
     return Container(
       width: double.infinity,
-      decoration: const BoxDecoration(
-        color: AppColors.primary,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primary,
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(30),
           bottomRight: Radius.circular(30),
@@ -388,7 +388,10 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
         if (action.isNotEmpty)
           Text(
             action,
-            style: const TextStyle(color: AppColors.primary, fontSize: 12),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.primary,
+              fontSize: 12,
+            ),
           ),
       ],
     );
@@ -426,15 +429,15 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
               },
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(0, 55),
-                side: const BorderSide(color: AppColors.primary),
+                side: BorderSide(color: Theme.of(context).colorScheme.primary),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15),
                 ),
               ),
-              child: const Text(
+              child: Text(
                 "ស្នើច្បាប់ឈឺ",
                 style: TextStyle(
-                  color: AppColors.primary,
+                  color: Theme.of(context).colorScheme.primary,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -447,7 +450,7 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
                 Navigator.pushNamed(context, AppRoute.annualleaveScreen);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
+                backgroundColor: Theme.of(context).colorScheme.primary,
                 minimumSize: const Size(0, 55),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15),

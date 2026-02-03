@@ -48,11 +48,11 @@ class _TelegramIntegrationState extends State<TelegramIntegration> {
         ),
         onPressed: () => Navigator.pop(context),
       ),
-      title: const Text(
+      title: Text(
         'ការកំណត់ Telegram',
         style: TextStyle(
           fontSize: 20,
-          color: AppColors.primary,
+          color: Theme.of(context).colorScheme.primary,
           fontWeight: FontWeight.bold,
         ),
       ),
@@ -96,12 +96,12 @@ class _TelegramIntegrationState extends State<TelegramIntegration> {
   Widget _buildIntroText(BuildContext context) {
     return Column(
       children: [
-        const Text(
+        Text(
           'ភ្ជាប់ជាមួយ Telegram',
           style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,
-            color: AppColors.primary,
+            color: Theme.of(context).colorScheme.primary,
           ),
         ),
         const SizedBox(height: 10),
@@ -121,7 +121,7 @@ class _TelegramIntegrationState extends State<TelegramIntegration> {
       child: ElevatedButton(
         onPressed: () {},
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
+          backgroundColor: Theme.of(context).colorScheme.primary,
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
@@ -172,10 +172,10 @@ class _TelegramIntegrationState extends State<TelegramIntegration> {
                   ), // QR Code background stays light for scanning contrast
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.qr_code,
                   size: 130,
-                  color: AppColors.primary,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               )
               .animate(onPlay: (controller) => controller.repeat(reverse: true))
@@ -190,11 +190,11 @@ class _TelegramIntegrationState extends State<TelegramIntegration> {
                 duration: 2.seconds,
               ),
           const SizedBox(height: 20),
-          const Text(
+          Text(
             '@WorkSmart_Bot',
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: AppColors.primary,
+              color: Theme.of(context).colorScheme.primary,
               fontSize: 16,
             ),
           ),
@@ -261,11 +261,13 @@ class _TelegramIntegrationState extends State<TelegramIntegration> {
         children: [
           CircleAvatar(
             radius: 16,
-            backgroundColor: AppColors.primary.withOpacity(0.1),
+            backgroundColor: Theme.of(
+              context,
+            ).colorScheme.primary.withOpacity(0.1),
             child: Text(
               number,
-              style: const TextStyle(
-                color: AppColors.primary,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.primary,
                 fontWeight: FontWeight.bold,
               ),
             ),

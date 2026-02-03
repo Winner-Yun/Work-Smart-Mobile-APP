@@ -1,6 +1,5 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -127,7 +126,7 @@ class _FaceScanScreenState extends State<FaceScanScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            backgroundColor: AppColors.primary,
+            backgroundColor: Theme.of(context).colorScheme.primary,
             content: Text(AppStrings.tr('scan_success')),
           ),
         );
@@ -163,7 +162,7 @@ class _FaceScanScreenState extends State<FaceScanScreen>
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: AppColors.primary,
+      backgroundColor: Theme.of(context).colorScheme.primary,
       elevation: 0,
       leading: Padding(
         padding: const EdgeInsets.all(8.0),

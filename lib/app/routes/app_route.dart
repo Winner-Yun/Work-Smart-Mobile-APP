@@ -35,6 +35,7 @@ class AppRoute {
   static const String telegramConfig = '/telegramConfig';
   static const String helpSupportScreen = '/helpSupportScreen';
 
+
   static Map<String, WidgetBuilder> routes = {
     tutorial: (context) => const TutorialScreen(),
     authScreen: (context) => const Authscreen(),
@@ -52,5 +53,7 @@ class AppRoute {
     settingScreen: (context) => const SettingsScreen(),
     telegramConfig: (context) => const TelegramIntegration(),
     helpSupportScreen: (context) => const HelpSupportScreen(),
+
+
   };
 }

@@ -4,10 +4,10 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
-import 'package:flutter_worksmart_mobile_app/core/constants/app_img.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
+import 'package:flutter_worksmart_mobile_app/core/constants/app_img.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
+import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -20,7 +20,8 @@ class HomePageScreen extends StatefulWidget {
 }
 
 class _HomePageScreenState extends State<HomePageScreen> {
-  late GoogleMapController mapController;
+  // 2. MAKE CONTROLLER NULLABLE
+  GoogleMapController? mapController;
   StreamSubscription<Position>? _positionStreamSubscription;
 
   // Config
@@ -49,10 +50,22 @@ class _HomePageScreenState extends State<HomePageScreen> {
     _generateProfileMarker();
   }
 
+  // 3. LISTEN FOR THEME CHANGES
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _updateMapStyle(context);
+  }
+
+  // 4. FUNCTION TO APPLY DARK MODE STYLE
+  void _updateMapStyle(BuildContext context) {
+    if (mapController == null) return;
+  }
+
   @override
   void dispose() {
     _positionStreamSubscription?.cancel();
-    mapController.dispose();
+    mapController?.dispose();
     super.dispose();
   }
 
@@ -95,8 +108,8 @@ class _HomePageScreenState extends State<HomePageScreen> {
           circleId: const CircleId('office_zone'),
           center: _officeLocation,
           radius: _scanRangeMeters,
-          fillColor: AppColors.primary.withOpacity(0.2),
-          strokeColor: AppColors.primary,
+          fillColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+          strokeColor: Theme.of(context).colorScheme.primary,
           strokeWidth: 2,
         ),
       );
@@ -175,7 +188,6 @@ class _HomePageScreenState extends State<HomePageScreen> {
   }
 
   Future<void> _initLocationTracking() async {
-    // 1. Request Permission (This triggers the Default iOS/Android Dialog)
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
@@ -186,15 +198,11 @@ class _HomePageScreenState extends State<HomePageScreen> {
     }
 
     if (permission == LocationPermission.deniedForever) {
-      // On Android/iOS, this usually means they have to go to settings manually.
-      // We just show text status, no custom popup.
       setState(() => _rangeStatusText = "សូមបើកសិទ្ធិទីតាំងនៅក្នុងការកំណត់");
       return;
     }
 
-    // 2. Force initial update
     try {
-      // This will trigger system location services check internally
       Position initialPosition = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
@@ -203,7 +211,6 @@ class _HomePageScreenState extends State<HomePageScreen> {
       debugPrint("Location service might be disabled or error: $e");
     }
 
-    // 3. Start Live Stream
     const LocationSettings locationSettings = LocationSettings(
       accuracy: LocationAccuracy.high,
       distanceFilter: 5,
@@ -232,11 +239,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
 
     try {
       if (await canLaunchUrl(url)) {
-        await launchUrl(
-          url,
-          mode:
-              LaunchMode.externalApplication, // This forces it out of your app
-        );
+        await launchUrl(url, mode: LaunchMode.externalApplication);
       } else {
         debugPrint("Could not launch $url");
       }
@@ -281,7 +284,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
         _markers = newMarkers;
       });
 
-      mapController.animateCamera(
+      mapController?.animateCamera(
         CameraUpdate.newCameraPosition(
           CameraPosition(
             target: LatLng(userPos.latitude, userPos.longitude),
@@ -379,7 +382,6 @@ class _HomePageScreenState extends State<HomePageScreen> {
   }
 
   Widget _buildLiveMapCard(BuildContext context) {
-    // 1. Helper Logic to Format Distance
     String getFormattedDistance(String statusText) {
       if (!statusText.contains("m")) return "--";
 
@@ -394,7 +396,6 @@ class _HomePageScreenState extends State<HomePageScreen> {
 
         double distance = double.parse(numberString);
 
-        // Convert logic
         if (distance >= 1000) {
           return "${(distance / 1000).toStringAsFixed(2)} km";
         } else {
@@ -410,7 +411,10 @@ class _HomePageScreenState extends State<HomePageScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.primary, width: 3),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.primary,
+          width: 3,
+        ),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF4A4A4A).withOpacity(0.08),
@@ -421,13 +425,10 @@ class _HomePageScreenState extends State<HomePageScreen> {
       ),
       child: Column(
         children: [
-          // Map Header
-          // Map Header
           SizedBox(
             height: 240,
             child: Stack(
               children: [
-                // 1. The Map (Bottom Layer)
                 ClipRRect(
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(24),
@@ -449,8 +450,6 @@ class _HomePageScreenState extends State<HomePageScreen> {
                     compassEnabled: false,
                   ),
                 ),
-
-                // 2. Gradient Overlay (Optional)
                 Positioned(
                   bottom: 0,
                   left: 0,
@@ -469,8 +468,6 @@ class _HomePageScreenState extends State<HomePageScreen> {
                     ),
                   ),
                 ),
-
-                // 3. Status Badge (Top Left)
                 Positioned(
                   top: 16,
                   left: 16,
@@ -496,7 +493,9 @@ class _HomePageScreenState extends State<HomePageScreen> {
                           width: 8,
                           height: 8,
                           decoration: BoxDecoration(
-                            color: _isInRange ? AppColors.primary : Colors.red,
+                            color: _isInRange
+                                ? Theme.of(context).colorScheme.primary
+                                : Colors.red,
                             shape: BoxShape.circle,
                           ),
                         ).animate(onPlay: (c) => c.repeat()).fade().scale(),
@@ -509,7 +508,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
                             color: _isInRange
-                                ? AppColors.primary
+                                ? Theme.of(context).colorScheme.primary
                                 : Colors.red[700],
                           ),
                         ),
@@ -517,12 +516,9 @@ class _HomePageScreenState extends State<HomePageScreen> {
                     ),
                   ),
                 ),
-
-                // 4. ADDED: Directions Button (Top Right)
-              ], // End of Stack children
+              ],
             ),
           ),
-
           Padding(
             padding: const EdgeInsets.all(20.0),
             child: Column(
@@ -553,7 +549,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
                               color: _isInRange
-                                  ? AppColors.primary
+                                  ? Theme.of(context).colorScheme.primary
                                   : Colors.red,
                             ),
                           ),
@@ -568,7 +564,6 @@ class _HomePageScreenState extends State<HomePageScreen> {
                           ),
                         ],
                       ),
-
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
@@ -580,24 +575,22 @@ class _HomePageScreenState extends State<HomePageScreen> {
                             ),
                           ),
                           const SizedBox(height: 4),
-                          // --- UPDATED DISTANCE DISPLAY ---
                           Text(
                             getFormattedDistance(_rangeStatusText),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
-                              color: AppColors.primary,
+                              color: Theme.of(context).colorScheme.primary,
                             ),
                           ),
                           const SizedBox(height: 10),
-
                           InkWell(
                             onTap: _openDirections,
                             child: Container(
                               width: 100,
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: AppColors.primary,
+                                color: Theme.of(context).colorScheme.primary,
                                 borderRadius: BorderRadius.circular(10),
                                 boxShadow: [
                                   BoxShadow(
@@ -625,11 +618,15 @@ class _HomePageScreenState extends State<HomePageScreen> {
                   height: 55,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(16),
-                    color: _isInRange ? AppColors.primary : Colors.grey[200],
+                    color: _isInRange
+                        ? Theme.of(context).colorScheme.primary
+                        : Colors.grey[200],
                     boxShadow: _isInRange
                         ? [
                             BoxShadow(
-                              color: AppColors.primary.withOpacity(0.3),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.primary.withOpacity(0.3),
                               blurRadius: 15,
                               offset: const Offset(0, 5),
                             ),
@@ -724,8 +721,8 @@ class _HomePageScreenState extends State<HomePageScreen> {
                 ),
                 Text(
                   "${AppStrings.tr('greet_pronoun_man')} វិនន័រ",
-                  style: const TextStyle(
-                    color: AppColors.primary,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
@@ -785,21 +782,21 @@ class _HomePageScreenState extends State<HomePageScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.shield_outlined,
                 size: 14,
-                color: AppColors.primary,
+                color: Theme.of(context).colorScheme.primary,
               ),
               const SizedBox(width: 4),
               Text(
                 AppStrings.tr('safety'),
                 style: TextStyle(
-                  color: AppColors.primary,
+                  color: Theme.of(context).colorScheme.primary,
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
@@ -853,7 +850,9 @@ class _HomePageScreenState extends State<HomePageScreen> {
         padding: const EdgeInsets.all(12),
         height: 110,
         decoration: BoxDecoration(
-          color: isDark ? AppColors.primary : Theme.of(context).cardTheme.color,
+          color: isDark
+              ? Theme.of(context).colorScheme.primary
+              : Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(15),
           boxShadow: isDark
               ? []
@@ -873,7 +872,9 @@ class _HomePageScreenState extends State<HomePageScreen> {
                 Icon(
                   icon,
                   size: 18,
-                  color: isDark ? Colors.white70 : AppColors.primary,
+                  color: isDark
+                      ? Colors.white70
+                      : Theme.of(context).colorScheme.primary,
                 ),
                 const SizedBox(width: 5),
                 Text(
@@ -1022,7 +1023,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
               Navigator.pushNamed(context, AppRoute.leaderboardScreen),
           child: Text(
             AppStrings.tr('view_all'),
-            style: const TextStyle(color: AppColors.primary),
+            style: TextStyle(color: Theme.of(context).colorScheme.primary),
           ),
         ),
       ],
@@ -1122,10 +1123,10 @@ class _HomePageScreenState extends State<HomePageScreen> {
           const Spacer(),
           Text(
             score,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: AppColors.primary,
+              color: Theme.of(context).colorScheme.primary,
             ),
           ),
         ],

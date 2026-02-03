@@ -2,9 +2,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_worksmart_mobile_app/features/auth/presentation/change_pas_screen.dart';
-import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
+import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
+import 'package:flutter_worksmart_mobile_app/features/auth/presentation/change_pas_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/profile&setting_screens/setting_screen.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -55,12 +55,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              const Text(
+              Text(
                 'ជ្រើសរើសរូបថត',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
               const SizedBox(height: 25),
@@ -71,7 +71,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     context,
                     icon: Icons.photo_library_rounded,
                     label: 'បណ្ណាល័យ',
-                    color: AppColors.primary,
+                    color: Theme.of(context).colorScheme.primary,
                     onTap: () {
                       _pickImage(ImageSource.gallery);
                       Navigator.pop(context);
@@ -136,7 +136,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
-      backgroundColor: AppColors.primary,
+      backgroundColor: Theme.of(context).colorScheme.primary,
       elevation: 0,
       title: const Text(
         'គណនី',
@@ -221,9 +221,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           GestureDetector(
             onTap: () => _showPickerOptions(context),
-            child: const CircleAvatar(
+            child: CircleAvatar(
               radius: 18,
-              backgroundColor: AppColors.primary,
+              backgroundColor: Theme.of(context).colorScheme.primary,
               child: Icon(Icons.camera_alt, size: 18, color: Colors.white),
             ),
           ),
@@ -269,7 +269,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       children: [
         CircleAvatar(
           backgroundColor: Colors.blue.shade50,
-          child: const Icon(Icons.send, color: AppColors.primary, size: 20),
+          child: Icon(
+            Icons.send,
+            color: Theme.of(context).colorScheme.primary,
+            size: 20,
+          ),
         ),
         const SizedBox(width: 15),
         Expanded(
@@ -294,15 +298,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
           onPressed: () =>
               Navigator.pushNamed(context, AppRoute.telegramConfig),
           style: TextButton.styleFrom(
-            backgroundColor: AppColors.primary.withOpacity(0.2),
+            backgroundColor: Theme.of(
+              context,
+            ).colorScheme.primary.withOpacity(0.2),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
             ),
           ),
-          child: const Text(
+          child: Text(
             'ភ្ជាប់ឥឡូវ',
             style: TextStyle(
-              color: AppColors.primary,
+              color: Theme.of(context).colorScheme.primary,
               fontWeight: FontWeight.bold,
               fontSize: 12,
             ),
@@ -397,9 +403,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       width: double.infinity,
       height: 55,
       decoration: BoxDecoration(
-        color: Colors.red.shade50.withOpacity(0.4),
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.red.shade100),
+        border: Border.all(color: AppColors.error),
       ),
       child: InkWell(
         onTap: () {
@@ -441,7 +447,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: Theme.of(context).textTheme.bodyLarge?.color,
+                            color: AppColors.textLight,
                           ),
                         ),
                         const SizedBox(height: 10),

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
+import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 
 class AttendanceStatsScreen extends StatefulWidget {
   const AttendanceStatsScreen({super.key});
@@ -157,14 +157,17 @@ class _AttendanceStatsScreenState extends State<AttendanceStatsScreen> {
           onPressed: () {
             Navigator.pushNamed(context, AppRoute.attendanCalendarScreen);
           },
-          icon: const Icon(Icons.calendar_month, color: AppColors.primary),
+          icon: Icon(
+            Icons.calendar_month,
+            color: Theme.of(context).colorScheme.primary,
+          ),
         ),
       ],
       automaticallyImplyLeading: false,
       title: Text(
         AppStrings.tr('my_stats'),
-        style: const TextStyle(
-          color: AppColors.primary,
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.primary,
           fontWeight: FontWeight.bold,
         ),
       ),
@@ -197,7 +200,7 @@ class _AttendanceStatsScreenState extends State<AttendanceStatsScreen> {
                     backgroundColor: Theme.of(
                       context,
                     ).dividerColor.withOpacity(0.1),
-                    color: AppColors.primary,
+                    color: Theme.of(context).colorScheme.primary,
                     strokeCap: StrokeCap.round,
                   ),
                 ),
@@ -219,10 +222,10 @@ class _AttendanceStatsScreenState extends State<AttendanceStatsScreen> {
       children: [
         Text(
           "${(value * 100).toInt()}%",
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 32,
             fontWeight: FontWeight.bold,
-            color: AppColors.primary,
+            color: Theme.of(context).colorScheme.primary,
           ),
         ),
         Text(
@@ -473,8 +476,6 @@ class _AttendanceStatsScreenState extends State<AttendanceStatsScreen> {
     );
   }
 
-  // Existing animation methods from original code (buildClickableBar, buildStatCard, buildFilterChip)
-  // are included here in the refactored state.
   Widget _buildClickableBar({
     required int index,
     required String label,
@@ -493,7 +494,7 @@ class _AttendanceStatsScreenState extends State<AttendanceStatsScreen> {
               margin: const EdgeInsets.only(bottom: 4),
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: AppColors.primary,
+                color: Theme.of(context).colorScheme.primary,
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
@@ -513,7 +514,7 @@ class _AttendanceStatsScreenState extends State<AttendanceStatsScreen> {
             height: _animateChart ? 120 * percentage : 0,
             decoration: BoxDecoration(
               color: isActive
-                  ? AppColors.primary
+                  ? Theme.of(context).colorScheme.primary
                   : const Color(0xFFB0BEC5).withValues(alpha: 0.3),
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(8),
@@ -588,13 +589,15 @@ class _AttendanceStatsScreenState extends State<AttendanceStatsScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.primary
+              ? Theme.of(context).colorScheme.primary
               : Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(25),
           boxShadow: [
             if (isSelected)
               BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.3),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.3),
                 blurRadius: 8,
                 offset: const Offset(0, 4),
               ),

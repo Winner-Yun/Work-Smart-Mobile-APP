@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
 
 void main() {
@@ -86,7 +85,7 @@ class LeaveAttendanceScreen extends StatelessWidget {
                     .fadeIn(duration: 500.ms)
                     .slideX(begin: -0.1, end: 0),
                 const SizedBox(height: 30),
-                _buildListHeader(),
+                _buildListHeader(context),
               ],
             ),
           ),
@@ -126,10 +125,10 @@ class LeaveAttendanceScreen extends StatelessWidget {
       elevation: 0,
       centerTitle: false,
       scrolledUnderElevation: 0,
-      title: const Text(
+      title: Text(
         'ច្បាប់ឈប់សម្រាក',
         style: TextStyle(
-          color: AppColors.primary,
+          color: Theme.of(context).colorScheme.primary,
           fontSize: 22,
           fontWeight: FontWeight.bold,
         ),
@@ -183,7 +182,7 @@ class LeaveAttendanceScreen extends StatelessWidget {
             title: 'ច្បាប់ប្រចាំឆ្នាំ',
             value: '១២',
             icon: Icons.calendar_today_outlined,
-            iconColor: Colors.teal,
+            iconColor: Theme.of(context).colorScheme.primary,
           ),
         ),
         const SizedBox(width: 15),
@@ -201,7 +200,7 @@ class LeaveAttendanceScreen extends StatelessWidget {
   }
 
   // --- 3. Request List Header ---
-  Widget _buildListHeader() {
+  Widget _buildListHeader(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -211,7 +210,10 @@ class LeaveAttendanceScreen extends StatelessWidget {
         ),
         TextButton(
           onPressed: () {},
-          child: const Text('មើលទាំងអស់', style: TextStyle(color: Colors.teal)),
+          child: Text(
+            'មើលទាំងអស់',
+            style: TextStyle(color: Theme.of(context).colorScheme.primary),
+          ),
         ),
       ],
     ).animate().fadeIn(delay: 200.ms);
@@ -241,15 +243,15 @@ class LeaveAttendanceScreen extends StatelessWidget {
               },
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(0, 55),
-                side: const BorderSide(color: AppColors.primary),
+                side: BorderSide(color: Theme.of(context).colorScheme.primary),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15),
                 ),
               ),
-              child: const Text(
+              child: Text(
                 "ស្នើច្បាប់ឈឺ",
                 style: TextStyle(
-                  color: AppColors.primary,
+                  color: Theme.of(context).colorScheme.primary,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -262,7 +264,7 @@ class LeaveAttendanceScreen extends StatelessWidget {
                 Navigator.pushNamed(context, AppRoute.annualleaveScreen);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
+                backgroundColor: Theme.of(context).colorScheme.primary,
                 minimumSize: const Size(0, 55),
                 elevation: 0,
                 shape: RoundedRectangleBorder(
@@ -323,10 +325,10 @@ class LeaveAttendanceScreen extends StatelessWidget {
             children: [
               Text(
                 value,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.blueGrey,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
               const SizedBox(width: 4),

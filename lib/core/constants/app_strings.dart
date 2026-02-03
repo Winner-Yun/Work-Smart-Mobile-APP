@@ -3,6 +3,12 @@ class AppStrings {
 
   static const Map<String, Map<String, String>> data = {
     'en': {
+      //menu bottomAppbar
+      'home_menu': 'Home',
+      'atd_menu': 'Attendent',
+      'leave_menu': 'Leave',
+      'profile_menu': 'Profile',
+
       // Auth Screen
       'logging_in_employee': 'Logging in to Employee account...',
       'logging_in_admin': 'Logging in to Admin account...',
@@ -29,6 +35,32 @@ class AppStrings {
       'forgot_password': 'Forgot Password?',
       'app_version': 'WorkSmart v1.0 • ',
 
+      "forgot_password_desc":
+          "Please enter your email address to receive a verification code.",
+      "email_label": "Email Address",
+      "enter_email_error": "Please enter your email",
+      "invalid_email_error": "Invalid email format",
+      "send_button": "Send Code",
+      "verify_title": "Verify Code",
+      "otp_message": "We have sent a 4-digit code to your email address.",
+      "verify_button": "Verify",
+      "resend_code": "Resend Code",
+      "verifying": "Verifying...",
+      "otp_length_error": "Please enter all 4 digits",
+      "reset_password_title": "Reset Password",
+      "reset_password_subtitle": "Create a strong new password",
+      "new_password_label": "New Password",
+      "new_password_hint": "Enter new password",
+      "confirm_password_label": "Confirm Password",
+      "confirm_password_hint": "Re-enter new password",
+      "password_empty_error": "Please enter password",
+
+      "password_mismatch_error": "Passwords do not match",
+      "change_password_button": "Change Password",
+      "success_title": "Success!",
+      "success_message": "Your password has been changed successfully.",
+      "back_to_login": "Back to Login",
+
       // Tutorial Screen
       'skip': 'Skip',
       'start': 'Start',
@@ -45,6 +77,8 @@ class AppStrings {
       // Homepage
       'greeting': 'Good Morning,',
       'safety': 'Safety',
+      'greet_pronoun_man': 'Mr',
+      'greet_pronoun_woman': 'Ms',
       'check_in': 'In',
       'check_out': 'Out',
       'work_hours': 'Hours',
@@ -61,6 +95,14 @@ class AppStrings {
       'role_ios': 'iOS Developer',
       'role_designer': 'Designer',
       'days': 'Days',
+
+      'office_zone': 'Office Zone',
+      'outside_zone': 'Outside Zone',
+      'gps_status': 'GPS Status',
+      'ready_to_scan': 'Ready to Scan',
+      'too_far': 'Too Far',
+      'distance': 'Distance',
+      'get_directions': 'Get Directions',
 
       // Attd screen display
       'my_stats': 'My Statistics',
@@ -94,8 +136,44 @@ class AppStrings {
       'month_oct': 'Oct',
       'month_nov': 'Nov',
       'month_dec': 'Dec',
+
+      // Leaderboard Screen
+      'top_rankings': 'Top Rankings',
+      'monthly': 'Monthly',
+      'yearly': 'Yearly',
+      'next_rankings': 'Next Rankings',
+      'average_score': 'Average Score',
+      'next_goal': 'Next Goal',
+      'goal_description': 'Reach 95% to receive a bronze medal',
+      'achievements': 'Achievements',
+      'it_department': 'IT Department',
+      'acc_department': 'Accounting Department',
+      'admin_department': 'Admin Department',
+
+      // in callender
+      'no_data': 'No Data',
+      'total_work_hours': 'Total Work Hours',
+      'attendance_calendar_title': 'Attendance Calendar',
+      'download_report': 'Downloading report...',
+      'day_label': 'Day',
+      'avg_attendance': 'Average Attendance',
+
+      //face scanner screen
+      'face_scan_title': 'Please place your face in the circle',
+      'face_scan_step': 'Step 2: Scan Face',
+      'live_status': 'LIVE',
+      'switch_camera': 'Switch Camera',
+      'ensure_light': 'Ensure enough light',
+      'scan_success': 'Scan Success!',
+      'camera_error': 'Camera Error',
     },
     'km': {
+      //menu bottomAppbar
+      'home_menu': 'ទំព័រដើម',
+      'atd_menu': 'វត្តមាន',
+      'leave_menu': 'ច្បាប់ឈប់សម្រាក',
+      'profile_menu': 'ប្រវត្តិរូប',
+
       // Auth Screen
       'logging_in_employee': 'កំពុងចូលក្នុងគណនីបុគ្គលិក...',
       'logging_in_admin': 'កំពុងចូលក្នុងគណនីអ្នកគ្រប់គ្រង...',
@@ -123,6 +201,31 @@ class AppStrings {
       'forgot_password': 'ភ្លេចពាក្យសម្ងាត់?',
       'app_version': 'WorkSmart v1.0 • ',
 
+      "forgot_password_desc":
+          "សូមបញ្ចូលអាសយដ្ឋានអ៊ីមែលរបស់អ្នក ដើម្បីទទួលបានលេខកូដផ្ទៀងផ្ទាត់។",
+      "email_label": "អាសយដ្ឋានអ៊ីមែល",
+      "enter_email_error": "សូមបញ្ចូលអ៊ីមែលរបស់អ្នក",
+      "invalid_email_error": "ទម្រង់អ៊ីមែលមិនត្រឹមត្រូវ",
+      "send_button": "ផ្ញើលេខកូដ",
+      "verify_title": "ផ្ទៀងផ្ទាត់កូដ",
+      "otp_message": "យើងបានផ្ញើលេខកូដ ៤ ខ្ទង់ទៅកាន់អ៊ីមែលរបស់អ្នក។",
+      "verify_button": "ផ្ទៀងផ្ទាត់",
+      "resend_code": "ផ្ញើកូដម្តងទៀត",
+      "verifying": "កំពុងផ្ទៀងផ្ទាត់...",
+      "otp_length_error": "សូមបញ្ចូលកូដឱ្យបានគ្រប់ ៤ ខ្ទង់",
+      "reset_password_title": "ប្តូរលេខសម្ងាត់",
+      "reset_password_subtitle": "បង្កើតលេខសម្ងាត់ថ្មីដែលរឹងមាំ",
+      "new_password_label": "លេខសម្ងាត់ថ្មី",
+      "new_password_hint": "បញ្ចូលលេខសម្ងាត់ថ្មី",
+      "confirm_password_label": "បញ្ជាក់លេខសម្ងាត់",
+      "confirm_password_hint": "បញ្ចូលលេខសម្ងាត់ម្តងទៀត",
+      "password_empty_error": "សូមបញ្ចូលលេខសម្ងាត់",
+      "password_mismatch_error": "លេខសម្ងាត់មិនត្រូវគ្នា",
+      "change_password_button": "ផ្លាស់ប្តូរលេខសម្ងាត់",
+      "success_title": "ជោគជ័យ!",
+      "success_message": "លេខសម្ងាត់របស់អ្នកត្រូវបានផ្លាស់ប្តូររួចរាល់ហើយ។",
+      "back_to_login": "ត្រឡប់ទៅទំព័រចូល",
+
       // Tutorial Screen
       'skip': 'រំលង',
       'start': 'ចាប់ផ្តើម',
@@ -142,6 +245,8 @@ class AppStrings {
       'check_in': 'ចូល',
       'check_out': 'ចេញ',
       'work_hours': 'ម៉ោង',
+      'greet_pronoun_man': 'លោក',
+      'greet_pronoun_woman': 'លោកស្រី',
       'current_loc': 'ទីតាំងបច្ចុប្បន្ន',
       'office_name': 'ការិយាល័យភ្នំពេញ',
       'leave_question': 'ដល់ពេលចេញពីធ្វើការ?',
@@ -155,6 +260,14 @@ class AppStrings {
       'role_ios': 'អ្នកអភិវឌ្ឍន៍ iOS',
       'role_designer': 'អ្នករចនា',
       'days': 'ថ្ងៃ',
+
+      'office_zone': 'ក្នុងតំបន់ការិយាល័យ',
+      'outside_zone': 'ក្រៅតំបន់ការិយាល័យ',
+      'gps_status': 'ស្ថានភាព GPS',
+      'ready_to_scan': 'អាចស្កេនបាន',
+      'too_far': 'នៅឆ្ងាយពេក',
+      'distance': 'ចម្ងាយ',
+      'get_directions': 'នាំផ្លូវទៅកាន់ការិយាល័យ',
 
       // Attd screen display
       'my_stats': 'ស្ថិតិរបស់ខ្ញុំ',
@@ -188,6 +301,37 @@ class AppStrings {
       'month_oct': 'តុលា',
       'month_nov': 'វិច្ឆិកា',
       'month_dec': 'ធ្នូ',
+
+      // Leaderboard Screen
+      'top_rankings': 'ចំណាត់ថ្នាក់បុគ្គលិកឆ្នើម',
+      'monthly': 'ប្រចាំខែ',
+      'yearly': 'ប្រចាំឆ្នាំ',
+      'next_rankings': 'ចំណាត់ថ្នាក់បន្ទាប់',
+      'average_score': 'មធ្យមភាគពិន្ទុ',
+      'next_goal': 'គោលដៅបន្ទាប់',
+      'goal_description': 'ឈានដល់ ៩៥% ដើម្បីទទួលបានមេដាយសំរិទ្ធ',
+      'achievements': 'សមិទ្ធផល',
+      'it_department': 'ផ្នែកព័ត៌មានវិទ្យា',
+      'acc_department': 'ផ្នែកគណនេយ្យ',
+      'admin_department': 'ផ្នែករដ្ឋបាល',
+
+      // in callender
+      'no_data': 'គ្មានទិន្នន័យ',
+      'total_work_hours': 'សរុបម៉ោងការងារ',
+      'hours_unit': 'ម៉ោង',
+      'attendance_calendar_title': 'ប្រតិទិនវត្តមាន',
+      'download_report': 'កំពុងទាញយករបាយការណ៍...',
+      'day_label': 'ថ្ងៃទី',
+      'avg_attendance': 'មធ្យមភាគវត្តមាន',
+
+      //face scanner screen
+      'face_scan_title': 'សូមដាក់ផ្ទៃមុខឱ្យចំរង្វង់',
+      'face_scan_step': 'ជំហានទី ២: ស្កេនផ្ទៃមុខ',
+      'live_status': 'បន្តផ្ទាល់',
+      'switch_camera': 'ប្តូរកាមេរ៉ា',
+      'ensure_light': 'ធានាថាពន្លឺគ្រប់គ្រាន់',
+      'scan_success': 'ស្កេនជោគជ័យ!',
+      'camera_error': 'មានបញ្ហាកាមេរ៉ា',
     },
   };
 

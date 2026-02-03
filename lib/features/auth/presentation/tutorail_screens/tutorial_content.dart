@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_worksmart_mobile_app/config/appcolor.dart'; // Added AppColors
+import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart'; // Added AppColors
 
 class TutorialContent extends StatelessWidget {
   final String imagePath;

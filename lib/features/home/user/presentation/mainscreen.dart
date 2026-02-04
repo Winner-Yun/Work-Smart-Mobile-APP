@@ -16,16 +16,22 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = [
-    const HomePageScreen(),
-    const AttendanceStatsScreen(),
-    const LeaveAttendanceScreen(),
-    const ProfileScreen(),
-  ];
-
   @override
   Widget build(BuildContext context) {
     bool isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final List<Widget> screens = [
+      HomePageScreen(
+        onProfileTap: () {
+          setState(() {
+            _currentIndex = 3;
+          });
+        },
+      ),
+      const AttendanceStatsScreen(),
+      const LeaveAttendanceScreen(),
+      const ProfileScreen(),
+    ];
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
@@ -33,7 +39,7 @@ class _MainScreenState extends State<MainScreen> {
         statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
       ),
       child: Scaffold(
-        body: _screens[_currentIndex],
+        body: screens[_currentIndex],
         bottomNavigationBar: Container(
           decoration: BoxDecoration(
             boxShadow: [

@@ -21,7 +21,7 @@ class AttendanceDetailScreen extends StatelessWidget {
           children: [
             _buildDateHeaderCard(context, data).animate().fadeIn(delay: 200.ms),
             const SizedBox(height: 25),
-            if (data['status'] == "វត្តមាន") ...[
+            if (data['status'] == AppStrings.tr('present')) ...[
               _buildCheckInDetail(
                 context,
                 data,
@@ -44,8 +44,6 @@ class AttendanceDetailScreen extends StatelessWidget {
       ),
     );
   }
-
-  // --- WIDGET MODULES ---
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
@@ -85,9 +83,9 @@ class AttendanceDetailScreen extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                "កាលបរិច្ឆេទ",
-                style: TextStyle(color: AppColors.textGrey, fontSize: 12),
+              Text(
+                AppStrings.tr('date_label'),
+                style: const TextStyle(color: AppColors.textGrey, fontSize: 12),
               ),
               const SizedBox(height: 4),
               Text(
@@ -250,9 +248,9 @@ class AttendanceDetailScreen extends StatelessWidget {
             children: [
               Icon(Icons.event_busy, size: 80, color: Colors.grey[300]),
               const SizedBox(height: 20),
-              const Text(
-                "មិនមានទិន្នន័យសម្រាប់ថ្ងៃនេះទេ",
-                style: TextStyle(color: AppColors.textGrey),
+              Text(
+                AppStrings.tr('no_data_for_today'),
+                style: const TextStyle(color: AppColors.textGrey),
               ),
             ],
           ),
@@ -260,8 +258,6 @@ class AttendanceDetailScreen extends StatelessWidget {
       ],
     );
   }
-
-  // --- SHARED SUB-WIDGETS ---
 
   Widget _buildSectionHeader(
     BuildContext context,
@@ -353,9 +349,9 @@ class AttendanceDetailScreen extends StatelessWidget {
               color: Colors.black.withValues(alpha: 0.6),
               borderRadius: BorderRadius.circular(4),
             ),
-            child: const Text(
-              "Live",
-              style: TextStyle(color: Colors.white, fontSize: 10),
+            child: Text(
+              AppStrings.tr('live_status'),
+              style: const TextStyle(color: Colors.white, fontSize: 10),
             ),
           ),
         ),
@@ -368,7 +364,9 @@ class AttendanceDetailScreen extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          isCheckIn ? "ម៉ោងចូល" : "ម៉ោងចេញ",
+          isCheckIn
+              ? AppStrings.tr('check_in_title')
+              : AppStrings.tr('check_out_title'),
           style: const TextStyle(color: AppColors.textGrey, fontSize: 12),
         ),
         if (isLate && isCheckIn)
@@ -378,9 +376,9 @@ class AttendanceDetailScreen extends StatelessWidget {
               color: Colors.orange.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(4),
             ),
-            child: const Text(
-              "Late",
-              style: TextStyle(
+            child: Text(
+              AppStrings.tr('late'),
+              style: const TextStyle(
                 color: Colors.orange,
                 fontSize: 10,
                 fontWeight: FontWeight.bold,

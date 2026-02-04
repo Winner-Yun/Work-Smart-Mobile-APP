@@ -17,7 +17,6 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
   DateTime _currentViewDate = DateTime(2023, 10);
   final bool _isLoading = false;
 
-  // --- API MOCK DATA (Keys remain in English) ---
   final List<Map<String, dynamic>> _apiAttendanceList = [
     {
       "date": "2023-10-01",
@@ -61,7 +60,6 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
     },
   ];
 
-  // Helper to translate Month + Year based on AppStrings
   String _getLocalizedMonthYear(DateTime date) {
     String monthKey = 'month_${DateFormat('MMM').format(date).toLowerCase()}';
     return "${AppStrings.tr(monthKey)} ${date.year}";
@@ -371,14 +369,14 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
         Row(
           children: [
             _buildInfoCard(
-              AppStrings.tr('check_in'),
+              AppStrings.tr('check_in_title'),
               data['in'],
               Icons.login,
               Colors.green,
             ),
             const SizedBox(width: 10),
             _buildInfoCard(
-              AppStrings.tr('check_out'),
+              AppStrings.tr('check_out_title'),
               data['out'],
               Icons.logout,
               Colors.orange,

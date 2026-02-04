@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
+import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 
 class LeaveDetailScreen extends StatefulWidget {
@@ -19,24 +20,23 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
 
   final List<Map<String, dynamic>> _history = [
     {
-      "title": "ឈប់ច្បាប់ប្រចាំឆ្នាំ",
-      "date": "១៥ តុលា ២០២៣",
-      "status": "បានអនុម័ត",
+      "title": "annual_leave",
+      "date": "15 Oct 2023",
+      "status": "status_approved",
       "color": Colors.green,
     },
     {
-      "title": "ឈប់ច្បាប់ឈឺ (គ្រុនក្ដៅ)",
-      "date": "០២ កញ្ញា ២០២៣",
-      "status": "បានអនុម័ត",
+      "title": "sick_leave_fever",
+      "date": "02 Sep 2023",
+      "status": "status_approved",
       "color": Colors.green,
     },
     {
-      "title": "ឈប់ច្បាប់ប្រចាំឆ្នាំ",
-      "date": "១០ សីហា ២០២៣",
-      "status": "បានបដិសេធ",
+      "title": "annual_leave",
+      "date": "10 Aug 2023",
+      "status": "status_rejected",
       "color": Colors.red,
     },
-    // ... other items
   ];
 
   @override
@@ -76,11 +76,14 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildSectionHeader("ស្ថិតិប្រើប្រាស់", ""),
+                _buildSectionHeader(AppStrings.tr('usage_stats'), ""),
                 const SizedBox(height: 15),
                 _buildDetailedStatsGrid(),
                 const SizedBox(height: 30),
-                _buildSectionHeader("ប្រវត្តិការស្នើសុំ", "មើលទាំងអស់"),
+                _buildSectionHeader(
+                  AppStrings.tr('request_history'),
+                  AppStrings.tr('view_all'),
+                ),
                 const SizedBox(height: 5),
               ],
             ),
@@ -93,9 +96,9 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
               itemBuilder: (context, index) {
                 final item = _history[index];
                 return _buildTimelineItem(
-                  item['title'] as String,
+                  AppStrings.tr(item['title']),
                   item['date'] as String,
-                  item['status'] as String,
+                  AppStrings.tr(item['status']),
                   item['color'] as Color,
                 );
               },
@@ -109,16 +112,16 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: Theme.of(context).colorScheme.primary,
+      backgroundColor: Theme.of(context).colorScheme.tertiary,
       elevation: 0,
       scrolledUnderElevation: 0,
       leading: IconButton(
         icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
         onPressed: () => Navigator.pop(context),
       ),
-      title: const Text(
-        "ព័ត៌មានលម្អិតការឈប់សម្រាក",
-        style: TextStyle(
+      title: Text(
+        AppStrings.tr('leave_details_title'),
+        style: const TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.bold,
           fontSize: 18,
@@ -132,8 +135,8 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary,
-        borderRadius: BorderRadius.only(
+        color: Theme.of(context).colorScheme.tertiary,
+        borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(30),
           bottomRight: Radius.circular(30),
         ),
@@ -147,7 +150,7 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
                 child: _buildLeaveProgressItem(
                   _annualAnimation,
                   "12/18",
-                  "ច្បាប់ប្រចាំឆ្នាំ",
+                  AppStrings.tr('annual_leave'),
                   Colors.white,
                 ),
               ),
@@ -161,7 +164,7 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
                 child: _buildLeaveProgressItem(
                   _sickAnimation,
                   "02/05",
-                  "ច្បាប់ឈឺ",
+                  AppStrings.tr('sick_leave'),
                   AppColors.secondary,
                 ),
               ),
@@ -170,7 +173,7 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
           const SizedBox(height: 20),
           _buildInfoRow(
             Icons.info_outline,
-            "អ្នកនៅសល់សរុប ៩ ថ្ងៃទៀតសម្រាប់ឆ្នាំនេះ",
+            AppStrings.tr('total_remaining_note'),
           ),
         ],
       ),
@@ -201,7 +204,7 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
               ),
               const SizedBox(height: 4),
               Text(
-                "នៅសល់ ${value.split('/')[1].split('')[1]} ថ្ងៃ",
+                "${AppStrings.tr('remaining')} ${value.split('/')[1].split('')[1]} ${AppStrings.tr('days')}",
                 style: const TextStyle(color: Colors.white70, fontSize: 11),
               ),
             ],
@@ -252,16 +255,16 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
     return Row(
       children: [
         _buildStatBox(
-          "ច្បាប់ប្រចាំឆ្នាំ",
-          "ប្រើអស់ ១២ ថ្ងៃ",
-          "សល់ ៦ ថ្ងៃ",
+          AppStrings.tr('annual_leave'),
+          "${AppStrings.tr('used')} 12 ${AppStrings.tr('days')}",
+          "${AppStrings.tr('remaining')} 6 ${AppStrings.tr('days')}",
           Colors.blue,
         ),
         const SizedBox(width: 15),
         _buildStatBox(
-          "ច្បាប់ឈឺ",
-          "ប្រើអស់ ២ ថ្ងៃ",
-          "សល់ ៣ ថ្ងៃ",
+          AppStrings.tr('sick_leave'),
+          "${AppStrings.tr('used')} 2 ${AppStrings.tr('days')}",
+          "${AppStrings.tr('remaining')} 3 ${AppStrings.tr('days')}",
           Colors.purple,
         ),
       ],
@@ -435,11 +438,13 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
                 ),
               ),
               child: Text(
-                "ស្នើច្បាប់ឈឺ",
+                AppStrings.tr('request_sick_leave'),
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.primary,
                   fontWeight: FontWeight.bold,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ),
@@ -456,12 +461,14 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
                   borderRadius: BorderRadius.circular(15),
                 ),
               ),
-              child: const Text(
-                "ស្នើច្បាប់ប្រចាំឆ្នាំ",
-                style: TextStyle(
+              child: Text(
+                AppStrings.tr('request_annual_leave'),
+                style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ),

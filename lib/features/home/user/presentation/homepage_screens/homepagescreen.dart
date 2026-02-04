@@ -14,30 +14,28 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class HomePageScreen extends StatefulWidget {
-  const HomePageScreen({super.key});
+  final VoidCallback? onProfileTap; 
+
+  const HomePageScreen({super.key, this.onProfileTap});
 
   @override
   State<HomePageScreen> createState() => _HomePageScreenState();
 }
 
 class _HomePageScreenState extends State<HomePageScreen> {
-  // 2. MAKE CONTROLLER NULLABLE
   GoogleMapController? mapController;
   StreamSubscription<Position>? _positionStreamSubscription;
 
-  // Config
   static const LatLng _officeLocation = LatLng(
-    11.55599257148443,
-    104.91627071997854,
+    11.572430738457149,
+    104.89330484272999,
   );
-  static const double _scanRangeMeters = 50;
+  static const double _scanRangeMeters = 5000;
 
-  // State
   bool _isInRange = false;
-  String _rangeStatusText = "កំពុងស្វែងរកទីតាំង...";
+  String _rangeStatusText = AppStrings.tr('finding_location');
   Position? _lastKnownPosition;
 
-  // Map Objects
   Set<Marker> _markers = {};
   final Set<Circle> _circles = {};
   BitmapDescriptor? _userProfileIcon;
@@ -51,7 +49,6 @@ class _HomePageScreenState extends State<HomePageScreen> {
     _generateProfileMarker();
   }
 
-  // 3. LISTEN FOR THEME CHANGES
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -60,9 +57,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
 
   void _updateMapStyle(BuildContext context) {
     if (mapController == null) return;
-
     bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
     if (isDarkMode) {
       mapController!.setMapStyle(MapStyles.dark);
     } else {
@@ -77,8 +72,6 @@ class _HomePageScreenState extends State<HomePageScreen> {
     super.dispose();
   }
 
-  final String _officeIconPath = AppImg.appIcon;
-
   Future<BitmapDescriptor> getBytesFromAsset(String path, int width) async {
     ByteData data = await rootBundle.load(path);
     ui.Codec codec = await ui.instantiateImageCodec(
@@ -86,7 +79,6 @@ class _HomePageScreenState extends State<HomePageScreen> {
       targetWidth: width,
     );
     ui.FrameInfo fi = await codec.getNextFrame();
-
     return BitmapDescriptor.fromBytes(
       (await fi.image.toByteData(
         format: ui.ImageByteFormat.png,
@@ -99,18 +91,16 @@ class _HomePageScreenState extends State<HomePageScreen> {
       AppImg.pinIcon,
       100,
     );
-
     setState(() {
       _markers.add(
         Marker(
           markerId: const MarkerId('office_center'),
           position: _officeLocation,
-          infoWindow: const InfoWindow(title: "WorkSmart Office"),
+          infoWindow: InfoWindow(title: AppStrings.tr('office_name')),
           icon: customIcon,
           anchor: const Offset(0.5, 0.5),
         ),
       );
-
       _circles.add(
         Circle(
           circleId: const CircleId('office_zone'),
@@ -129,7 +119,6 @@ class _HomePageScreenState extends State<HomePageScreen> {
       final Uint8List? imageBytes = await _loadNetworkImageBytes(
         _userProfileUrl,
       );
-
       if (imageBytes != null) {
         final ui.Codec codec = await ui.instantiateImageCodec(
           imageBytes,
@@ -138,17 +127,14 @@ class _HomePageScreenState extends State<HomePageScreen> {
         );
         final ui.FrameInfo fi = await codec.getNextFrame();
         final ui.Image image = fi.image;
-
         final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
         final Canvas canvas = Canvas(pictureRecorder);
         const double size = 120.0;
         const double radius = size / 2;
-
         final Paint borderPaint = Paint()
           ..color = Colors.white
           ..style = PaintingStyle.fill;
         canvas.drawCircle(const Offset(radius, radius), radius, borderPaint);
-
         final Path clipPath = Path()
           ..addOval(
             Rect.fromCircle(
@@ -157,21 +143,18 @@ class _HomePageScreenState extends State<HomePageScreen> {
             ),
           );
         canvas.clipPath(clipPath);
-
         paintImage(
           canvas: canvas,
           rect: const Rect.fromLTWH(6, 6, size - 12, size - 12),
           image: image,
           fit: BoxFit.cover,
         );
-
         final ui.Image recordedImage = await pictureRecorder
             .endRecording()
             .toImage(size.toInt(), size.toInt());
         final ByteData? byteData = await recordedImage.toByteData(
           format: ui.ImageByteFormat.png,
         );
-
         if (byteData != null) {
           setState(() {
             _userProfileIcon = BitmapDescriptor.fromBytes(
@@ -200,13 +183,13 @@ class _HomePageScreenState extends State<HomePageScreen> {
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        setState(() => _rangeStatusText = "ត្រូវការការអនុញ្ញាតទីតាំង");
+        setState(() => _rangeStatusText = AppStrings.tr('perm_needed'));
         return;
       }
     }
 
     if (permission == LocationPermission.deniedForever) {
-      setState(() => _rangeStatusText = "សូមបើកសិទ្ធិទីតាំងនៅក្នុងការកំណត់");
+      setState(() => _rangeStatusText = AppStrings.tr('enable_loc_settings'));
       return;
     }
 
@@ -228,7 +211,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
         Geolocator.getPositionStream(locationSettings: locationSettings).listen(
           (Position position) => _updateMapState(position),
           onError: (e) =>
-              setState(() => _rangeStatusText = "កំពុងរង់ចាំទីតាំង..."),
+              setState(() => _rangeStatusText = AppStrings.tr('waiting_loc')),
         );
   }
 
@@ -259,6 +242,44 @@ class _HomePageScreenState extends State<HomePageScreen> {
   void _updateMapState(Position userPos) {
     _lastKnownPosition = userPos;
 
+    // ---  SECURITY CHECK: MOCK LOCATION ---
+    if (userPos.isMocked) {
+      if (mounted) {
+        setState(() {
+          _isInRange = false;
+          _rangeStatusText = AppStrings.tr('mock_gps_label');
+          _markers = {};
+        });
+
+        // Show Warning SnackBar
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.warning_amber_rounded, color: Colors.white),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    AppStrings.tr('mock_gps_warning'),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.red[800],
+            duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+      return;
+    }
+    // -----------------------------------------
+
     double distance = Geolocator.distanceBetween(
       userPos.latitude,
       userPos.longitude,
@@ -287,8 +308,8 @@ class _HomePageScreenState extends State<HomePageScreen> {
       setState(() {
         _isInRange = inScanRange;
         _rangeStatusText = inScanRange
-            ? "អ្នកស្ថិតក្នុងបរិវេណការិយាល័យ"
-            : "នៅឆ្ងាយ ${distance.toStringAsFixed(0)}m ពីការិយាល័យ";
+            ? AppStrings.tr('in_office_area')
+            : "${AppStrings.tr('far_from_office')} ${distance.toStringAsFixed(0)}m ${AppStrings.tr('from_office')}";
         _markers = newMarkers;
       });
 
@@ -304,7 +325,6 @@ class _HomePageScreenState extends State<HomePageScreen> {
     }
   }
 
-  // Mock Data
   static const List<Map<String, dynamic>> employeeData = [
     {
       "name": "Dara",
@@ -392,18 +412,13 @@ class _HomePageScreenState extends State<HomePageScreen> {
   Widget _buildLiveMapCard(BuildContext context) {
     String getFormattedDistance(String statusText) {
       if (!statusText.contains("m")) return "--";
-
       try {
         String rawMetric = statusText
             .split(" ")
             .firstWhere((s) => s.contains("m"), orElse: () => "");
-
         String numberString = rawMetric.replaceAll(RegExp(r'[^0-9.]'), '');
-
         if (numberString.isEmpty) return "--";
-
         double distance = double.parse(numberString);
-
         if (distance >= 1000) {
           return "${(distance / 1000).toStringAsFixed(2)} km";
         } else {
@@ -555,6 +570,8 @@ class _HomePageScreenState extends State<HomePageScreen> {
                           Text(
                             _isInRange
                                 ? AppStrings.tr('ready_to_scan')
+                                : _rangeStatusText.contains("Mock")
+                                ? "Fake GPS!"
                                 : AppStrings.tr('too_far'),
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
@@ -699,27 +716,30 @@ class _HomePageScreenState extends State<HomePageScreen> {
       titleSpacing: 20,
       title: Row(
         children: [
-          Stack(
-            children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: Colors.grey,
-                backgroundImage: NetworkImage(_userProfileUrl),
-              ),
-              Positioned(
-                right: 0,
-                bottom: 0,
-                child: Container(
-                  width: 14,
-                  height: 14,
-                  decoration: BoxDecoration(
-                    color: Colors.green,
-                    border: Border.all(color: Colors.white, width: 2),
-                    shape: BoxShape.circle,
+          GestureDetector(
+            onTap: widget.onProfileTap, // Added GestureDetector with callback
+            child: Stack(
+              children: [
+                CircleAvatar(
+                  radius: 20,
+                  backgroundColor: Colors.grey,
+                  backgroundImage: NetworkImage(_userProfileUrl),
+                ),
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    width: 14,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: Colors.green,
+                      border: Border.all(color: Colors.white, width: 2),
+                      shape: BoxShape.circle,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -731,7 +751,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
                   style: TextStyle(color: AppColors.textGrey, fontSize: 14),
                 ),
                 Text(
-                  "${AppStrings.tr('greet_pronoun_man')} វិនន័រ",
+                  "${AppStrings.tr('greet_pronoun_man')} Winner",
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.primary,
                     fontSize: 18,
@@ -786,9 +806,9 @@ class _HomePageScreenState extends State<HomePageScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        const Text(
-          "ថ្ងៃចន្ទ, ២៤ តុលា ២០២៣",
-          style: TextStyle(color: AppColors.textGrey, fontSize: 14),
+        Text(
+          AppStrings.tr('mock_date'),
+          style: const TextStyle(color: AppColors.textGrey, fontSize: 14),
         ),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -996,9 +1016,9 @@ class _HomePageScreenState extends State<HomePageScreen> {
                 ),
               ),
               const SizedBox(width: 4),
-              const Text(
-                "ថ្ងៃ",
-                style: TextStyle(fontSize: 10, color: AppColors.textGrey),
+              Text(
+                AppStrings.tr('days'),
+                style: const TextStyle(fontSize: 10, color: AppColors.textGrey),
               ),
             ],
           ),

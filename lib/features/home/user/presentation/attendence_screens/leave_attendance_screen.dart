@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
+import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 
 void main() {
   runApp(
@@ -14,47 +15,47 @@ void main() {
 class LeaveAttendanceScreen extends StatelessWidget {
   const LeaveAttendanceScreen({super.key});
 
-  // --- Mockup Data ---
+  // --- Mockup Data using keys ---
   static const List<Map<String, dynamic>> _leaveRequests = [
     {
-      'title': 'ឈប់សម្រាកប្រចាំឆ្នាំ',
-      'subtitle': '២០ - ២២ តុលា ២០២៣',
-      'status': 'អនុម័ត',
+      'title': 'annual_leave',
+      'subtitle': '20 - 22 Oct 2023',
+      'status': 'status_approved',
       'statusColor': Colors.green,
       'icon': Icons.beach_access_outlined,
     },
     {
-      'title': 'ច្បាប់ឈឺ (គ្រុនផ្តាសាយ)',
-      'subtitle': '០៥ វិច្ឆិកា ២០២៣',
-      'status': 'រង់ចាំ',
+      'title': 'sick_leave_fever',
+      'subtitle': '05 Nov 2023',
+      'status': 'status_pending',
       'statusColor': Colors.orange,
       'icon': Icons.medical_services_outlined,
     },
     {
-      'title': 'ឈប់សម្រាកផ្ទាល់ខ្លួន',
-      'subtitle': '១៥ តុលា ២០២៣',
-      'status': 'បដិសេធ',
+      'title': 'personal_leave',
+      'subtitle': '15 Oct 2023',
+      'status': 'status_rejected',
       'statusColor': Colors.red,
       'icon': Icons.calendar_today_outlined,
     },
     {
-      'title': 'ឈប់សម្រាកពិសេស',
-      'subtitle': '១០ ធ្នូ ២០២៣',
-      'status': 'អនុម័ត',
+      'title': 'special_leave',
+      'subtitle': '10 Dec 2023',
+      'status': 'status_approved',
       'statusColor': Colors.green,
       'icon': Icons.star_outline,
     },
     {
-      'title': 'ឈប់សម្រាកប្រចាំឆ្នាំ',
-      'subtitle': '០១ - ០៣ មករា ២០២៤',
-      'status': 'អនុម័ត',
+      'title': 'annual_leave',
+      'subtitle': '01 - 03 Jan 2024',
+      'status': 'status_approved',
       'statusColor': Colors.green,
       'icon': Icons.beach_access_outlined,
     },
     {
-      'title': 'ច្បាប់ឈឺ',
-      'subtitle': '១២ កុម្ភៈ ២០២៤',
-      'status': 'រង់ចាំ',
+      'title': 'sick_leave',
+      'subtitle': '12 Feb 2024',
+      'status': 'status_pending',
       'statusColor': Colors.orange,
       'icon': Icons.medical_services_outlined,
     },
@@ -95,15 +96,14 @@ class LeaveAttendanceScreen extends StatelessWidget {
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               itemCount: _leaveRequests.length,
-              physics:
-                  const BouncingScrollPhysics(), // Added for smooth scrolling
+              physics: const BouncingScrollPhysics(),
               itemBuilder: (context, index) {
                 final data = _leaveRequests[index];
                 return _buildRequestListItem(
                       context: context,
-                      title: data['title'],
-                      subtitle: data['subtitle'],
-                      status: data['status'],
+                      title: AppStrings.tr(data['title']),
+                      subtitle: data['subtitle'], 
+                      status: AppStrings.tr(data['status']),
                       statusColor: data['statusColor'],
                       icon: data['icon'],
                     )
@@ -126,7 +126,7 @@ class LeaveAttendanceScreen extends StatelessWidget {
       centerTitle: false,
       scrolledUnderElevation: 0,
       title: Text(
-        'ច្បាប់ឈប់សម្រាក',
+        AppStrings.tr('leave_menu'),
         style: TextStyle(
           color: Theme.of(context).colorScheme.primary,
           fontSize: 22,
@@ -179,8 +179,8 @@ class LeaveAttendanceScreen extends StatelessWidget {
         Expanded(
           child: _buildSummaryCard(
             context: context,
-            title: 'ច្បាប់ប្រចាំឆ្នាំ',
-            value: '១២',
+            title: AppStrings.tr('annual_leave'),
+            value: '12',
             icon: Icons.calendar_today_outlined,
             iconColor: Theme.of(context).colorScheme.primary,
           ),
@@ -189,8 +189,8 @@ class LeaveAttendanceScreen extends StatelessWidget {
         Expanded(
           child: _buildSummaryCard(
             context: context,
-            title: 'ច្បាប់ឈឺ',
-            value: '០៥',
+            title: AppStrings.tr('sick_leave'),
+            value: '05',
             icon: Icons.medical_services_outlined,
             iconColor: Colors.blue,
           ),
@@ -204,14 +204,14 @@ class LeaveAttendanceScreen extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        const Text(
-          'សំណើថ្មីៗ',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        Text(
+          AppStrings.tr('recent_requests'),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         TextButton(
           onPressed: () {},
           child: Text(
-            'មើលទាំងអស់',
+            AppStrings.tr('view_all'),
             style: TextStyle(color: Theme.of(context).colorScheme.primary),
           ),
         ),
@@ -249,7 +249,9 @@ class LeaveAttendanceScreen extends StatelessWidget {
                 ),
               ),
               child: Text(
-                "ស្នើច្បាប់ឈឺ",
+                AppStrings.tr('request_sick_leave'),
+                maxLines: 1, // Fix: Prevent text wrapping
+                overflow: TextOverflow.ellipsis, // Fix: Handle overflow
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.primary,
                   fontWeight: FontWeight.bold,
@@ -271,9 +273,11 @@ class LeaveAttendanceScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(15),
                 ),
               ),
-              child: const Text(
-                "ស្នើច្បាប់ប្រចាំឆ្នាំ",
-                style: TextStyle(
+              child: Text(
+                AppStrings.tr('request_annual_leave'),
+                maxLines: 1, // Fix: Prevent text wrapping
+                overflow: TextOverflow.ellipsis, // Fix: Handle overflow
+                style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                 ),
@@ -319,7 +323,12 @@ class LeaveAttendanceScreen extends StatelessWidget {
             child: Icon(icon, color: iconColor, size: 20),
           ),
           const SizedBox(height: 12),
-          Text(title, style: const TextStyle(color: Colors.grey, fontSize: 14)),
+          Text(
+            title,
+            maxLines: 1, // Fix: Prevent wrapping
+            overflow: TextOverflow.ellipsis, // Fix: Handle overflow
+            style: const TextStyle(color: Colors.grey, fontSize: 14),
+          ),
           const SizedBox(height: 4),
           Row(
             children: [
@@ -332,9 +341,14 @@ class LeaveAttendanceScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 4),
-              const Text(
-                'ថ្ងៃនៅសល់',
-                style: TextStyle(color: Colors.grey, fontSize: 12),
+  
+              Expanded(
+                child: Text(
+                  AppStrings.tr('days_remaining'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                ),
               ),
             ],
           ),
@@ -371,6 +385,8 @@ class LeaveAttendanceScreen extends StatelessWidget {
               children: [
                 Text(
                   title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
@@ -379,11 +395,14 @@ class LeaveAttendanceScreen extends StatelessWidget {
                 ),
                 Text(
                   subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis, 
                   style: const TextStyle(color: Colors.grey, fontSize: 13),
                 ),
               ],
             ),
           ),
+          const SizedBox(width: 8), 
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(

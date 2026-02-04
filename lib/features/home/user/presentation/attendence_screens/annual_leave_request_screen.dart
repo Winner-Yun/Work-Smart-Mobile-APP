@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 
 class AnnualLeaveRequestScreen extends StatefulWidget {
   const AnnualLeaveRequestScreen({super.key});
@@ -22,11 +23,11 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
           children: [
             _buildInfoBanner(),
             const SizedBox(height: 25),
-            _buildSectionTitle('ជ្រើសរើសកាលបរិច្ឆេទ', context),
+            _buildSectionTitle(AppStrings.tr('select_date'), context),
             const SizedBox(height: 15),
             _buildDateRangePicker(context),
             const SizedBox(height: 25),
-            _buildSectionTitle('មូលហេតុនៃការស្នើសុំ', context),
+            _buildSectionTitle(AppStrings.tr('reason_for_request'), context),
             const SizedBox(height: 15),
             _buildTextArea(context),
             const SizedBox(height: 40),
@@ -41,7 +42,7 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.teal.shade50.withOpacity(0.1), // Adjusted for theme
+        color: Colors.teal.shade50.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.teal.shade100),
       ),
@@ -51,9 +52,9 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'អ្នកនៅសល់ច្បាប់សម្រាកចំនួន ១២ ថ្ងៃសម្រាប់ឆ្នាំនេះ។',
+              AppStrings.tr('annual_leave_balance_msg'),
               style: TextStyle(
-                color: Colors.teal.shade900, // Or adapt to theme
+                color: Theme.of(context).textTheme.bodyLarge?.color,
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
               ),
@@ -73,12 +74,12 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
       ),
       child: Row(
         children: [
-          _dateColumn(context, 'ថ្ងៃចាប់ផ្តើម', '២០ តុលា ២០២៣'),
+          _dateColumn(context, AppStrings.tr('start_date'), '20 Oct 2023'),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 10),
             child: Icon(Icons.arrow_forward, color: Colors.grey, size: 16),
           ),
-          _dateColumn(context, 'ថ្ងៃបញ្ចប់', '២២ តុលា ២០២៣'),
+          _dateColumn(context, AppStrings.tr('end_date'), '22 Oct 2023'),
         ],
       ),
     );
@@ -108,7 +109,7 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
     return TextField(
       maxLines: 5,
       decoration: InputDecoration(
-        hintText: 'បញ្ជាក់មូលហេតុនៅទីនេះ...',
+        hintText: AppStrings.tr('enter_reason_hint'),
         filled: true,
         fillColor: Theme.of(context).inputDecorationTheme.fillColor,
         border: OutlineInputBorder(
@@ -119,7 +120,6 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
     );
   }
 
-  // --- Reusing AppBar, Section Title, and Submit Button from Sick Leave ---
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -134,7 +134,7 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
         onPressed: () => Navigator.pop(context),
       ),
       title: Text(
-        'ពាក្យសុំច្បាប់ប្រចាំឆ្នាំ',
+        AppStrings.tr('request_annual_leave_title'),
         style: TextStyle(
           color: Theme.of(context).textTheme.bodyLarge?.color,
           fontSize: 18,
@@ -166,9 +166,12 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
             borderRadius: BorderRadius.circular(15),
           ),
         ),
-        child: const Text(
-          'ផ្ញើសំណើឈប់សម្រាក',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        child: Text(
+          AppStrings.tr('submit_request'),
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
     );

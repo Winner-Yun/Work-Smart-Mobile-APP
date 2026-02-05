@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
+import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 import 'package:intl/intl.dart';
 
 class AttendanceCalendarScreen extends StatefulWidget {
@@ -116,32 +116,32 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       elevation: 0,
       leading: IconButton(
-        icon: const Icon(
+        icon: Icon(
           Icons.arrow_back_ios,
-          color: AppColors.primary,
+          color: Theme.of(context).colorScheme.primary,
           size: 20,
         ),
         onPressed: () => Navigator.pop(context),
       ),
       title: Text(
         AppStrings.tr('attendance_calendar_title'),
-        style: const TextStyle(
-          color: AppColors.primary,
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.primary,
           fontWeight: FontWeight.bold,
         ),
       ),
       centerTitle: true,
       actions: [
         IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.file_download_outlined,
-            color: AppColors.primary,
+            color: Theme.of(context).colorScheme.primary,
           ),
           onPressed: () {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(AppStrings.tr('download_report')),
-                backgroundColor: AppColors.primary,
+                backgroundColor: Theme.of(context).colorScheme.primary,
               ),
             );
           },
@@ -307,11 +307,14 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
           height: 38,
           decoration: BoxDecoration(
             color: isSelected
-                ? AppColors.primary.withValues(alpha: 0.1)
+                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
             border: isSelected
-                ? Border.all(color: AppColors.primary, width: 1.5)
+                ? Border.all(
+                    color: Theme.of(context).colorScheme.primary,
+                    width: 1.5,
+                  )
                 : null,
           ),
           child: Center(
@@ -321,7 +324,7 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
                 fontSize: 15,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 color: isSelected
-                    ? AppColors.primary
+                    ? Theme.of(context).colorScheme.primary
                     : (isGrey
                           ? Colors.grey[300]
                           : Theme.of(context).textTheme.bodyLarge?.color),
@@ -355,9 +358,9 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
             children: [
               Text(
                 "${AppStrings.tr('day_label')} $_selectedDay ${_getLocalizedMonthYear(_currentViewDate)}",
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
               _buildStatusTag(AppStrings.tr(data['s']), data['c']),
@@ -458,11 +461,11 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.primary,
+        color: Theme.of(context).colorScheme.primary,
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.3),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
+import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 
 class AttendanceDetailScreen extends StatelessWidget {
   const AttendanceDetailScreen({super.key});
@@ -32,7 +32,10 @@ class AttendanceDetailScreen extends StatelessWidget {
                 data,
               ).animate().fadeIn(delay: 200.ms),
               const SizedBox(height: 25),
-              _buildTotalHoursSummary(data).animate().fadeIn(delay: 200.ms),
+              _buildTotalHoursSummary(
+                data,
+                context,
+              ).animate().fadeIn(delay: 200.ms),
             ] else ...[
               _buildAbsentFallback().animate().fadeIn(delay: 200.ms),
             ],
@@ -58,8 +61,8 @@ class AttendanceDetailScreen extends StatelessWidget {
       ),
       title: Text(
         AppStrings.tr('attendance_details'),
-        style: const TextStyle(
-          color: AppColors.primary,
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.primary,
           fontWeight: FontWeight.bold,
           fontSize: 18,
         ),
@@ -89,8 +92,8 @@ class AttendanceDetailScreen extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 "${data['date']} ${data['day']}",
-                style: const TextStyle(
-                  color: AppColors.primary,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.primary,
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
                 ),
@@ -131,6 +134,7 @@ class AttendanceDetailScreen extends StatelessWidget {
           context,
           Icons.login,
           AppStrings.tr('check_in_title'),
+          Theme.of(context).colorScheme.primary,
         ),
         const SizedBox(height: 10),
         _buildDetailCard(
@@ -152,7 +156,7 @@ class AttendanceDetailScreen extends StatelessWidget {
           context,
           Icons.logout,
           AppStrings.tr('check_out_title'),
-          color: Colors.orange,
+          Colors.orange,
         ),
         const SizedBox(height: 10),
         _buildDetailCard(
@@ -166,11 +170,14 @@ class AttendanceDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTotalHoursSummary(Map<String, dynamic> data) {
+  Widget _buildTotalHoursSummary(
+    Map<String, dynamic> data,
+    BuildContext context,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.primary,
+        color: Theme.of(context).colorScheme.primary,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -259,9 +266,9 @@ class AttendanceDetailScreen extends StatelessWidget {
   Widget _buildSectionHeader(
     BuildContext context,
     IconData icon,
-    String title, {
-    Color color = AppColors.primary,
-  }) {
+    String title,
+    Color color,
+  ) {
     return Row(
       children: [
         Icon(icon, color: color, size: 20),

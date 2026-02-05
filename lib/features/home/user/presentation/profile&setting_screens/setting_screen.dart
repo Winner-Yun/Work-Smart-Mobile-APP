@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
+import 'package:flutter_worksmart_mobile_app/config/language_manager.dart';
+import 'package:flutter_worksmart_mobile_app/config/theme_manager.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -10,74 +12,82 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool isDarkMode = false;
   bool isNotification = true;
-  String selectedLanguage = 'ខ្មែរ';
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: _buildAppBar(context),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        children: [
-          _buildSectionHeader('ទូទៅ'),
-          _buildPremiumGroup(context, [
-            _buildLanguageTile(context),
-            _buildCustomDivider(context),
-            _buildGlassSwitchTile(
-              context,
-              Icons.dark_mode_rounded,
-              'ផ្ទៃងងឹត',
-              Colors.purple,
-              isDarkMode,
-              (v) => setState(() => isDarkMode = v),
-            ),
-            _buildCustomDivider(context),
-            _buildGlassSwitchTile(
-              context,
-              Icons.notifications_active_rounded,
-              'ការជូនដំណឹង',
-              Colors.orange,
-              isNotification,
-              (v) => setState(() => isNotification = v),
-            ),
-            _buildCustomDivider(context),
-          ]),
-          const SizedBox(height: 30),
-          _buildSectionHeader('គាំទ្រ'),
-          _buildPremiumGroup(context, [
-            _buildPremiumNavTile(
-              context,
-              Icons.headset_mic_rounded,
-              'ជំនួយ និង ការគាំទ្រ',
-              Colors.blue,
-              onTap: () {
-                Navigator.pushNamed(context, AppRoute.helpSupportScreen);
-              },
-            ),
-            _buildCustomDivider(context),
-            _buildPremiumNavTile(
-              context,
-              Icons.auto_awesome_motion_rounded,
-              'អំពីកម្មវិធី',
-              Colors.indigo,
-              trailing: Text(
-                'v1.2.4',
-                style: TextStyle(
-                  color: Colors.grey.shade400,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
+    // Listen to both Theme and Language managers to update UI instantly
+    return ListenableBuilder(
+      listenable: Listenable.merge([ThemeManager(), LanguageManager()]),
+      builder: (context, child) {
+        final isDarkMode = ThemeManager().isDarkMode;
+
+        return Scaffold(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          appBar: _buildAppBar(context),
+          body: ListView(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            children: [
+              _buildSectionHeader('ទូទៅ'),
+              _buildPremiumGroup(context, [
+                _buildLanguageTile(context),
+                _buildCustomDivider(context),
+                _buildGlassSwitchTile(
+                  context,
+                  Icons.dark_mode_rounded,
+                  'ផ្ទៃងងឹត',
+                  Colors.purple,
+                  isDarkMode,
+                  (value) {
+                    ThemeManager().toggleTheme(value);
+                  },
                 ),
-              ),
-              onTap: () {},
-            ),
-          ]),
-          const SizedBox(height: 40),
-          _buildBrandFooter(context),
-        ],
-      ),
+                _buildCustomDivider(context),
+                _buildGlassSwitchTile(
+                  context,
+                  Icons.notifications_active_rounded,
+                  'ការជូនដំណឹង',
+                  Colors.orange,
+                  isNotification,
+                  (v) => setState(() => isNotification = v),
+                ),
+                _buildCustomDivider(context),
+              ]),
+              const SizedBox(height: 30),
+              _buildSectionHeader('គាំទ្រ'),
+              _buildPremiumGroup(context, [
+                _buildPremiumNavTile(
+                  context,
+                  Icons.headset_mic_rounded,
+                  'ជំនួយ និង ការគាំទ្រ',
+                  Colors.blue,
+                  onTap: () {
+                    Navigator.pushNamed(context, AppRoute.helpSupportScreen);
+                  },
+                ),
+                _buildCustomDivider(context),
+                _buildPremiumNavTile(
+                  context,
+                  Icons.auto_awesome_motion_rounded,
+                  'អំពីកម្មវិធី',
+                  Colors.indigo,
+                  trailing: Text(
+                    'v1.2.4',
+                    style: TextStyle(
+                      color: Colors.grey.shade400,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  onTap: () {},
+                ),
+              ]),
+              const SizedBox(height: 40),
+              _buildBrandFooter(context),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -215,11 +225,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _premiumLangBtn(String text, BuildContext context) {
-    bool active = selectedLanguage == text;
+    final String codeToCheck = (text == 'ខ្មែរ') ? 'km' : 'en';
+
+    bool active = LanguageManager().locale == codeToCheck;
     bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
-      onTap: () => setState(() => selectedLanguage = text),
+      onTap: () {
+        LanguageManager().changeLanguage(codeToCheck);
+      },
       child: AnimatedContainer(
         duration: 250.ms,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

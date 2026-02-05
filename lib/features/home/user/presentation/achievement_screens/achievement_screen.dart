@@ -17,7 +17,7 @@ class AchievementScreen extends StatelessWidget {
           _buildStatsRow(context),
           const SizedBox(height: 30),
           Expanded(child: _buildBadgesGrid(context)),
-          _buildBottomGoalCard().animate().scale(
+          _buildBottomGoalCard(context).animate().scale(
             delay: 600.ms,
             curve: Curves.bounceOut,
           ),
@@ -39,9 +39,9 @@ class AchievementScreen extends StatelessWidget {
         ),
         onPressed: () => Navigator.pop(context),
       ),
-      title: const Text(
+      title:  Text(
         "សមិទ្ធផលរបស់ខ្ញុំ",
-        style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+        style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
       ),
       centerTitle: true,
     );
@@ -134,10 +134,10 @@ class AchievementScreen extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   value,
-                  style: const TextStyle(
+                  style:  TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
               ],
@@ -271,12 +271,12 @@ class AchievementScreen extends StatelessWidget {
     ).animate().fadeIn(delay: (index * 50).ms).scale();
   }
 
-  Widget _buildBottomGoalCard() {
+  Widget _buildBottomGoalCard(BuildContext context) {
     return Container(
       margin: const EdgeInsets.all(24),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.primary,
+        color: Theme.of(context).colorScheme.primary,
         borderRadius: BorderRadius.circular(25),
       ),
       child: Column(

@@ -27,8 +27,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
       _notifications.removeAt(index);
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        backgroundColor: AppColors.primary,
+      SnackBar(
+        backgroundColor: Theme.of(context).colorScheme.primary,
         content: Text("បានលុបការជូនដំណឹង"),
         duration: Duration(seconds: 1),
       ),
@@ -69,7 +69,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 _buildMenuButton(
                   icon: Icons.done_all_rounded,
                   label: "សម្គាល់ថាបានអាន",
-                  color: AppColors.primary,
+                  color: Theme.of(context).colorScheme.primary,
                   onTap: () {
                     setState(() => _notifications[index]['is_read'] = true);
                     Navigator.pop(context);
@@ -115,14 +115,20 @@ class _NotificationScreenState extends State<NotificationScreen> {
         ),
         onPressed: () => Navigator.pop(context),
       ),
-      title: const Text(
+      title: Text(
         "ការជូនដំណឹង",
-        style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.primary,
+          fontWeight: FontWeight.bold,
+        ),
       ),
       centerTitle: true,
       actions: [
         IconButton(
-          icon: const Icon(Icons.done_all, color: AppColors.primary),
+          icon: Icon(
+            Icons.done_all,
+            color: Theme.of(context).colorScheme.primary,
+          ),
           tooltip: "អានទាំងអស់",
           onPressed: () => setState(() {
             for (var n in _notifications) {
@@ -201,7 +207,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
         border: Border.all(
           color: isRead
               ? Theme.of(context).dividerColor.withValues(alpha: 0.1)
-              : AppColors.primary.withValues(alpha: 0.3),
+              : Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
         ),
       ),
       child: Row(
@@ -277,7 +283,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
         break;
       default:
         iconData = Icons.campaign_outlined;
-        iconColor = AppColors.primary;
+        iconColor = Theme.of(context).colorScheme.primary;
     }
 
     return Container(

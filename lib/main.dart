@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_worksmart_mobile_app/app/theme/theme.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
+import 'package:flutter_worksmart_mobile_app/app/theme/theme.dart';
+import 'package:flutter_worksmart_mobile_app/config/language_manager.dart';
+import 'package:flutter_worksmart_mobile_app/config/theme_manager.dart'; // Import the manager
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await ThemeManager().loadSettings();
+  await LanguageManager().loadSettings();
+
   runApp(const MainApp());
 }
 
@@ -11,15 +17,19 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'WorkSmart',
-      theme: AppThemes.lightTheme,
-      darkTheme: AppThemes.darkTheme,
-      themeMode: ThemeMode.system,
-
-      initialRoute: AppRoute.tutorial,
-      routes: AppRoute.routes,
+    return ListenableBuilder(
+      listenable: ThemeManager(),
+      builder: (context, child) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'WorkSmart',
+          theme: AppThemes.lightTheme,
+          darkTheme: AppThemes.darkTheme,
+          themeMode: ThemeManager().themeMode,
+          initialRoute: AppRoute.appmain,
+          routes: AppRoute.routes,
+        );
+      },
     );
   }
 }

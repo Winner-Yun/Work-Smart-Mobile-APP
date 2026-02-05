@@ -1,7 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 
 class SickLeaveRequestScreen extends StatefulWidget {
   const SickLeaveRequestScreen({super.key});
@@ -116,8 +115,13 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
         children: [
           CircleAvatar(
             radius: 25,
-            backgroundColor: AppColors.primary.withOpacity(0.1),
-            child: const Icon(Icons.medical_services, color: AppColors.primary),
+            backgroundColor: Theme.of(
+              context,
+            ).colorScheme.primary.withOpacity(0.1),
+            child: Icon(
+              Icons.medical_services,
+              color: Theme.of(context).colorScheme.primary,
+            ),
           ),
           const SizedBox(width: 15),
           Column(
@@ -172,7 +176,7 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
           border: Border.all(
             color: _pickedFile != null
                 ? Colors.green
-                : AppColors.primary.withOpacity(0.2),
+                : Theme.of(context).colorScheme.primary.withOpacity(0.2),
             width: 2,
             style: BorderStyle.solid,
           ),
@@ -184,7 +188,9 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
                   ? Icons.check_circle_outline
                   : Icons.add_photo_alternate_outlined,
               size: 40,
-              color: _pickedFile != null ? Colors.green : AppColors.primary,
+              color: _pickedFile != null
+                  ? Colors.green
+                  : Theme.of(context).colorScheme.primary,
             ),
             const SizedBox(height: 10),
             Text(
@@ -193,7 +199,9 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
                   : 'ចុចទីនេះដើម្បីភ្ជាប់លិខិតបញ្ជាក់ពីពេទ្យ',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: _pickedFile != null ? Colors.green : AppColors.primary,
+                color: _pickedFile != null
+                    ? Colors.green
+                    : Theme.of(context).colorScheme.primary,
                 fontSize: 13,
                 fontWeight: _pickedFile != null
                     ? FontWeight.bold
@@ -221,7 +229,7 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -230,7 +238,7 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
       child: ElevatedButton(
         onPressed: () {},
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
+          backgroundColor: Theme.of(context).colorScheme.primary,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
           ),
@@ -277,9 +285,11 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
     return Theme(
       data: Theme.of(context).copyWith(
         textSelectionTheme: TextSelectionThemeData(
-          cursorColor: AppColors.primary,
-          selectionHandleColor: AppColors.primary,
-          selectionColor: (AppColors.primary).withValues(alpha: 0.2),
+          cursorColor: Theme.of(context).colorScheme.primary,
+          selectionHandleColor: Theme.of(context).colorScheme.primary,
+          selectionColor: (Theme.of(
+            context,
+          ).colorScheme.primary).withValues(alpha: 0.2),
         ),
       ),
       child: TextField(
@@ -296,7 +306,10 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: AppColors.primary, width: 2),
+            borderSide: BorderSide(
+              color: Theme.of(context).colorScheme.primary,
+              width: 2,
+            ),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),

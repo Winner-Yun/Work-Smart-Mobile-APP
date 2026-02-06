@@ -2,14 +2,9 @@ import 'package:flutter/material.dart';
 
 class AppColors {
   // --- Brand Colors ---
-  static const Color primary = Color(0xFF007D7D); // Primary Teal
+  static const Color primary = Color(0xFF004C4C); // Primary Teal
   static const Color secondary = Color(0xFFFFB300); // Secondary Gold
-  static const Color tertiary = Color.fromARGB(
-    255,
-    2,
-    177,
-    177,
-  ); // Secondary Gold
+  static const Color tertiary = Color(0xFF02B1B1); // Secondary Gold
 
   // --- Dark Theme Palette ---
   static const Color darkBg = Color(0xFF0D1414);

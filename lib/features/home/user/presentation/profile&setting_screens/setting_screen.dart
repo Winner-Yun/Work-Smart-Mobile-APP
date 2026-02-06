@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
-import 'package:flutter_worksmart_mobile_app/config/theme_manager.dart'; // Import Manager
+import 'package:flutter_worksmart_mobile_app/config/language_manager.dart';
+import 'package:flutter_worksmart_mobile_app/config/theme_manager.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -11,15 +12,13 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  // Removed local isDarkMode variable. We use the Manager now.
   bool isNotification = true;
-  String selectedLanguage = 'ខ្មែរ';
 
   @override
   Widget build(BuildContext context) {
-    // Listen to changes so the switch animates correctly
+    // Listen to both Theme and Language managers to update UI instantly
     return ListenableBuilder(
-      listenable: ThemeManager(),
+      listenable: Listenable.merge([ThemeManager(), LanguageManager()]),
       builder: (context, child) {
         final isDarkMode = ThemeManager().isDarkMode;
 
@@ -38,9 +37,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Icons.dark_mode_rounded,
                   'ផ្ទៃងងឹត',
                   Colors.purple,
-                  isDarkMode, // Use global state
+                  isDarkMode,
                   (value) {
-                    // Trigger global update
                     ThemeManager().toggleTheme(value);
                   },
                 ),
@@ -227,11 +225,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _premiumLangBtn(String text, BuildContext context) {
-    bool active = selectedLanguage == text;
+    final String codeToCheck = (text == 'ខ្មែរ') ? 'km' : 'en';
+
+    bool active = LanguageManager().locale == codeToCheck;
     bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
-      onTap: () => setState(() => selectedLanguage = text),
+      onTap: () {
+        LanguageManager().changeLanguage(codeToCheck);
+      },
       child: AnimatedContainer(
         duration: 250.ms,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

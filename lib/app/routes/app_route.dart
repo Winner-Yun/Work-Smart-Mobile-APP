@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_worksmart_mobile_app/features/auth/presentation/authscreen.dart';
 import 'package:flutter_worksmart_mobile_app/features/auth/presentation/forgot_pas_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/auth/presentation/tutorail_screens/tutorial_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/home/admin/light_admin_homepage.dart';
 import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/achievement_screens/achievement_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/attendence_screens/annual_leave_request_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/attendence_screens/attendance_calendar_screen.dart';
@@ -34,6 +35,7 @@ class AppRoute {
   static const String settingScreen = '/settingScreen';
   static const String telegramConfig = '/telegramConfig';
   static const String helpSupportScreen = '/helpSupportScreen';
+  static const String ligt_admin_homepage= '/lightadminhomepage';
 
 
   static Map<String, WidgetBuilder> routes = {
@@ -53,6 +55,7 @@ class AppRoute {
     settingScreen: (context) => const SettingsScreen(),
     telegramConfig: (context) => const TelegramIntegration(),
     helpSupportScreen: (context) => const HelpSupportScreen(),
+    ligt_admin_homepage :(context) =>const LightAdminHomepage(),
 
 
   };

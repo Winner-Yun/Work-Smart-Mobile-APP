@@ -22,7 +22,6 @@ class DatabaseHelper {
       path,
       version: 1,
       onCreate: (db, version) async {
-        // Create a Key-Value table for flexible configuration
         await db.execute('''
           CREATE TABLE settings (
             key TEXT PRIMARY KEY,
@@ -33,15 +32,12 @@ class DatabaseHelper {
     );
   }
 
-  // --- CRUD Operations for Config ---
-
   Future<void> saveConfig(String key, String value) async {
     final db = await database;
-    await db.insert(
-      'settings',
-      {'key': key, 'value': value},
-      conflictAlgorithm: ConflictAlgorithm.replace, // Upsert (Update if exists)
-    );
+    await db.insert('settings', {
+      'key': key,
+      'value': value,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   Future<String?> getConfig(String key) async {
@@ -55,6 +51,6 @@ class DatabaseHelper {
     if (maps.isNotEmpty) {
       return maps.first['value'] as String;
     }
-    return null; // Return null if not found
+    return null;
   }
 }

@@ -1,5 +1,7 @@
+import 'package:flutter_worksmart_mobile_app/config/language_manager.dart';
+
 class AppStrings {
-  static const String currentLang = 'km';
+  static String get currentLang => LanguageManager().locale;
 
   static const Map<String, Map<String, String>> data = {
     'en': {

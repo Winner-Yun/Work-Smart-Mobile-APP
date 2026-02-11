@@ -3,17 +3,19 @@ import 'package:flutter_worksmart_mobile_app/features/auth/presentation/authscre
 import 'package:flutter_worksmart_mobile_app/features/auth/presentation/forgot_pas_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/auth/presentation/tutorail_screens/tutorial_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/achievement_screens/achievement_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/achievement_screens/empleaderboard_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/attendence_screens/annual_leave_request_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/attendence_screens/attendance_calendar_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/attendence_screens/attendance_detail_screen.dart';
-import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/achievement_screens/empleaderboard_screen.dart';
-import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/homepage_screens/face_scan_screen.dart';
-import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/profile&setting_screens/help_support_screen.dart';
-import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/homepage_screens/leave_management_screen.dart';
-import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/mainscreen.dart';
-import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/homepage_screens/notification_screens.dart';
-import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/profile&setting_screens/setting_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/attendence_screens/leave_all_requests_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/attendence_screens/sick_leave_request_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/homepage_screens/assign_user_face_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/homepage_screens/face_scan_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/homepage_screens/leave_management_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/homepage_screens/notification_screens.dart';
+import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/mainscreen.dart';
+import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/profile&setting_screens/help_support_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/profile&setting_screens/setting_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/profile&setting_screens/telegram_integration.dart';
 
 class AppRoute {
@@ -31,9 +33,11 @@ class AppRoute {
   static const String attendanceScreen = '/attendance-screen';
   static const String sickleaveScreen = '/sickleaveScreen';
   static const String annualleaveScreen = '/annualleaveScreen-screen';
+  static const String leaveAllRequestsScreen = '/leaveAllRequestsScreen';
   static const String settingScreen = '/settingScreen';
   static const String telegramConfig = '/telegramConfig';
   static const String helpSupportScreen = '/helpSupportScreen';
+  static const String registerFace = '/registerFace';
 
   static Map<String, WidgetBuilder> routes = {
     tutorial: (context) => const TutorialScreen(),
@@ -49,8 +53,10 @@ class AppRoute {
     faceScanScreen: (context) => const FaceScanScreen(),
     sickleaveScreen: (context) => const SickLeaveRequestScreen(),
     annualleaveScreen: (context) => const AnnualLeaveRequestScreen(),
+    leaveAllRequestsScreen: (context) => const LeaveAllRequestsScreen(),
     settingScreen: (context) => const SettingsScreen(),
     telegramConfig: (context) => const TelegramIntegration(),
     helpSupportScreen: (context) => const HelpSupportScreen(),
+    registerFace: (context) => const RegisterFaceScanScreen(),
   };
 }

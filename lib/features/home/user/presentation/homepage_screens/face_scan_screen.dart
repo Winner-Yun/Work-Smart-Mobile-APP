@@ -1,7 +1,7 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter_worksmart_mobile_app/features/home/user/logic/face_scan_logic.dart';
 
 class FaceScanScreen extends StatefulWidget {
   const FaceScanScreen({super.key});
@@ -10,128 +10,7 @@ class FaceScanScreen extends StatefulWidget {
   State<FaceScanScreen> createState() => _FaceScanScreenState();
 }
 
-class _FaceScanScreenState extends State<FaceScanScreen>
-    with WidgetsBindingObserver {
-  CameraController? _controller;
-  List<CameraDescription>? _cameras;
-  bool _isCameraInitialized = false;
-  bool _isRearCameraSelected = false;
-  FlashMode _flashMode = FlashMode.off;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    _initCamera();
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    _controller?.dispose();
-    super.dispose();
-  }
-
-  Future<void> _initCamera() async {
-    final status = await Permission.camera.request();
-    if (!status.isGranted) return;
-
-    _cameras = await availableCameras();
-    if (_cameras != null && _cameras!.isNotEmpty) {
-      final frontCamera = _cameras!.firstWhere(
-        (c) => c.lensDirection == CameraLensDirection.front,
-        orElse: () => _cameras!.first,
-      );
-      _onNewCameraSelected(frontCamera);
-    }
-  }
-
-  void _onNewCameraSelected(CameraDescription cameraDescription) async {
-    if (_controller != null) await _controller!.dispose();
-
-    final cameraController = CameraController(
-      cameraDescription,
-      ResolutionPreset.high,
-      enableAudio: false,
-    );
-
-    _controller = cameraController;
-    cameraController.addListener(() {
-      if (mounted) setState(() {});
-    });
-
-    try {
-      await cameraController.initialize();
-      await cameraController.setFlashMode(FlashMode.off);
-
-      if (mounted) {
-        setState(() {
-          _isCameraInitialized = true;
-          _flashMode = FlashMode.off;
-          _isRearCameraSelected =
-              cameraDescription.lensDirection == CameraLensDirection.back;
-        });
-      }
-    } catch (e) {
-      debugPrint('$e');
-    }
-  }
-
-  Future<void> _switchCamera() async {
-    if (_cameras == null || _cameras!.isEmpty) return;
-    setState(() => _isCameraInitialized = false);
-
-    CameraLensDirection newDirection = _isRearCameraSelected
-        ? CameraLensDirection.front
-        : CameraLensDirection.back;
-
-    CameraDescription newCamera = _cameras!.firstWhere(
-      (camera) => camera.lensDirection == newDirection,
-      orElse: () => _cameras!.first,
-    );
-
-    _onNewCameraSelected(newCamera);
-  }
-
-  Future<void> _toggleFlash() async {
-    if (_controller == null || !_isRearCameraSelected) return;
-
-    try {
-      final newMode = _flashMode == FlashMode.off
-          ? FlashMode.torch
-          : FlashMode.off;
-      await _controller!.setFlashMode(newMode);
-      setState(() => _flashMode = newMode);
-    } catch (e) {
-      debugPrint("$e");
-    }
-  }
-
-  Future<void> _takePicture() async {
-    if (_controller == null ||
-        !_controller!.value.isInitialized ||
-        _controller!.value.isTakingPicture) {
-      return;
-    }
-    try {
-      final XFile file = await _controller!.takePicture();
-      debugPrint(file.path);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            content: Text(
-              AppStrings.tr('scan_success'),
-              textAlign: TextAlign.center,
-            ),
-          ),
-        );
-      }
-    } catch (e) {
-      debugPrint("$e");
-    }
-  }
-
+class _FaceScanScreenState extends FaceScanLogic {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -172,13 +51,13 @@ class _FaceScanScreenState extends State<FaceScanScreen>
         Padding(
           padding: const EdgeInsets.only(right: 8.0),
           child: _buildGlassButton(
-            icon: (_flashMode == FlashMode.off || !_isRearCameraSelected)
+            icon: (flashMode == FlashMode.off || !isRearCameraSelected)
                 ? Icons.flash_off
                 : Icons.flash_on,
-            color: (_flashMode == FlashMode.torch && _isRearCameraSelected)
+            color: (flashMode == FlashMode.torch && isRearCameraSelected)
                 ? Colors.yellow
                 : Colors.white,
-            onTap: _isRearCameraSelected ? _toggleFlash : () {},
+            onTap: isRearCameraSelected ? toggleFlash : () {},
           ),
         ),
       ],
@@ -186,8 +65,8 @@ class _FaceScanScreenState extends State<FaceScanScreen>
   }
 
   Widget _buildCameraPreview() {
-    return (_isCameraInitialized && _controller != null)
-        ? Center(child: CameraPreview(_controller!))
+    return (isCameraInitialized && controller != null)
+        ? Center(child: CameraPreview(controller!))
         : const Center(child: CircularProgressIndicator(color: Colors.white));
   }
 
@@ -279,7 +158,7 @@ class _FaceScanScreenState extends State<FaceScanScreen>
                   child: _buildActionColumn(
                     icon: Icons.flip_camera_ios,
                     label: AppStrings.tr('switch_camera'),
-                    onTap: _switchCamera,
+                    onTap: switchCamera,
                   ),
                 ),
               ),
@@ -294,7 +173,7 @@ class _FaceScanScreenState extends State<FaceScanScreen>
 
   Widget _buildShutterButton() {
     return GestureDetector(
-      onTap: _takePicture,
+      onTap: takePicture,
       child: Container(
         width: 80,
         height: 80,

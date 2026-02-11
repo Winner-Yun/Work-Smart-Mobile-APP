@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/mock_data/leave_attendance.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/mock_data/userFinalData.dart';
+import 'package:flutter_worksmart_mobile_app/shared/model/activity_models/attendance_record.dart';
+import 'package:flutter_worksmart_mobile_app/shared/model/user_model/user_profile.dart';
 import 'package:intl/intl.dart';
 
 class AttendanceCalendarScreen extends StatefulWidget {
@@ -13,52 +17,34 @@ class AttendanceCalendarScreen extends StatefulWidget {
 }
 
 class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
-  int _selectedDay = 10;
-  DateTime _currentViewDate = DateTime(2023, 10);
+  late UserProfile _currentUser;
+  late List<AttendanceRecord> _userAttendanceRecords;
+
+  late int _selectedDay;
+  late DateTime _currentViewDate;
   final bool _isLoading = false;
 
-  final List<Map<String, dynamic>> _apiAttendanceList = [
-    {
-      "date": "2023-10-01",
-      "in": "08:00 AM",
-      "out": "05:00 PM",
-      "h": "8",
-      "s": "on_time",
-      "c": Colors.green,
-    },
-    {
-      "date": "2023-10-03",
-      "in": "08:45 AM",
-      "out": "05:30 PM",
-      "h": "7.5",
-      "s": "late",
-      "c": Colors.orange,
-    },
-    {
-      "date": "2023-10-05",
-      "in": "--:--",
-      "out": "--:--",
-      "h": "0",
-      "s": "absent",
-      "c": Colors.red,
-    },
-    {
-      "date": "2023-10-10",
-      "in": "08:00 AM",
-      "out": "05:00 PM",
-      "h": "8",
-      "s": "on_time",
-      "c": Colors.green,
-    },
-    {
-      "date": "2023-10-12",
-      "in": "09:10 AM",
-      "out": "05:00 PM",
-      "h": "7",
-      "s": "late",
-      "c": Colors.orange,
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    final now = DateTime.now();
+    _selectedDay = now.day;
+    _currentViewDate = DateTime(now.year, now.month);
+    _loadData();
+  }
+
+  void _loadData() {
+    final currentUserData = usersFinalData.firstWhere(
+      (user) => user['uid'] == "user_winner_777",
+      orElse: () => usersFinalData[0],
+    );
+    _currentUser = UserProfile.fromJson(currentUserData);
+
+    _userAttendanceRecords = attendanceRecords
+        .where((record) => record['uid'] == _currentUser.uid)
+        .map((json) => AttendanceRecord.fromJson(json))
+        .toList();
+  }
 
   String _getLocalizedMonthYear(DateTime date) {
     String monthKey = 'month_${DateFormat('MMM').format(date).toLowerCase()}';
@@ -66,20 +52,54 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
   }
 
   Map<String, dynamic> _getDayData(int day) {
-    String searchDate = DateFormat(
+    final searchDate = DateFormat(
       'yyyy-MM-dd',
     ).format(DateTime(_currentViewDate.year, _currentViewDate.month, day));
 
-    return _apiAttendanceList.firstWhere(
-      (element) => element['date'] == searchDate,
-      orElse: () => {
+    final match = _userAttendanceRecords
+        .where((record) => record.date == searchDate)
+        .toList();
+
+    if (match.isEmpty) {
+      return {
         "in": "--:--",
         "out": "--:--",
         "h": "0",
         "s": "no_data",
         "c": Colors.grey,
-      },
-    );
+      };
+    }
+
+    final record = match.first;
+    final color = record.status == 'on_time'
+        ? Colors.green
+        : record.status == 'late'
+        ? Colors.orange
+        : Colors.red;
+
+    return {
+      "in": record.checkIn,
+      "out": record.checkOut,
+      "h": record.totalHours.toStringAsFixed(1),
+      "s": record.status,
+      "c": color,
+    };
+  }
+
+  int _getMonthAttendanceRate(DateTime date) {
+    final monthRecords = _userAttendanceRecords.where((record) {
+      final recordDate = DateTime.parse(record.date);
+      return recordDate.year == date.year && recordDate.month == date.month;
+    }).toList();
+
+    if (monthRecords.isEmpty) return 0;
+
+    final onTimeCount = monthRecords
+        .where((record) => record.status == 'on_time')
+        .length;
+    final rate = (onTimeCount / monthRecords.length) * 100;
+
+    return rate.round();
   }
 
   @override
@@ -166,7 +186,7 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
                 ),
               ),
               Text(
-                "96% ${AppStrings.tr('avg_attendance')}",
+                "${_getMonthAttendanceRate(_currentViewDate)}% ${AppStrings.tr('avg_attendance')}",
                 style: TextStyle(
                   fontSize: 12,
                   color: AppColors.textGrey.withValues(alpha: 0.7),

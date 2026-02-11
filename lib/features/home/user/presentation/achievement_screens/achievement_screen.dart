@@ -2,10 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
+import 'package:flutter_worksmart_mobile_app/features/home/user/logic/achievement_logic.dart';
 
-class AchievementScreen extends StatelessWidget {
+class AchievementScreen extends StatefulWidget {
   const AchievementScreen({super.key});
 
+  @override
+  State<AchievementScreen> createState() => _AchievementScreenState();
+}
+
+class _AchievementScreenState extends AchievementLogic {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -51,6 +57,7 @@ class AchievementScreen extends StatelessWidget {
   }
 
   Widget _buildProfileHeader(BuildContext context) {
+    final profileData = getUserProfileData();
     return Column(
       children: [
         Stack(
@@ -64,9 +71,9 @@ class AchievementScreen extends StatelessWidget {
                   colors: [AppColors.secondary, Colors.orange],
                 ),
               ),
-              child: const CircleAvatar(
+              child: CircleAvatar(
                 radius: 50,
-                backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=4'),
+                backgroundImage: NetworkImage(profileData['profileUrl']),
               ),
             ),
             CircleAvatar(
@@ -82,7 +89,7 @@ class AchievementScreen extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Text(
-          "${AppStrings.tr('hello')}, Winner",
+          "${AppStrings.tr('hello')}, ${profileData['name']}",
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -90,7 +97,7 @@ class AchievementScreen extends StatelessWidget {
           ),
         ),
         Text(
-          AppStrings.tr('role_it_staff'),
+          profileData['role'],
           style: const TextStyle(color: AppColors.textGrey, fontSize: 14),
         ),
       ],
@@ -98,6 +105,7 @@ class AchievementScreen extends StatelessWidget {
   }
 
   Widget _buildStatsRow(BuildContext context) {
+    final profileData = getUserProfileData();
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
@@ -105,14 +113,14 @@ class AchievementScreen extends StatelessWidget {
           _statItem(
             context,
             AppStrings.tr('total_medals'),
-            "12",
+            profileData['totalMedals'].toString(),
             Icons.military_tech,
           ),
           const SizedBox(width: 15),
           _statItem(
             context,
             AppStrings.tr('rank_label'),
-            "#5",
+            "#${profileData['rank']}",
             Icons.leaderboard_outlined,
           ),
         ],
@@ -162,44 +170,33 @@ class AchievementScreen extends StatelessWidget {
   }
 
   Widget _buildBadgesGrid(BuildContext context) {
-    final badges = [
-      {
-        "name": AppStrings.tr('badge_early_bird'),
-        "icon": Icons.wb_sunny_outlined,
-        "color": Colors.orange,
-        "locked": false,
+    final badgesData = getBadgesData();
+
+    // Badge definitions with icons and colors
+    final badgeDefinitions = {
+      'early_bird': {'icon': Icons.wb_sunny_outlined, 'color': Colors.orange},
+      'perfect_atd': {
+        'icon': Icons.calendar_today_outlined,
+        'color': Colors.teal,
       },
-      {
-        "name": AppStrings.tr('badge_perfect_atd'),
-        "icon": Icons.calendar_today_outlined,
-        "color": Colors.teal,
-        "locked": false,
-      },
-      {
-        "name": AppStrings.tr('badge_emp_month'),
-        "icon": Icons.military_tech_outlined,
-        "color": Colors.pink,
-        "locked": false,
-      },
-      {
-        "name": AppStrings.tr('badge_speed'),
-        "icon": Icons.rocket_launch_outlined,
-        "color": Colors.blue,
-        "locked": false,
-      },
-      {
-        "name": AppStrings.tr('badge_collab'),
-        "icon": Icons.handshake_outlined,
-        "color": Colors.grey,
-        "locked": true,
-      },
-      {
-        "name": AppStrings.tr('badge_creative'),
-        "icon": Icons.lightbulb_outline,
-        "color": Colors.grey,
-        "locked": true,
-      },
-    ];
+      'emp_month': {'icon': Icons.military_tech_outlined, 'color': Colors.pink},
+      'speed': {'icon': Icons.rocket_launch_outlined, 'color': Colors.blue},
+      'collab': {'icon': Icons.handshake_outlined, 'color': Colors.grey},
+      'creative': {'icon': Icons.lightbulb_outline, 'color': Colors.grey},
+    };
+
+    final badges = badgesData.map((badgeData) {
+      final badgeKey = badgeData['name'];
+      final definition =
+          badgeDefinitions[badgeKey] ??
+          {'icon': Icons.star_outline, 'color': Colors.grey};
+      return {
+        "name": AppStrings.tr('badge_$badgeKey'),
+        "icon": definition['icon'],
+        "color": definition['color'],
+        "locked": badgeData['isLocked'],
+      };
+    }).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -285,6 +282,9 @@ class AchievementScreen extends StatelessWidget {
   }
 
   Widget _buildBottomGoalCard(BuildContext context) {
+    final goalData = getGoalData();
+    final progressPercent = (goalData['progress'] as double) * 100;
+
     return Container(
       margin: const EdgeInsets.all(24),
       padding: const EdgeInsets.all(20),
@@ -315,7 +315,7 @@ class AchievementScreen extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      AppStrings.tr('goal_hero_desc'),
+                      AppStrings.tr(goalData['description']),
                       style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 11,
@@ -324,9 +324,9 @@ class AchievementScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              const Text(
-                "80%",
-                style: TextStyle(
+              Text(
+                "${progressPercent.toStringAsFixed(0)}%",
+                style: const TextStyle(
                   color: AppColors.secondary,
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
@@ -335,11 +335,13 @@ class AchievementScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-          const LinearProgressIndicator(
-            value: 0.8,
+          LinearProgressIndicator(
+            value: goalData['progress'],
             minHeight: 8,
             backgroundColor: Colors.white24,
-            valueColor: AlwaysStoppedAnimation<Color>(AppColors.secondary),
+            valueColor: const AlwaysStoppedAnimation<Color>(
+              AppColors.secondary,
+            ),
           ),
           const SizedBox(height: 10),
           Row(
@@ -350,7 +352,7 @@ class AchievementScreen extends StatelessWidget {
                 style: const TextStyle(color: Colors.white70, fontSize: 10),
               ),
               Text(
-                "20/25 ${AppStrings.tr('days')}",
+                "${goalData['daysCount']} ${AppStrings.tr('days')}",
                 style: const TextStyle(color: Colors.white70, fontSize: 10),
               ),
             ],

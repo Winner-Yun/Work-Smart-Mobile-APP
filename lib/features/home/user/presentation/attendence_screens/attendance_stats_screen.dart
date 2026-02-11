@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
+import 'package:flutter_worksmart_mobile_app/features/home/user/logic/attendance_stats_logic.dart';
 
 class AttendanceStatsScreen extends StatefulWidget {
   const AttendanceStatsScreen({super.key});
@@ -11,115 +12,21 @@ class AttendanceStatsScreen extends StatefulWidget {
   State<AttendanceStatsScreen> createState() => _AttendanceStatsScreenState();
 }
 
-class _AttendanceStatsScreenState extends State<AttendanceStatsScreen> {
-  bool _animateChart = false;
-  String _selectedFilter = 'All';
-  late int _selectedMonthIndex;
-  late int _selectedYear;
-  late List<Map<String, dynamic>> _monthlyStats;
-
-  final List<String> _monthKeys = [
-    '',
-    'month_jan',
-    'month_feb',
-    'month_mar',
-    'month_apr',
-    'month_may',
-    'month_jun',
-    'month_jul',
-    'month_aug',
-    'month_sep',
-    'month_oct',
-    'month_nov',
-    'month_dec',
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeData();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      setState(() => _animateChart = true);
-    });
-  }
-
-  void _initializeData() {
-    final now = DateTime.now();
-    _selectedYear = now.year;
-    _monthlyStats = [];
-    for (int i = 4; i >= 0; i--) {
-      final date = DateTime(now.year, now.month - i, 1);
-      _monthlyStats.add({
-        "monthKey": _monthKeys[date.month],
-        "year": date.year,
-        "percentage": _getMockPercentage(i),
-        "present": "${20 + i}",
-        "late": "${5 - i}",
-        "absent": "$i",
-      });
-    }
-    _selectedMonthIndex = 4;
-  }
-
-  double _getMockPercentage(int index) {
-    List<double> percs = [0.65, 0.80, 0.50, 0.90, 0.95];
-    return percs[index % percs.length];
-  }
-
-  // UPDATED: Using keys for localization
-  final List<Map<String, dynamic>> _historyData = [
-    {
-      "date": "25 Sep 2023",
-      "day": "monday",
-      "status": "present",
-      "color": Colors.green,
-      "checkIn": "08:00 AM",
-      "checkOut": "05:00 PM",
-      "hours": "8h",
-      "isLate": false,
-    },
-    {
-      "date": "22 Sep 2023",
-      "day": "friday",
-      "status": "present",
-      "color": Colors.green,
-      "checkIn": "08:15 AM",
-      "checkOut": "05:00 PM",
-      "hours": "7h 45m",
-      "isLate": true,
-    },
-    {
-      "date": "21 Sep 2023",
-      "day": "absent",
-      "status": "absent",
-      "color": Colors.red,
-      "checkIn": "--:--",
-      "checkOut": "--:--",
-      "hours": "0h",
-      "isLate": false,
-    },
-  ];
-
-  List<Map<String, dynamic>> get _filteredData {
-    if (_selectedFilter == 'All') return _historyData;
-    if (_selectedFilter == 'Late') {
-      return _historyData.where((e) => e['isLate'] == true).toList();
-    }
-    if (_selectedFilter == 'Absent') {
-      return _historyData.where((e) => e['status'] == 'absent').toList();
-    }
-    return _historyData;
-  }
-
+class _AttendanceStatsScreenState extends AttendanceStatsLogic {
   @override
   Widget build(BuildContext context) {
-    final currentStats = _monthlyStats[_selectedMonthIndex];
+    final currentStats = monthlyStats[selectedMonthIndex];
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _buildAppBar(),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.only(
+          left: 20,
+          right: 20,
+          top: 20,
+          bottom: 10,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -181,7 +88,7 @@ class _AttendanceStatsScreenState extends State<AttendanceStatsScreen> {
       ),
       child: Center(
         child: TweenAnimationBuilder<double>(
-          key: ValueKey(_selectedMonthIndex),
+          key: ValueKey(selectedMonthIndex),
           tween: Tween<double>(begin: 0, end: currentStats['percentage']),
           duration: const Duration(seconds: 1),
           curve: Curves.easeOutQuart,
@@ -256,21 +163,21 @@ class _AttendanceStatsScreenState extends State<AttendanceStatsScreen> {
         _buildStatCard(
           Icons.check_circle_outline,
           AppStrings.tr('present'),
-          currentStats['present'],
+          currentStats['present'].toString(),
           Colors.green,
         ).animate().fadeIn(delay: 200.ms),
         const SizedBox(width: 10),
         _buildStatCard(
           Icons.access_time,
           AppStrings.tr('late'),
-          currentStats['late'],
+          currentStats['late'].toString(),
           Colors.orange,
         ).animate().fadeIn(delay: 200.ms),
         const SizedBox(width: 10),
         _buildStatCard(
           Icons.cancel_outlined,
           AppStrings.tr('absent'),
-          currentStats['absent'],
+          currentStats['absent'].toString(),
           Colors.red,
         ).animate().fadeIn(delay: 200.ms),
       ],
@@ -313,13 +220,13 @@ class _AttendanceStatsScreenState extends State<AttendanceStatsScreen> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: List.generate(_monthlyStats.length, (index) {
-            final stat = _monthlyStats[index];
+          children: List.generate(monthlyStats.length, (index) {
+            final stat = monthlyStats[index];
             return _buildClickableBar(
               index: index,
               label: AppStrings.tr(stat['monthKey']),
               percentage: stat['percentage'],
-              isActive: index == _selectedMonthIndex,
+              isActive: index == selectedMonthIndex,
             );
           }),
         ),
@@ -351,7 +258,7 @@ class _AttendanceStatsScreenState extends State<AttendanceStatsScreen> {
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         Text(
-          "${AppStrings.tr(currentStats['monthKey'])} $_selectedYear",
+          "${AppStrings.tr(currentStats['monthKey'])} $selectedYear",
           style: const TextStyle(color: AppColors.textGrey, fontSize: 12),
         ),
       ],
@@ -359,17 +266,36 @@ class _AttendanceStatsScreenState extends State<AttendanceStatsScreen> {
   }
 
   Widget _buildAttendanceHistoryList() {
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: _filteredData.length,
-      itemBuilder: (context, index) {
-        final item = _filteredData[index];
-        return _buildHistoryListItem(
-          item,
-        ).animate().fadeIn(delay: (800 + (index * 100)).ms).slideX(begin: 0.1);
-      },
-    );
+    final filteredData = getFilteredAttendanceData();
+    return filteredData.isEmpty
+        ? Container(
+            padding: const EdgeInsets.all(30),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardTheme.color,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.info_outline, color: AppColors.textGrey),
+                const SizedBox(width: 10),
+                Text(
+                  AppStrings.tr('no_records'),
+                  style: const TextStyle(color: AppColors.textGrey),
+                ),
+              ],
+            ),
+          )
+        : SizedBox(
+            height: MediaQuery.of(context).size.height * 0.45,
+            child: ListView.builder(
+              physics: const BouncingScrollPhysics(),
+              itemCount: filteredData.length,
+              itemBuilder: (context, index) {
+                final item = filteredData[index];
+                return _buildHistoryListItem(item);
+              },
+            ),
+          );
   }
 
   Widget _buildYearChip(int year) {
@@ -396,10 +322,14 @@ class _AttendanceStatsScreenState extends State<AttendanceStatsScreen> {
         context,
         AppRoute.attendanceDetail,
         arguments: {
-          ...item,
-          'status': AppStrings.tr(
-            item['status'],
-          ), // Ensure status is translated before passing
+          'date': item['date'],
+          'day': AppStrings.tr(item['day']),
+          'status': AppStrings.tr(item['status']),
+          'color': item['color'],
+          'checkIn': item['checkIn'],
+          'checkOut': item['checkOut'],
+          'hours': item['hours'],
+          'isLate': item['isLate'],
         },
       ),
       child: Container(
@@ -485,7 +415,7 @@ class _AttendanceStatsScreenState extends State<AttendanceStatsScreen> {
     required bool isActive,
   }) {
     return GestureDetector(
-      onTap: () => setState(() => _selectedMonthIndex = index),
+      onTap: () => setState(() => selectedMonthIndex = index),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
@@ -513,7 +443,7 @@ class _AttendanceStatsScreenState extends State<AttendanceStatsScreen> {
             duration: const Duration(milliseconds: 500),
             curve: Curves.easeInOut,
             width: 30,
-            height: _animateChart ? 120 * percentage : 0,
+            height: animateChart ? 120 * percentage : 0,
             decoration: BoxDecoration(
               color: isActive
                   ? Theme.of(context).colorScheme.primary
@@ -583,9 +513,9 @@ class _AttendanceStatsScreenState extends State<AttendanceStatsScreen> {
   }
 
   Widget _buildFilterChip(String label, String filterKey) {
-    final bool isSelected = _selectedFilter == filterKey;
+    final bool isSelected = selectedFilter == filterKey;
     return GestureDetector(
-      onTap: () => setState(() => _selectedFilter = filterKey),
+      onTap: () => setState(() => selectedFilter = filterKey),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),

@@ -5,8 +5,10 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/mock_data/userFinalData.dart';
 import 'package:flutter_worksmart_mobile_app/features/auth/presentation/change_pas_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/profile&setting_screens/setting_screen.dart';
+import 'package:flutter_worksmart_mobile_app/shared/model/user_model/user_profile.dart';
 import 'package:image_picker/image_picker.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -17,8 +19,23 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  late UserProfile _currentUser;
   File? _image;
   final ImagePicker _picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  void _loadData() {
+    final currentUserData = usersFinalData.firstWhere(
+      (user) => user['uid'] == "user_winner_777",
+      orElse: () => usersFinalData[0],
+    );
+    _currentUser = UserProfile.fromJson(currentUserData);
+  }
 
   Future<void> _pickImage(ImageSource source) async {
     try {
@@ -111,16 +128,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _buildAvatarSection(),
             const SizedBox(height: 15),
             Text(
-              'យុន​​ វិនន័រ', // Replace with user name from state
+              _currentUser.displayName,
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: Theme.of(context).textTheme.bodyLarge?.color,
               ),
             ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.3, end: 0),
-            const Text(
-              'អ្នកគ្រប់គ្រងក្រុមបុរសនៅលីវ', // Replace with user role
-              style: TextStyle(color: AppColors.textGrey),
+            Text(
+              _currentUser.roleTitle,
+              style: const TextStyle(color: AppColors.textGrey),
             ).animate().fadeIn(delay: 300.ms),
             const SizedBox(height: 30),
             _buildInfoCard(context),
@@ -224,7 +241,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: ClipOval(
               child: _image != null
                   ? Image.file(_image!, fit: BoxFit.cover)
-                  : const Icon(Icons.person, size: 80, color: Colors.white),
+                  : (_currentUser.profileUrl.isNotEmpty
+                        ? Image.network(
+                            _currentUser.profileUrl,
+                            fit: BoxFit.cover,
+                          )
+                        : const Icon(
+                            Icons.person,
+                            size: 80,
+                            color: Colors.white,
+                          )),
             ),
           ),
           GestureDetector(
@@ -260,7 +286,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             context,
             Icons.phone_outlined,
             AppStrings.tr('phone_label'),
-            '096 123 4567',
+            _currentUser.phone,
           ),
           const Divider(height: 30, thickness: 0.5),
           _buildTelegramStatus(context),
@@ -269,7 +295,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             context,
             Icons.email_outlined,
             AppStrings.tr('email_label'),
-            'yun.winner@worksmart.kh',
+            _currentUser.email,
           ),
         ],
       ),
@@ -277,6 +303,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildTelegramStatus(BuildContext context) {
+    final bool isConnected = _currentUser.telegram.isConnected;
+    final String telegramLabel = isConnected
+        ? _currentUser.telegram.telegramUsername
+        : AppStrings.tr('not_connected');
     return Row(
       children: [
         CircleAvatar(
@@ -297,37 +327,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: TextStyle(color: AppColors.textGrey, fontSize: 12),
               ),
               Text(
-                AppStrings.tr('not_connected'),
+                telegramLabel,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color: Colors.red.shade400,
+                  color: isConnected
+                      ? Colors.green.shade600
+                      : Colors.red.shade400,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ],
           ),
         ),
-        TextButton(
-          onPressed: () =>
-              Navigator.pushNamed(context, AppRoute.telegramConfig),
-          style: TextButton.styleFrom(
-            backgroundColor: Theme.of(
-              context,
-            ).colorScheme.primary.withOpacity(0.2),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
+        if (!isConnected)
+          TextButton(
+            onPressed: () =>
+                Navigator.pushNamed(context, AppRoute.telegramConfig),
+            style: TextButton.styleFrom(
+              backgroundColor: Theme.of(
+                context,
+              ).colorScheme.primary.withOpacity(0.2),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: Text(
+              AppStrings.tr('connect_now'),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.primary,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
             ),
           ),
-          child: Text(
-            AppStrings.tr('connect_now'),
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.primary,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-            ),
-          ),
-        ),
       ],
     );
   }

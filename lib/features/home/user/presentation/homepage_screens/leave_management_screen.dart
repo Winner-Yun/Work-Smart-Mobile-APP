@@ -3,6 +3,11 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/mock_data/userFinalData.dart';
+import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/attendence_screens/leave_detail_view_screen.dart';
+import 'package:flutter_worksmart_mobile_app/shared/model/activity_models/leave_record.dart';
+import 'package:flutter_worksmart_mobile_app/shared/model/user_model/user_profile.dart';
+import 'package:intl/intl.dart';
 
 class LeaveDetailScreen extends StatefulWidget {
   const LeaveDetailScreen({super.key});
@@ -18,42 +23,80 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
   late Animation<double> _annualAnimation;
   late Animation<double> _sickAnimation;
 
-  final List<Map<String, dynamic>> _history = [
-    {
-      "title": "annual_leave",
-      "date": "15 Oct 2023",
-      "status": "status_approved",
-      "color": Colors.green,
-    },
-    {
-      "title": "sick_leave_fever",
-      "date": "02 Sep 2023",
-      "status": "status_approved",
-      "color": Colors.green,
-    },
-    {
-      "title": "annual_leave",
-      "date": "10 Aug 2023",
-      "status": "status_rejected",
-      "color": Colors.red,
-    },
-  ];
+  static const int _annualTotal = 18;
+  static const int _sickTotal = 5;
+
+  late UserProfile _currentUser;
+  late List<LeaveRecord> _leaveRecords;
+  late List<LeaveRecord> _history;
+  late int _annualUsed;
+  late int _sickUsed;
+  late double _annualRatio;
+  late double _sickRatio;
 
   @override
   void initState() {
     super.initState();
+    _loadData();
     _annualController = AnimationController(vsync: this, duration: 1500.ms);
     _sickController = AnimationController(vsync: this, duration: 1500.ms);
 
-    _annualAnimation = Tween<double>(begin: 0, end: 0.7).animate(
+    _annualAnimation = Tween<double>(begin: 0, end: _annualRatio).animate(
       CurvedAnimation(parent: _annualController, curve: Curves.easeInOut),
     );
-    _sickAnimation = Tween<double>(begin: 0, end: 0.4).animate(
+    _sickAnimation = Tween<double>(begin: 0, end: _sickRatio).animate(
       CurvedAnimation(parent: _sickController, curve: Curves.easeInOut),
     );
 
     _annualController.forward();
     _sickController.forward();
+  }
+
+  void _loadData() {
+    final currentUserData = usersFinalData.firstWhere(
+      (user) => user['uid'] == "user_winner_777",
+      orElse: () => usersFinalData[0],
+    );
+    _currentUser = UserProfile.fromJson(currentUserData);
+
+    // Only load CURRENT USER's leave records, not all users
+    _leaveRecords = _currentUser.leaveRecords;
+
+    debugPrint('=== Leave Data for User: ${_currentUser.uid} ===');
+    debugPrint('Total leave records: ${_leaveRecords.length}');
+    for (var record in _leaveRecords) {
+      debugPrint(
+        'Record: ${record.type} | ${record.startDate} to ${record.endDate} | Status: ${record.status} | Days: ${record.durationInDays}',
+      );
+    }
+
+    _annualUsed = _sumUsedDays('annual_leave');
+    _sickUsed = _sumUsedDays('sick_leave');
+
+    debugPrint(
+      'FINAL COUNTS - Annual: $_annualUsed/$_annualTotal | Sick: $_sickUsed/$_sickTotal',
+    );
+
+    _annualRatio = (_annualUsed / _annualTotal).clamp(0, 1).toDouble();
+    _sickRatio = (_sickUsed / _sickTotal).clamp(0, 1).toDouble();
+
+    _history = _leaveRecords.toList()
+      ..sort((a, b) => b.startDate.compareTo(a.startDate));
+  }
+
+  int _sumUsedDays(String type) {
+    final approvedRecords = _leaveRecords
+        .where((record) => record.type == type && record.status == 'approved')
+        .toList();
+
+    debugPrint(
+      'Counting approved "$type" records: found ${approvedRecords.length}',
+    );
+
+    return approvedRecords.fold(
+      0,
+      (sum, record) => sum + record.durationInDays,
+    );
   }
 
   @override
@@ -76,10 +119,6 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildSectionHeader(AppStrings.tr('usage_stats'), ""),
-                const SizedBox(height: 15),
-                _buildDetailedStatsGrid(),
-                const SizedBox(height: 30),
                 _buildSectionHeader(
                   AppStrings.tr('request_history'),
                   AppStrings.tr('view_all'),
@@ -94,13 +133,8 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
               padding: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
               itemCount: _history.length,
               itemBuilder: (context, index) {
-                final item = _history[index];
-                return _buildTimelineItem(
-                  AppStrings.tr(item['title']),
-                  item['date'] as String,
-                  AppStrings.tr(item['status']),
-                  item['color'] as Color,
-                );
+                final record = _history[index];
+                return _buildTimelineItem(record);
               },
             ),
           ),
@@ -149,7 +183,8 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
               Expanded(
                 child: _buildLeaveProgressItem(
                   _annualAnimation,
-                  "12/18",
+                  _annualUsed,
+                  _annualTotal,
                   AppStrings.tr('annual_leave'),
                   Colors.white,
                 ),
@@ -163,17 +198,24 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
               Expanded(
                 child: _buildLeaveProgressItem(
                   _sickAnimation,
-                  "02/05",
+                  _sickUsed,
+                  _sickTotal,
                   AppStrings.tr('sick_leave'),
                   AppColors.secondary,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          _buildInfoRow(
-            Icons.info_outline,
-            AppStrings.tr('total_remaining_note'),
+          const SizedBox(height: 15),
+          Row(
+            children: [
+              Icon(Icons.info_outline, color: Colors.white70, size: 16),
+              const SizedBox(width: 5),
+              Text(
+                '${AppStrings.tr('you_have_remaining_leave')} ${(_annualTotal - _annualUsed) + (_sickTotal - _sickUsed)} ${AppStrings.tr('days')} ${AppStrings.tr('this_year')}',
+                style: const TextStyle(color: Colors.white70, fontSize: 11),
+              ),
+            ],
           ),
         ],
       ),
@@ -182,13 +224,14 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
 
   Widget _buildLeaveProgressItem(
     Animation<double> animation,
-    String value,
+    int used,
+    int total,
     String label,
     Color color,
   ) {
     return Row(
       children: [
-        _buildAnimatedCircularIndicator(animation, value, color),
+        _buildAnimatedCircularIndicator(animation, used, total, color),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -204,7 +247,7 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
               ),
               const SizedBox(height: 4),
               Text(
-                "${AppStrings.tr('remaining')} ${value.split('/')[1].split('')[1]} ${AppStrings.tr('days')}",
+                "${AppStrings.tr('remaining')} ${total - used} ${AppStrings.tr('days')}",
                 style: const TextStyle(color: Colors.white70, fontSize: 11),
               ),
             ],
@@ -216,7 +259,8 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
 
   Widget _buildAnimatedCircularIndicator(
     Animation<double> animation,
-    String value,
+    int used,
+    int total,
     Color color,
   ) {
     return AnimatedBuilder(
@@ -238,11 +282,11 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
               ),
             ),
             Text(
-              value.split('/')[0],
+              "$used/$total",
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
-                fontSize: 12,
+                fontSize: 10,
               ),
             ),
           ],
@@ -251,129 +295,122 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
     );
   }
 
-  Widget _buildDetailedStatsGrid() {
-    return Row(
-      children: [
-        _buildStatBox(
-          AppStrings.tr('annual_leave'),
-          "${AppStrings.tr('used')} 12 ${AppStrings.tr('days')}",
-          "${AppStrings.tr('remaining')} 6 ${AppStrings.tr('days')}",
-          Colors.blue,
-        ),
-        const SizedBox(width: 15),
-        _buildStatBox(
-          AppStrings.tr('sick_leave'),
-          "${AppStrings.tr('used')} 2 ${AppStrings.tr('days')}",
-          "${AppStrings.tr('remaining')} 3 ${AppStrings.tr('days')}",
-          Colors.purple,
-        ),
-      ],
-    );
-  }
+  Widget _buildTimelineItem(LeaveRecord record) {
+    final String titleKey = record.type;
+    final String statusKey = _getStatusKey(record.status);
+    final Color color = _getStatusColor(record.status);
+    final String dateLabel = _formatDateRange(record.startDate, record.endDate);
 
-  Widget _buildStatBox(String title, String used, String remain, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(15),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: color.withValues(alpha: 0.1)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: TextStyle(
-                color: color,
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              used,
-              style: const TextStyle(color: AppColors.textGrey, fontSize: 11),
-            ),
-            Text(
-              remain,
-              style: TextStyle(
-                color: Theme.of(context).textTheme.bodyLarge?.color,
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTimelineItem(
-    String title,
-    String date,
-    String status,
-    Color color,
-  ) {
-    return Container(
-      margin: const EdgeInsets.only(top: 12),
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        focusColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        splashColor: Colors.transparent,
         borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 4,
-            height: 40,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(2),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => LeaveDetailViewScreen(leave: record),
             ),
+          );
+        },
+        child: Container(
+          margin: const EdgeInsets.only(top: 12),
+          padding: const EdgeInsets.all(15),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardTheme.color,
+            borderRadius: BorderRadius.circular(15),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 10,
+              ),
+            ],
           ),
-          const SizedBox(width: 15),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    color: Theme.of(context).textTheme.bodyLarge?.color,
-                  ),
+          child: Row(
+            children: [
+              Container(
+                width: 4,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(2),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  date,
-                  style: const TextStyle(
-                    color: AppColors.textGrey,
-                    fontSize: 12,
-                  ),
+              ),
+              const SizedBox(width: 15),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      AppStrings.tr(titleKey),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      dateLabel,
+                      style: const TextStyle(
+                        color: AppColors.textGrey,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              Text(
+                AppStrings.tr(statusKey),
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 11,
+                ),
+              ),
+            ],
           ),
-          Text(
-            status,
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.bold,
-              fontSize: 11,
-            ),
-          ),
-        ],
+        ),
       ),
     ).animate().fadeIn().slideX(begin: 0.1);
+  }
+
+  String _formatDateRange(DateTime start, DateTime end) {
+    final formatter = DateFormat('dd MMM yyyy');
+    final startLabel = formatter.format(start);
+    final endLabel = formatter.format(end);
+
+    if (startLabel == endLabel) {
+      return startLabel;
+    }
+    return "$startLabel - $endLabel";
+  }
+
+  String _getStatusKey(String status) {
+    switch (status) {
+      case 'approved':
+        return 'status_approved';
+      case 'rejected':
+        return 'status_rejected';
+      case 'pending':
+      default:
+        return 'status_pending';
+    }
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'approved':
+        return Colors.green;
+      case 'rejected':
+        return Colors.red;
+      case 'pending':
+      default:
+        return Colors.orange;
+    }
   }
 
   Widget _buildSectionHeader(String title, String action) {
@@ -389,23 +426,22 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
           ),
         ),
         if (action.isNotEmpty)
-          Text(
-            action,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.primary,
-              fontSize: 12,
+          InkWell(
+            borderRadius: BorderRadius.circular(10),
+            onTap: () {
+              Navigator.pushNamed(context, AppRoute.leaveAllRequestsScreen);
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              child: Text(
+                action,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontSize: 12,
+                ),
+              ),
             ),
           ),
-      ],
-    );
-  }
-
-  Widget _buildInfoRow(IconData icon, String text) {
-    return Row(
-      children: [
-        Icon(icon, color: Colors.white70, size: 16),
-        const SizedBox(width: 8),
-        Text(text, style: const TextStyle(color: Colors.white70, fontSize: 11)),
       ],
     );
   }

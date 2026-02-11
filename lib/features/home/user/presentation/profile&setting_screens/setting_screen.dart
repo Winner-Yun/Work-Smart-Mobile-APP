@@ -4,6 +4,8 @@ import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
 import 'package:flutter_worksmart_mobile_app/config/language_manager.dart';
 import 'package:flutter_worksmart_mobile_app/config/theme_manager.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/mock_data/userFinalData.dart';
+import 'package:flutter_worksmart_mobile_app/shared/model/user_model/user_profile.dart';
 import 'package:flutter_worksmart_mobile_app/shared/widget/restartwidget.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -14,7 +16,23 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  late UserProfile _currentUser;
   bool isNotification = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  void _loadData() {
+    final currentUserData = usersFinalData.firstWhere(
+      (user) => user['uid'] == "user_winner_777",
+      orElse: () => usersFinalData[0],
+    );
+    _currentUser = UserProfile.fromJson(currentUserData);
+    isNotification = _currentUser.appSettings.notificationsEnabled;
+  }
 
   Future<void> _handleLanguageChange(
     BuildContext context,

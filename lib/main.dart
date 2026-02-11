@@ -9,7 +9,6 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await ThemeManager().loadSettings();
   await LanguageManager().loadSettings();
-
   runApp(const RestartWidget(child: MainApp()));
 }
 

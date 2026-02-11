@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
+import 'package:intl/intl.dart';
 
 class AnnualLeaveRequestScreen extends StatefulWidget {
   const AnnualLeaveRequestScreen({super.key});
@@ -11,6 +12,22 @@ class AnnualLeaveRequestScreen extends StatefulWidget {
 }
 
 class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
+  static const int _annualLeaveTotal = 18;
+  late int _annualLeaveUsed;
+  late int _annualLeaveRemaining;
+
+  DateTime? _startDate;
+  DateTime? _endDate;
+  final DateFormat _dateFormatter = DateFormat('dd MMM yyyy');
+
+  @override
+  void initState() {
+    super.initState();
+    // For demo: assuming user has used 6 annual leave days
+    _annualLeaveUsed = 6;
+    _annualLeaveRemaining = _annualLeaveTotal - _annualLeaveUsed;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -21,7 +38,7 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildInfoBanner(),
+            _buildBalanceCard(context),
             const SizedBox(height: 25),
             _buildSectionTitle(AppStrings.tr('select_date'), context),
             const SizedBox(height: 15),
@@ -38,30 +55,103 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
     );
   }
 
-  Widget _buildInfoBanner() {
+  Widget _buildBalanceCard(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.teal.shade50.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.teal.shade100),
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10),
+        ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.info_outline, color: Colors.teal),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              AppStrings.tr('annual_leave_balance_msg'),
-              style: TextStyle(
-                color: Theme.of(context).textTheme.bodyLarge?.color,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 25,
+                backgroundColor: Colors.teal.withOpacity(0.1),
+                child: const Icon(Icons.calendar_today, color: Colors.teal),
               ),
+              const SizedBox(width: 15),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    AppStrings.tr('leave_type'),
+                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
+                  Text(
+                    AppStrings.tr('annual_leave'),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.teal.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildBalanceInfo(
+                  'Used',
+                  '$_annualLeaveUsed days',
+                  Colors.orange,
+                ),
+                Container(
+                  width: 1,
+                  height: 30,
+                  color: Theme.of(context).dividerColor.withOpacity(0.2),
+                ),
+                _buildBalanceInfo(
+                  'Remaining',
+                  '$_annualLeaveRemaining days',
+                  Colors.green,
+                ),
+                Container(
+                  width: 1,
+                  height: 30,
+                  color: Theme.of(context).dividerColor.withOpacity(0.2),
+                ),
+                _buildBalanceInfo(
+                  'Total',
+                  '$_annualLeaveTotal days',
+                  Colors.teal,
+                ),
+              ],
             ),
           ),
         ],
       ),
+    ).animate().fadeIn().slideY(begin: -0.2, end: 0);
+  }
+
+  Widget _buildBalanceInfo(String label, String value, Color color) {
+    return Column(
+      children: [
+        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 11)),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 13,
+            color: color,
+          ),
+        ),
+      ],
     );
   }
 
@@ -74,35 +164,111 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
       ),
       child: Row(
         children: [
-          _dateColumn(context, AppStrings.tr('start_date'), '20 Oct 2023'),
+          _dateColumn(
+            context,
+            AppStrings.tr('start_date'),
+            _startDate == null
+                ? AppStrings.tr('select_date')
+                : _dateFormatter.format(_startDate!),
+            onTap: () => _pickStartDate(context),
+          ),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 10),
             child: Icon(Icons.arrow_forward, color: Colors.grey, size: 16),
           ),
-          _dateColumn(context, AppStrings.tr('end_date'), '22 Oct 2023'),
+          _dateColumn(
+            context,
+            AppStrings.tr('end_date'),
+            _endDate == null
+                ? AppStrings.tr('select_date')
+                : _dateFormatter.format(_endDate!),
+            onTap: _startDate == null ? null : () => _pickEndDate(context),
+          ),
         ],
       ),
     );
   }
 
-  Widget _dateColumn(BuildContext context, String label, String date) {
+  Widget _dateColumn(
+    BuildContext context,
+    String label,
+    String date, {
+    VoidCallback? onTap,
+  }) {
+    final bool isDisabled = onTap == null;
+
     return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-          const SizedBox(height: 5),
-          Text(
-            date,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-              color: Theme.of(context).textTheme.bodyLarge?.color,
-            ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  color: isDisabled ? Colors.grey.shade400 : Colors.grey,
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                date,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: isDisabled
+                      ? Colors.grey.shade400
+                      : Theme.of(context).textTheme.bodyLarge?.color,
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
+  }
+
+  Future<void> _pickStartDate(BuildContext context) async {
+    final DateTime now = DateTime.now();
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _startDate ?? now,
+      firstDate: now,
+      lastDate: DateTime(now.year + 2),
+    );
+
+    if (picked == null) return;
+
+    setState(() {
+      _startDate = picked;
+      if (_endDate != null && !_endDate!.isAfter(_startDate!)) {
+        _endDate = null;
+      }
+    });
+  }
+
+  Future<void> _pickEndDate(BuildContext context) async {
+    if (_startDate == null) return;
+
+    final DateTime initial =
+        _endDate ?? _startDate!.add(const Duration(days: 1));
+    final DateTime firstDate = _startDate!.add(const Duration(days: 1));
+
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: initial.isAfter(firstDate) ? initial : firstDate,
+      firstDate: firstDate,
+      lastDate: DateTime(_startDate!.year + 2),
+    );
+
+    if (picked == null) return;
+
+    setState(() {
+      _endDate = picked;
+    });
   }
 
   Widget _buildTextArea(BuildContext context) {

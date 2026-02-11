@@ -4,6 +4,7 @@ import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_img.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
+import 'package:flutter_worksmart_mobile_app/features/home/user/logic/leaderboard_logic.dart';
 
 class LeaderboardScreen extends StatefulWidget {
   const LeaderboardScreen({super.key});
@@ -12,104 +13,11 @@ class LeaderboardScreen extends StatefulWidget {
   State<LeaderboardScreen> createState() => _LeaderboardScreenState();
 }
 
-class _LeaderboardScreenState extends State<LeaderboardScreen> {
-  bool isMonthly = true;
-
-  final List<Map<String, dynamic>> mockEmployees = [
-    {
-      "rank": 1,
-      "name": "តារា",
-      "dept": "km_it",
-      "score": 95,
-      "trend": 0,
-      "img": "https://i.pravatar.cc/150?u=1",
-    },
-    {
-      "rank": 2,
-      "name": "បូផា",
-      "dept": "km_acc",
-      "score": 87,
-      "trend": 0,
-      "img": "https://i.pravatar.cc/150?u=2",
-    },
-    {
-      "rank": 3,
-      "name": "វិបុល",
-      "dept": "km_admin",
-      "score": 85,
-      "trend": 0,
-      "img": "https://i.pravatar.cc/150?u=3",
-    },
-    {
-      "rank": 4,
-      "name": "សុភ័ក្រ",
-      "dept": "km_it",
-      "score": 92,
-      "trend": 2,
-      "img": "https://i.pravatar.cc/150?u=4",
-    },
-    {
-      "rank": 5,
-      "name": "សុខា",
-      "dept": "km_acc",
-      "score": 90,
-      "trend": -9,
-      "img": "https://i.pravatar.cc/150?u=5",
-    },
-    {
-      "rank": 6,
-      "name": "បញ្ញា",
-      "dept": "km_admin",
-      "score": 88,
-      "trend": 0,
-      "img": "https://i.pravatar.cc/150?u=6",
-    },
-    {
-      "rank": 7,
-      "name": "រតនា",
-      "dept": "km_it",
-      "score": 87,
-      "trend": 1,
-      "img": "https://i.pravatar.cc/150?u=7",
-    },
-    {
-      "rank": 8,
-      "name": "ពិសិដ្ឋ",
-      "dept": "km_admin",
-      "score": 85,
-      "trend": -2,
-      "img": "https://i.pravatar.cc/150?u=8",
-    },
-    {
-      "rank": 9,
-      "name": "ចាន់ណា",
-      "dept": "km_acc",
-      "score": 84,
-      "trend": 1,
-      "img": "https://i.pravatar.cc/150?u=9",
-    },
-    {
-      "rank": 10,
-      "name": "សម្បត្តិ",
-      "dept": "km_it",
-      "score": 82,
-      "trend": -1,
-      "img": "https://i.pravatar.cc/150?u=10",
-    },
-    {
-      "rank": 11,
-      "name": "ធីតា",
-      "dept": "km_admin",
-      "score": 80,
-      "trend": 3,
-      "img": "https://i.pravatar.cc/150?u=11",
-    },
-  ];
-
+class _LeaderboardScreenState extends LeaderboardLogic {
   @override
   Widget build(BuildContext context) {
-    final topThree = mockEmployees.where((e) => e['rank'] <= 3).toList();
-    final nextRankings = mockEmployees.where((e) => e['rank'] > 3).toList();
+    final topThree = getTopThreeEmployees();
+    final nextRankings = getNextRankingsEmployees();
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,

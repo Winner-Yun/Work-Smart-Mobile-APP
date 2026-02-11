@@ -110,6 +110,17 @@ class AppStrings {
       'far_from_office': 'Away',
       'from_office': 'from office',
       'mock_date': 'Mon, 24 Oct 2023',
+      'face_required_title': 'Please Verify Your Face',
+      'face_required_desc':
+          'Please press the button below to scan your face for attendance check-in',
+      'register_now': 'Register Now',
+      'waiting_admin': 'Waiting for Admin...',
+      'pending_approval_title': 'Scan Under Review',
+      'pending_approval_desc':
+          'Your identity is being verified. Please wait for admin approval.',
+      'processing': 'Processing...',
+      'points_label': 'Pts',
+      'punctuality': 'Punctuality',
 
       // --- Attendance ---
       'my_stats': 'My Statistics',
@@ -119,7 +130,7 @@ class AppStrings {
       'absent': 'Absent',
       'monthly_trend': 'Monthly Attendance Trends',
       'all_shifts': 'All Shifts',
-      'monthly_attendance': 'Attendance for September',
+      'monthly_attendance': 'Monthly Attendance',
       'attendance_details': 'Attendance Details',
       'check_in_title': 'Check-In',
       'check_out_title': 'Check-Out',
@@ -130,13 +141,15 @@ class AppStrings {
       'location_label': 'Location',
       'phnom_penh': 'Phnom Penh',
       'date_label': 'Date',
+      'no_records': 'No records available',
       'no_data_for_today': 'No data for today',
 
       // --- Leave Management & Requests ---
       'leave_details_title': 'Leave Details',
       'usage_stats': 'Usage Statistics',
       'request_history': 'Request History',
-      'total_remaining_note': 'You have 9 days remaining this year',
+      'you_have_remaining_leave': 'You have',
+      'this_year': 'of leave remaining for this year.',
       'remaining': 'Remaining',
       'used': 'Used',
       'request_sick_leave': 'Request Sick Leave',
@@ -306,7 +319,9 @@ class AppStrings {
       'mock_gps_label': 'Mock GPS Detected!',
       'mock_gps_warning': 'Fake GPS Detected! Please disable mock location.',
 
-      
+      'face_training_title': 'Face ID Training',
+      'take_photo_step': 'Step',
+      'face_registered_success': 'Face registered successfully!',
     },
     'km': {
       // --- Menu ---
@@ -415,6 +430,17 @@ class AppStrings {
       'far_from_office': 'នៅឆ្ងាយ',
       'from_office': 'ពីការិយាល័យ',
       'mock_date': 'ថ្ងៃចន្ទ, ២៤ តុលា ២០២៣',
+      'face_required_title': 'សូមធ្វើការចុះអត្តសញ្ញាណមុខ',
+      'face_required_desc':
+          'សូមចុចប៊ូតុងខាងក្រោម ដើម្បីធ្វើការស្កេនមុខ សម្រាប់ការចុះវត្តមាន',
+      'register_now': 'ចុះឈ្មោះឥឡូវនេះ',
+      'waiting_admin': 'កំពុងរង់ចាំការអនុម័ត...',
+      'pending_approval_title': 'កំពុងត្រួតពិនិត្យ',
+      'pending_approval_desc':
+          'អត្តសញ្ញាណរបស់អ្នកកំពុងត្រូវបានផ្ទៀងផ្ទាត់។ សូមរង់ចាំការអនុម័ត។',
+      'processing': 'កំពុងដំណើរការ...',
+      'points_label': 'ពិន្ទុ',
+      'punctuality': 'ភាពទាន់ពេល',
 
       // --- Attendance ---
       'my_stats': 'ស្ថិតិរបស់ខ្ញុំ',
@@ -424,7 +450,7 @@ class AppStrings {
       'absent': 'អវត្តមាន',
       'monthly_trend': 'និន្នាការវត្តមានប្រចាំខែ',
       'all_shifts': 'គ្រប់វេន',
-      'monthly_attendance': 'វត្តមានប្រចាំខែកញ្ញា',
+      'monthly_attendance': 'វត្តមានប្រចាំខែ',
       'attendance_details': 'ព័ត៌មានលម្អិតនៃវត្តមាន',
       'check_in_title': 'ការចុះវត្តមានចូល',
       'check_out_title': 'ការចុះវត្តមានចេញ',
@@ -435,13 +461,15 @@ class AppStrings {
       'location_label': 'ទីតាំង',
       'phnom_penh': 'ការិយាល័យកណ្ដាល',
       'date_label': 'កាលបរិច្ឆេទ',
+      'no_records': 'មិនមានកំណត់ត្រាណាមួយ',
       'no_data_for_today': 'មិនមានទិន្នន័យសម្រាប់ថ្ងៃនេះទេ',
 
       // --- Leave Management & Requests ---
       'leave_details_title': 'ព័ត៌មានលម្អិតការឈប់សម្រាក',
       'usage_stats': 'ស្ថិតិប្រើប្រាស់',
       'request_history': 'ប្រវត្តិការស្នើសុំ',
-      'total_remaining_note': 'អ្នកនៅសល់សរុប ៩ ថ្ងៃទៀតសម្រាប់ឆ្នាំនេះ',
+      'you_have_remaining_leave': 'អ្នកនៅសល់ច្បាប់សម្រាកចំនួន',
+      'this_year': 'សម្រាប់ឆ្នាំនេះ។',
       'remaining': 'នៅសល់',
       'used': 'ប្រើអស់',
       'request_sick_leave': 'ស្នើច្បាប់ឈឺ',
@@ -610,6 +638,10 @@ class AppStrings {
 
       'mock_gps_label': 'ប្រព័ន្ធ GPS ក្លែងក្លាយ!',
       'mock_gps_warning': 'រកឃើញការបន្លំ GPS! សូមបិទការកំណត់ទីតាំងក្លែងក្លាយ។',
+
+      'face_training_title': 'ការបង្វឹក Face ID',
+      'take_photo_step': 'ជំហាន',
+      'face_registered_success': 'ការចុះឈ្មោះផ្ទៃមុខបានជោគជ័យ!',
     },
   };
 

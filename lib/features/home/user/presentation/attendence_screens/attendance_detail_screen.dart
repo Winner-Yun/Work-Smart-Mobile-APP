@@ -15,29 +15,27 @@ class AttendanceDetailScreen extends StatelessWidget {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _buildAppBar(context),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildDateHeaderCard(context, data).animate().fadeIn(delay: 200.ms),
-            const SizedBox(height: 25),
-            if (data['status'] == AppStrings.tr('present')) ...[
-              _buildCheckInDetail(
+            // Date Header
+            _buildDateHeader(context, data).animate().fadeIn(delay: 100.ms),
+            const SizedBox(height: 24),
+
+            if (data['status'] != AppStrings.tr('absent')) ...[
+              // Timeline Card - Check-in/Check-out
+              _buildAttendanceTimeline(
                 context,
                 data,
-              ).animate().fadeIn(delay: 200.ms),
-              const SizedBox(height: 25),
-              _buildCheckOutDetail(
-                context,
-                data,
-              ).animate().fadeIn(delay: 200.ms),
-              const SizedBox(height: 25),
-              _buildTotalHoursSummary(
-                data,
-                context,
-              ).animate().fadeIn(delay: 200.ms),
+              ).animate().fadeIn(delay: 150.ms),
+              const SizedBox(height: 24),
+
+              // Metrics Row
+              _buildMetricsRow(context, data).animate().fadeIn(delay: 200.ms),
+              const SizedBox(height: 24),
             ] else ...[
-              _buildAbsentFallback().animate().fadeIn(delay: 200.ms),
+              _buildAbsentFallback().animate().fadeIn(delay: 150.ms),
             ],
           ],
         ),
@@ -69,51 +67,238 @@ class AttendanceDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDateHeaderCard(BuildContext context, Map<String, dynamic> data) {
+  Widget _buildDateHeader(BuildContext context, Map<String, dynamic> data) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          colors: [
+            Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+            Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+          width: 1,
+        ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                AppStrings.tr('date_label'),
-                style: const TextStyle(color: AppColors.textGrey, fontSize: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    data['date'],
+                    style: TextStyle(
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 20,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    data['day'],
+                    style: const TextStyle(
+                      color: AppColors.textGrey,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 4),
-              Text(
-                "${data['date']} ${data['day']}",
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: (data['color'] as Color).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: data['color'], width: 1.5),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: data['color'],
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      data['status'],
+                      style: TextStyle(
+                        color: data['color'],
+                        fontWeight: FontWeight.w700,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: (data['color'] as Color).withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAttendanceTimeline(
+    BuildContext context,
+    Map<String, dynamic> data,
+  ) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          // Check-in Card
+          _buildTimelineCard(
+            context,
+            Icons.login,
+            AppStrings.tr('check_in_title'),
+            data['checkIn'],
+            Theme.of(context).colorScheme.primary,
+            isCheckIn: true,
+            isLate: data['isLate'] ?? false,
+          ),
+
+          // Timeline Connector
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Column(
               children: [
-                Icon(Icons.circle, size: 8, color: data['color']),
-                const SizedBox(width: 5),
+                Container(
+                  height: 2,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.2),
+                ),
+                const SizedBox(height: 8),
+                Icon(
+                  Icons.trending_flat,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.4),
+                  size: 20,
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  height: 2,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.2),
+                ),
+              ],
+            ),
+          ),
+
+          // Check-out Card
+          _buildTimelineCard(
+            context,
+            Icons.logout,
+            AppStrings.tr('check_out_title'),
+            data['checkOut'],
+            Colors.orange,
+            isCheckIn: false,
+            isLate: false,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTimelineCard(
+    BuildContext context,
+    IconData icon,
+    String label,
+    String time,
+    Color color, {
+    required bool isCheckIn,
+    required bool isLate,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.2), width: 1),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      label,
+                      style: TextStyle(
+                        color: AppColors.textGrey,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    if (isLate && isCheckIn)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withValues(alpha: 0.25),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          AppStrings.tr('late'),
+                          style: const TextStyle(
+                            color: Colors.orange,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 4),
                 Text(
-                  data['status'],
+                  time,
                   style: TextStyle(
-                    color: data['color'],
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 18,
                   ),
                 ),
               ],
@@ -124,115 +309,82 @@ class AttendanceDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCheckInDetail(BuildContext context, Map<String, dynamic> data) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildMetricsRow(BuildContext context, Map<String, dynamic> data) {
+    final bool isLate = data['isLate'] ?? false;
+    final String hours = data['hours'] ?? "9h 0m";
+
+    // Calculate punctuality score (100 if on-time, 70 if late)
+    final int punctualityScore = isLate ? 70 : 100;
+
+    return Row(
       children: [
-        _buildSectionHeader(
-          context,
-          Icons.login,
-          AppStrings.tr('check_in_title'),
-          Theme.of(context).colorScheme.primary,
+        // Total Hours Metric
+        Expanded(
+          child: _buildMetricCard(
+            context,
+            Icons.schedule,
+            AppStrings.tr('total_hours'),
+            hours,
+            Theme.of(context).colorScheme.primary,
+          ),
         ),
-        const SizedBox(height: 10),
-        _buildDetailCard(
-          context: context,
-          time: data['checkIn'],
-          imageColor: const Color(0xFFD7CCC8),
-          isCheckIn: true,
-          isLate: data['isLate'] ?? false,
+        const SizedBox(width: 12),
+        // Punctuality Score
+        Expanded(
+          child: _buildMetricCard(
+            context,
+            Icons.check_circle,
+            AppStrings.tr('punctuality'),
+            '$punctualityScore%',
+            isLate ? Colors.orange : Colors.green,
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildCheckOutDetail(BuildContext context, Map<String, dynamic> data) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionHeader(
-          context,
-          Icons.logout,
-          AppStrings.tr('check_out_title'),
-          Colors.orange,
-        ),
-        const SizedBox(height: 10),
-        _buildDetailCard(
-          context: context,
-          time: data['checkOut'],
-          imageColor: const Color(0xFFC8E6C9),
-          isCheckIn: false,
-          isLate: false,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTotalHoursSummary(
-    Map<String, dynamic> data,
+  Widget _buildMetricCard(
     BuildContext context,
+    IconData icon,
+    String label,
+    String value,
+    Color color,
   ) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary,
-        borderRadius: BorderRadius.circular(20),
+        color: color.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.2), width: 1),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.timer_outlined, color: Colors.white),
-              ),
-              const SizedBox(width: 15),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    AppStrings.tr('total_hours'),
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.8),
-                      fontSize: 12,
-                    ),
-                  ),
-                  Text(
-                    data['hours'],
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 16),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                AppStrings.tr('equal_to'),
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.8),
-                  fontSize: 12,
-                ),
-              ),
-              Text(
-                AppStrings.tr('one_full_day'),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-            ],
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: const TextStyle(
+              color: AppColors.textGrey,
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              color: Theme.of(context).textTheme.bodyLarge?.color,
+              fontWeight: FontWeight.w700,
+              fontSize: 16,
+            ),
           ),
         ],
       ),
@@ -242,172 +394,37 @@ class AttendanceDetailScreen extends StatelessWidget {
   Widget _buildAbsentFallback() {
     return Column(
       children: [
-        const SizedBox(height: 50),
+        const SizedBox(height: 60),
         Center(
           child: Column(
             children: [
-              Icon(Icons.event_busy, size: 80, color: Colors.grey[300]),
-              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.event_busy,
+                  size: 60,
+                  color: Colors.red.withValues(alpha: 0.6),
+                ),
+              ),
+              const SizedBox(height: 16),
               Text(
                 AppStrings.tr('no_data_for_today'),
-                style: const TextStyle(color: AppColors.textGrey),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSectionHeader(
-    BuildContext context,
-    IconData icon,
-    String title,
-    Color color,
-  ) {
-    return Row(
-      children: [
-        Icon(icon, color: color, size: 20),
-        const SizedBox(width: 8),
-        Text(
-          title,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-            color: Theme.of(context).textTheme.bodyLarge?.color,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDetailCard({
-    required BuildContext context,
-    required String time,
-    required Color imageColor,
-    required bool isCheckIn,
-    required bool isLate,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          _buildLiveImagePlaceholder(imageColor),
-          const SizedBox(width: 15),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildTimeHeader(isCheckIn, isLate),
-                Text(
-                  time,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                    color: Theme.of(context).textTheme.bodyLarge?.color,
-                  ),
+                style: TextStyle(
+                  color: AppColors.textGrey,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
                 ),
-                const SizedBox(height: 12),
-                _buildLocationInfo(),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLiveImagePlaceholder(Color color) {
-    return Stack(
-      children: [
-        Container(
-          width: 100,
-          height: 100,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(15),
-          ),
-          child: const Icon(Icons.image, color: Colors.white54, size: 40),
-        ),
-        Positioned(
-          bottom: 5,
-          right: 5,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.6),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Text(
-              AppStrings.tr('live_status'),
-              style: const TextStyle(color: Colors.white, fontSize: 10),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTimeHeader(bool isCheckIn, bool isLate) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          isCheckIn
-              ? AppStrings.tr('check_in_title')
-              : AppStrings.tr('check_out_title'),
-          style: const TextStyle(color: AppColors.textGrey, fontSize: 12),
-        ),
-        if (isLate && isCheckIn)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: Colors.orange.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Text(
-              AppStrings.tr('late'),
-              style: const TextStyle(
-                color: Colors.orange,
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
               ),
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildLocationInfo() {
-    return Row(
-      children: [
-        const Icon(Icons.location_on, color: AppColors.secondary, size: 20),
-        const SizedBox(width: 5),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+              const SizedBox(height: 8),
               Text(
-                AppStrings.tr('location_label'),
-                style: const TextStyle(fontSize: 10, color: AppColors.textGrey),
-              ),
-              Text(
-                AppStrings.tr('phnom_penh'),
-                style: const TextStyle(
+                'You were absent on this day',
+                style: TextStyle(
+                  color: AppColors.textGrey.withValues(alpha: 0.7),
                   fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],

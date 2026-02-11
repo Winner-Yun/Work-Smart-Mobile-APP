@@ -1,20 +1,14 @@
-import 'dart:async';
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_img.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
-import 'package:flutter_worksmart_mobile_app/core/constants/map_styles.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:flutter_worksmart_mobile_app/features/home/user/logic/homepage_logic.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class HomePageScreen extends StatefulWidget {
-  final VoidCallback? onProfileTap; 
+  final VoidCallback? onProfileTap;
 
   const HomePageScreen({super.key, this.onProfileTap});
 
@@ -22,348 +16,7 @@ class HomePageScreen extends StatefulWidget {
   State<HomePageScreen> createState() => _HomePageScreenState();
 }
 
-class _HomePageScreenState extends State<HomePageScreen> {
-  GoogleMapController? mapController;
-  StreamSubscription<Position>? _positionStreamSubscription;
-
-  static const LatLng _officeLocation = LatLng(
-    11.572430738457149,
-    104.89330484272999,
-  );
-  static const double _scanRangeMeters = 5000;
-
-  bool _isInRange = false;
-  String _rangeStatusText = AppStrings.tr('finding_location');
-  Position? _lastKnownPosition;
-
-  Set<Marker> _markers = {};
-  final Set<Circle> _circles = {};
-  BitmapDescriptor? _userProfileIcon;
-  final String _userProfileUrl = 'https://i.pravatar.cc/150?img=11';
-
-  @override
-  void initState() {
-    super.initState();
-    _initLocationTracking();
-    _setupOfficeMapObjects();
-    _generateProfileMarker();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _updateMapStyle(context);
-  }
-
-  void _updateMapStyle(BuildContext context) {
-    if (mapController == null) return;
-    bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    if (isDarkMode) {
-      mapController!.setMapStyle(MapStyles.dark);
-    } else {
-      mapController!.setMapStyle(null);
-    }
-  }
-
-  @override
-  void dispose() {
-    _positionStreamSubscription?.cancel();
-    mapController?.dispose();
-    super.dispose();
-  }
-
-  Future<BitmapDescriptor> getBytesFromAsset(String path, int width) async {
-    ByteData data = await rootBundle.load(path);
-    ui.Codec codec = await ui.instantiateImageCodec(
-      data.buffer.asUint8List(),
-      targetWidth: width,
-    );
-    ui.FrameInfo fi = await codec.getNextFrame();
-    return BitmapDescriptor.fromBytes(
-      (await fi.image.toByteData(
-        format: ui.ImageByteFormat.png,
-      ))!.buffer.asUint8List(),
-    );
-  }
-
-  Future<void> _setupOfficeMapObjects() async {
-    final BitmapDescriptor customIcon = await getBytesFromAsset(
-      AppImg.pinIcon,
-      100,
-    );
-    setState(() {
-      _markers.add(
-        Marker(
-          markerId: const MarkerId('office_center'),
-          position: _officeLocation,
-          infoWindow: InfoWindow(title: AppStrings.tr('office_name')),
-          icon: customIcon,
-          anchor: const Offset(0.5, 0.5),
-        ),
-      );
-      _circles.add(
-        Circle(
-          circleId: const CircleId('office_zone'),
-          center: _officeLocation,
-          radius: _scanRangeMeters,
-          fillColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-          strokeColor: Theme.of(context).colorScheme.primary,
-          strokeWidth: 2,
-        ),
-      );
-    });
-  }
-
-  Future<void> _generateProfileMarker() async {
-    try {
-      final Uint8List? imageBytes = await _loadNetworkImageBytes(
-        _userProfileUrl,
-      );
-      if (imageBytes != null) {
-        final ui.Codec codec = await ui.instantiateImageCodec(
-          imageBytes,
-          targetHeight: 120,
-          targetWidth: 120,
-        );
-        final ui.FrameInfo fi = await codec.getNextFrame();
-        final ui.Image image = fi.image;
-        final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
-        final Canvas canvas = Canvas(pictureRecorder);
-        const double size = 120.0;
-        const double radius = size / 2;
-        final Paint borderPaint = Paint()
-          ..color = Colors.white
-          ..style = PaintingStyle.fill;
-        canvas.drawCircle(const Offset(radius, radius), radius, borderPaint);
-        final Path clipPath = Path()
-          ..addOval(
-            Rect.fromCircle(
-              center: const Offset(radius, radius),
-              radius: radius - 6,
-            ),
-          );
-        canvas.clipPath(clipPath);
-        paintImage(
-          canvas: canvas,
-          rect: const Rect.fromLTWH(6, 6, size - 12, size - 12),
-          image: image,
-          fit: BoxFit.cover,
-        );
-        final ui.Image recordedImage = await pictureRecorder
-            .endRecording()
-            .toImage(size.toInt(), size.toInt());
-        final ByteData? byteData = await recordedImage.toByteData(
-          format: ui.ImageByteFormat.png,
-        );
-        if (byteData != null) {
-          setState(() {
-            _userProfileIcon = BitmapDescriptor.fromBytes(
-              byteData.buffer.asUint8List(),
-            );
-          });
-          _refreshUserMarker();
-        }
-      }
-    } catch (e) {
-      debugPrint("Error generating profile marker: $e");
-    }
-  }
-
-  Future<Uint8List?> _loadNetworkImageBytes(String url) async {
-    try {
-      final ByteData data = await NetworkAssetBundle(Uri.parse(url)).load("");
-      return data.buffer.asUint8List();
-    } catch (e) {
-      return null;
-    }
-  }
-
-  Future<void> _initLocationTracking() async {
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        setState(() => _rangeStatusText = AppStrings.tr('perm_needed'));
-        return;
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      setState(() => _rangeStatusText = AppStrings.tr('enable_loc_settings'));
-      return;
-    }
-
-    try {
-      Position initialPosition = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-      _updateMapState(initialPosition);
-    } catch (e) {
-      debugPrint("Location service might be disabled or error: $e");
-    }
-
-    const LocationSettings locationSettings = LocationSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: 5,
-    );
-
-    _positionStreamSubscription =
-        Geolocator.getPositionStream(locationSettings: locationSettings).listen(
-          (Position position) => _updateMapState(position),
-          onError: (e) =>
-              setState(() => _rangeStatusText = AppStrings.tr('waiting_loc')),
-        );
-  }
-
-  void _refreshUserMarker() {
-    if (_lastKnownPosition != null) {
-      _updateMapState(_lastKnownPosition!);
-    }
-  }
-
-  Future<void> _openDirections() async {
-    final lat = _officeLocation.latitude;
-    final lng = _officeLocation.longitude;
-    final Uri url = Uri.parse(
-      "https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&travelmode=driving",
-    );
-
-    try {
-      if (await canLaunchUrl(url)) {
-        await launchUrl(url, mode: LaunchMode.externalApplication);
-      } else {
-        debugPrint("Could not launch $url");
-      }
-    } catch (e) {
-      debugPrint("Error launching maps: $e");
-    }
-  }
-
-  void _updateMapState(Position userPos) {
-    _lastKnownPosition = userPos;
-
-    // ---  SECURITY CHECK: MOCK LOCATION ---
-    if (userPos.isMocked) {
-      if (mounted) {
-        setState(() {
-          _isInRange = false;
-          _rangeStatusText = AppStrings.tr('mock_gps_label');
-          _markers = {};
-        });
-
-        // Show Warning SnackBar
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.warning_amber_rounded, color: Colors.white),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    AppStrings.tr('mock_gps_warning'),
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: Colors.red[800],
-            duration: const Duration(seconds: 3),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-        );
-      }
-      return;
-    }
-    // -----------------------------------------
-
-    double distance = Geolocator.distanceBetween(
-      userPos.latitude,
-      userPos.longitude,
-      _officeLocation.latitude,
-      _officeLocation.longitude,
-    );
-
-    bool inScanRange = distance <= _scanRangeMeters;
-
-    Marker userMarker = Marker(
-      markerId: const MarkerId('user_location'),
-      position: LatLng(userPos.latitude, userPos.longitude),
-      icon:
-          _userProfileIcon ??
-          BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
-      anchor: const Offset(0.5, 0.5),
-      infoWindow: const InfoWindow(title: "Me"),
-      zIndex: 2,
-    );
-
-    Set<Marker> newMarkers = Set.from(_markers);
-    newMarkers.removeWhere((m) => m.markerId.value == 'user_location');
-    newMarkers.add(userMarker);
-
-    if (mounted) {
-      setState(() {
-        _isInRange = inScanRange;
-        _rangeStatusText = inScanRange
-            ? AppStrings.tr('in_office_area')
-            : "${AppStrings.tr('far_from_office')} ${distance.toStringAsFixed(0)}m ${AppStrings.tr('from_office')}";
-        _markers = newMarkers;
-      });
-
-      mapController?.animateCamera(
-        CameraUpdate.newCameraPosition(
-          CameraPosition(
-            target: LatLng(userPos.latitude, userPos.longitude),
-            zoom: 18,
-            tilt: 0,
-          ),
-        ),
-      );
-    }
-  }
-
-  static const List<Map<String, dynamic>> employeeData = [
-    {
-      "name": "Dara",
-      "role": "role_trainer",
-      "score": "98%",
-      "imgUrl": "https://i.pravatar.cc/150?img=2",
-      "isTop": true,
-    },
-    {
-      "name": "Vanda",
-      "role": "role_ios",
-      "score": "97%",
-      "imgUrl": "https://i.pravatar.cc/150?img=9",
-      "isTop": false,
-    },
-    {
-      "name": "Vibol",
-      "role": "role_designer",
-      "score": "95%",
-      "imgUrl": "https://i.pravatar.cc/150?img=3",
-      "isTop": false,
-    },
-  ];
-
-  static const List<Map<String, dynamic>> leaveData = [
-    {
-      "icon": Icons.beach_access,
-      "label": "annual_leave",
-      "amount": "12",
-      "color": Colors.blue,
-    },
-    {
-      "icon": Icons.sick_outlined,
-      "label": "sick_leave",
-      "amount": "5",
-      "color": Colors.purple,
-    },
-  ];
-
+class _HomePageScreenState extends HomePageLogic {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -385,10 +38,14 @@ class _HomePageScreenState extends State<HomePageScreen> {
                       context,
                     ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2),
                     const SizedBox(height: 20),
-                    _buildLiveMapCard(context)
-                        .animate()
-                        .fadeIn(delay: 400.ms)
-                        .scale(begin: const Offset(0.95, 0.95)),
+                    // Check logic based on currentUser Face Status
+                    if (currentFaceStatus == 'approved')
+                      _buildLiveMapCard(context)
+                          .animate()
+                          .fadeIn(delay: 400.ms)
+                          .scale(begin: const Offset(0.95, 0.95))
+                    else
+                      _buildFaceRegistrationCard(),
                     const SizedBox(height: 20),
                     _buildLeaveStatsSection(
                       context,
@@ -458,16 +115,16 @@ class _HomePageScreenState extends State<HomePageScreen> {
                     topRight: Radius.circular(24),
                   ),
                   child: GoogleMap(
-                    initialCameraPosition: const CameraPosition(
-                      target: _officeLocation,
-                      zoom: 2,
+                    initialCameraPosition: CameraPosition(
+                      target: officeLocation, // Use dynamic variable
+                      zoom: 16,
                     ),
                     onMapCreated: (c) {
                       mapController = c;
-                      _updateMapStyle(context);
+                      updateMapStyle(context);
                     },
-                    markers: _markers,
-                    circles: _circles,
+                    markers: markers,
+                    circles: circles,
                     myLocationEnabled: false,
                     zoomGesturesEnabled: false,
                     myLocationButtonEnabled: false,
@@ -519,7 +176,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
                           width: 8,
                           height: 8,
                           decoration: BoxDecoration(
-                            color: _isInRange
+                            color: isInRange
                                 ? Theme.of(context).colorScheme.primary
                                 : Colors.red,
                             shape: BoxShape.circle,
@@ -527,13 +184,13 @@ class _HomePageScreenState extends State<HomePageScreen> {
                         ).animate(onPlay: (c) => c.repeat()).fade().scale(),
                         const SizedBox(width: 6),
                         Text(
-                          _isInRange
+                          isInRange
                               ? AppStrings.tr('office_zone')
                               : AppStrings.tr('outside_zone'),
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: _isInRange
+                            color: isInRange
                                 ? Theme.of(context).colorScheme.primary
                                 : Colors.red[700],
                           ),
@@ -568,15 +225,15 @@ class _HomePageScreenState extends State<HomePageScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            _isInRange
+                            isInRange
                                 ? AppStrings.tr('ready_to_scan')
-                                : _rangeStatusText.contains("Mock")
+                                : rangeStatusText.contains("Mock")
                                 ? "Fake GPS!"
                                 : AppStrings.tr('too_far'),
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
-                              color: _isInRange
+                              color: isInRange
                                   ? Theme.of(context).colorScheme.primary
                                   : Colors.red,
                             ),
@@ -604,7 +261,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            getFormattedDistance(_rangeStatusText),
+                            getFormattedDistance(rangeStatusText),
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
@@ -613,7 +270,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
                           ),
                           const SizedBox(height: 10),
                           InkWell(
-                            onTap: _openDirections,
+                            onTap: openDirections,
                             child: Container(
                               width: 100,
                               padding: const EdgeInsets.all(8),
@@ -646,10 +303,10 @@ class _HomePageScreenState extends State<HomePageScreen> {
                   height: 55,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(16),
-                    color: _isInRange
+                    color: isInRange
                         ? Theme.of(context).colorScheme.primary
                         : Theme.of(context).cardTheme.color,
-                    boxShadow: _isInRange
+                    boxShadow: isInRange
                         ? [
                             BoxShadow(
                               color: Theme.of(
@@ -662,7 +319,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
                         : [],
                   ),
                   child: ElevatedButton(
-                    onPressed: _isInRange
+                    onPressed: isInRange
                         ? () => {
                             Navigator.pushNamed(
                               context,
@@ -682,7 +339,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
                       children: [
                         Icon(
                           Icons.qr_code_scanner,
-                          color: _isInRange ? Colors.white : Colors.grey[500],
+                          color: isInRange ? Colors.white : Colors.grey[500],
                         ),
                         const SizedBox(width: 10),
                         Text(
@@ -690,7 +347,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
-                            color: _isInRange ? Colors.white : Colors.grey[500],
+                            color: isInRange ? Colors.white : Colors.grey[500],
                           ),
                         ),
                       ],
@@ -717,13 +374,14 @@ class _HomePageScreenState extends State<HomePageScreen> {
       title: Row(
         children: [
           GestureDetector(
-            onTap: widget.onProfileTap, // Added GestureDetector with callback
+            onTap: widget.onProfileTap,
             child: Stack(
               children: [
                 CircleAvatar(
                   radius: 20,
                   backgroundColor: Colors.grey,
-                  backgroundImage: NetworkImage(_userProfileUrl),
+                  // Use dynamic profile URL
+                  backgroundImage: NetworkImage(currentUser.profileUrl),
                 ),
                 Positioned(
                   right: 0,
@@ -750,8 +408,9 @@ class _HomePageScreenState extends State<HomePageScreen> {
                   AppStrings.tr('greeting'),
                   style: TextStyle(color: AppColors.textGrey, fontSize: 14),
                 ),
+                // Dynamic User Name
                 Text(
-                  "${AppStrings.tr('greet_pronoun_man')} Winner",
+                  "${AppStrings.tr('greet_pronoun_man')} ${currentUser.displayName}",
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.primary,
                     fontSize: 18,
@@ -806,8 +465,9 @@ class _HomePageScreenState extends State<HomePageScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
+        // Using real date from attendance record or defaulting to today
         Text(
-          AppStrings.tr('mock_date'),
+          currentAttendance['date'] ?? AppStrings.tr('mock_date'),
           style: const TextStyle(color: AppColors.textGrey, fontSize: 14),
         ),
         Container(
@@ -845,7 +505,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
         _buildTimeCard(
           context,
           AppStrings.tr('check_in'),
-          "08:00\nAM",
+          currentAttendance['check_in'] ?? "--:--",
           Icons.login,
           false,
         ),
@@ -853,7 +513,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
         _buildTimeCard(
           context,
           AppStrings.tr('check_out'),
-          "--:--",
+          currentAttendance['check_out'] ?? "--:--",
           Icons.logout,
           false,
         ),
@@ -861,7 +521,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
         _buildTimeCard(
           context,
           AppStrings.tr('work_hours'),
-          "4h 30m",
+          "${currentAttendance['total_hours'] ?? 0}h",
           Icons.access_time,
           true,
         ),
@@ -934,8 +594,9 @@ class _HomePageScreenState extends State<HomePageScreen> {
   }
 
   Widget _buildLeaveStatsSection(BuildContext context) {
+    // Access data via Getter from Logic
     return Row(
-      children: leaveData.map((data) {
+      children: leaveStatisticsData.map((data) {
         return Expanded(
           child: GestureDetector(
             onTap: () =>
@@ -949,9 +610,12 @@ class _HomePageScreenState extends State<HomePageScreen> {
                     AppStrings.tr(data['label']),
                     data['amount'],
                     data['color'] as Color,
+                    data['progress'] as double,
+                    data['used'] as int,
+                    data['remaining'] as int,
                   ),
                 ),
-                if (data != leaveData.last) const SizedBox(width: 15),
+                if (data != leaveStatisticsData.last) const SizedBox(width: 15),
               ],
             ),
           ),
@@ -966,6 +630,9 @@ class _HomePageScreenState extends State<HomePageScreen> {
     String label,
     String amount,
     Color color,
+    double progress,
+    int used,
+    int remaining,
   ) {
     return Container(
       padding: const EdgeInsets.all(15),
@@ -1026,11 +693,16 @@ class _HomePageScreenState extends State<HomePageScreen> {
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
             child: LinearProgressIndicator(
-              value: int.parse(amount) / 18,
+              value: progress.clamp(0.0, 1.0),
               minHeight: 4,
               backgroundColor: color.withOpacity(0.1),
               valueColor: AlwaysStoppedAnimation<Color>(color),
             ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "${AppStrings.tr('used')} $used ${AppStrings.tr('days')}\n${AppStrings.tr('remaining')} $remaining ${AppStrings.tr('days')}",
+            style: const TextStyle(fontSize: 10, color: AppColors.textGrey),
           ),
         ],
       ),
@@ -1062,15 +734,18 @@ class _HomePageScreenState extends State<HomePageScreen> {
   }
 
   Widget _buildEmployeeList(BuildContext context) {
+    // Access data via Getter from Logic
     return Column(
-      children: employeeData.asMap().entries.map((entry) {
+      children: employeeListDisplayData.asMap().entries.map((entry) {
         return GestureDetector(
           onTap: () => Navigator.pushNamed(context, AppRoute.leaderboardScreen),
           child:
               _buildEmployeeRow(
                     context,
                     entry.value['name'],
-                    AppStrings.tr(entry.value['role']),
+                    AppStrings.tr(
+                      entry.value['role'],
+                    ), // Assuming roles are keys
                     entry.value['score'],
                     entry.value['imgUrl'],
                     entry.value['isTop'],
@@ -1081,6 +756,124 @@ class _HomePageScreenState extends State<HomePageScreen> {
         );
       }).toList(),
     );
+  }
+
+  Widget _buildFaceRegistrationCard() {
+    bool isPending = currentFaceStatus == 'pending';
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isPending
+              ? Theme.of(context).colorScheme.secondary.withOpacity(0.5)
+              : Theme.of(context).colorScheme.primary.withOpacity(0.5),
+          width: 2,
+        ),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            isPending
+                ? Icons.hourglass_empty_rounded
+                : Icons.face_retouching_natural,
+            size: 50,
+            color: isPending
+                ? Theme.of(context).colorScheme.secondary
+                : Theme.of(context).colorScheme.primary,
+          ),
+          const SizedBox(height: 15),
+          Text(
+            isPending
+                ? AppStrings.tr('pending_approval_title')
+                : AppStrings.tr('face_required_title'),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).textTheme.bodyLarge?.color,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            isPending
+                ? AppStrings.tr('pending_approval_desc')
+                : AppStrings.tr('face_required_desc'),
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Theme.of(context).textTheme.bodyMedium?.color,
+              fontSize: 13,
+            ),
+          ),
+          const SizedBox(height: 20),
+          if (!isPending)
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () async {
+                  final result = await Navigator.pushNamed(
+                    context,
+                    AppRoute.registerFace,
+                  );
+                  if (result != null) {
+                    setState(() => currentFaceStatus = 'pending');
+
+                    Future.delayed(const Duration(seconds: 10), () {
+                      if (mounted) {
+                        setState(() {
+                          currentFaceStatus = 'approved';
+                        });
+                      }
+                    });
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  AppStrings.tr('register_now'),
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            )
+          else
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    AppStrings.tr('processing'),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.secondary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    ).animate().fade().slideY(begin: 0.2);
   }
 
   Widget _buildEmployeeRow(

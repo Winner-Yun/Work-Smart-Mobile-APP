@@ -2,6 +2,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
+import 'package:intl/intl.dart';
 
 class SickLeaveRequestScreen extends StatefulWidget {
   const SickLeaveRequestScreen({super.key});
@@ -11,7 +12,21 @@ class SickLeaveRequestScreen extends StatefulWidget {
 }
 
 class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
+  static const int _sickLeaveTotal = 5;
+  late int _sickLeaveUsed;
+  late int _sickLeaveRemaining;
+
   PlatformFile? _pickedFile;
+  DateTime? _selectedDate;
+  final DateFormat _dateFormatter = DateFormat('dd MMM yyyy');
+
+  @override
+  void initState() {
+    super.initState();
+    // For demo: assuming user has used 2 sick leave days
+    _sickLeaveUsed = 2;
+    _sickLeaveRemaining = _sickLeaveTotal - _sickLeaveUsed;
+  }
 
   Future<void> _pickFile() async {
     try {
@@ -27,6 +42,22 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
       }
     } catch (e) {
       debugPrint("Error picking file: $e");
+    }
+  }
+
+  Future<void> _pickDate(BuildContext context) async {
+    final DateTime now = DateTime.now();
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate ?? now,
+      firstDate: now,
+      lastDate: DateTime(now.year + 1),
+    );
+
+    if (picked != null) {
+      setState(() {
+        _selectedDate = picked;
+      });
     }
   }
 
@@ -55,11 +86,7 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
                     ),
                     const SizedBox(height: 20),
                     _buildLabel(AppStrings.tr('leave_date'), context),
-                    _buildTextField(
-                      context: context,
-                      hint: AppStrings.tr('select_date_hint'),
-                      icon: Icons.calendar_today_rounded,
-                    ),
+                    _buildDatePickerField(context),
                   ]),
                   const SizedBox(height: 25),
                   _buildSectionTitle(
@@ -113,39 +140,173 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
           ),
         ),
       ),
-      child: Row(
+      child: Column(
         children: [
-          CircleAvatar(
-            radius: 25,
-            backgroundColor: Theme.of(
-              context,
-            ).colorScheme.primary.withOpacity(0.1),
-            child: Icon(
-              Icons.medical_services,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-          ),
-          const SizedBox(width: 15),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Row(
             children: [
-              Text(
-                AppStrings.tr('leave_type'),
-                style: const TextStyle(color: Colors.grey, fontSize: 12),
-              ),
-              Text(
-                AppStrings.tr('sick_leave'),
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
+              CircleAvatar(
+                radius: 25,
+                backgroundColor: Theme.of(
+                  context,
+                ).colorScheme.primary.withOpacity(0.1),
+                child: Icon(
+                  Icons.medical_services,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
+              const SizedBox(width: 15),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    AppStrings.tr('leave_type'),
+                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
+                  Text(
+                    AppStrings.tr('sick_leave'),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                    ),
+                  ),
+                ],
+              ),
             ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildBalanceInfo(
+                  'Used',
+                  '$_sickLeaveUsed days',
+                  Colors.orange,
+                ),
+                Container(
+                  width: 1,
+                  height: 30,
+                  color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
+                ),
+                _buildBalanceInfo(
+                  'Remaining',
+                  '$_sickLeaveRemaining days',
+                  Colors.green,
+                ),
+                Container(
+                  width: 1,
+                  height: 30,
+                  color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
+                ),
+                _buildBalanceInfo(
+                  'Total',
+                  '$_sickLeaveTotal days',
+                  Theme.of(context).colorScheme.primary,
+                ),
+              ],
+            ),
           ),
         ],
       ),
     ).animate().fadeIn().slideY(begin: -0.2, end: 0);
+  }
+
+  Widget _buildBalanceInfo(String label, String value, Color color) {
+    return Column(
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: Theme.of(
+              context,
+            ).textTheme.bodySmall?.color?.withOpacity(0.6),
+            fontSize: 11,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 13,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDatePickerField(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: Theme.of(context).dividerColor.withOpacity(0.3),
+        ),
+        borderRadius: BorderRadius.circular(12),
+        color:
+            Theme.of(context).inputDecorationTheme.fillColor ??
+            (isDark ? Colors.grey.shade800 : Colors.grey.shade50),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _pickDate(context),
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Select Leave Date',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.color?.withOpacity(0.6),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _selectedDate != null
+                          ? _dateFormatter.format(_selectedDate!)
+                          : 'Tap to select date',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: _selectedDate != null
+                            ? Theme.of(context).textTheme.bodyLarge?.color
+                            : Theme.of(
+                                context,
+                              ).textTheme.bodySmall?.color?.withOpacity(0.4),
+                      ),
+                    ),
+                  ],
+                ),
+                Icon(
+                  Icons.calendar_today,
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 24,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildInputCard(BuildContext context, List<Widget> children) {

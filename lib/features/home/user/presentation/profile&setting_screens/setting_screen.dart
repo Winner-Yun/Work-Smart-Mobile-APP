@@ -3,6 +3,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
 import 'package:flutter_worksmart_mobile_app/config/language_manager.dart';
 import 'package:flutter_worksmart_mobile_app/config/theme_manager.dart';
+import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
+import 'package:flutter_worksmart_mobile_app/shared/widget/restartwidget.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -14,9 +16,42 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool isNotification = true;
 
+  Future<void> _handleLanguageChange(
+    BuildContext context,
+    String langCode,
+  ) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Center(
+        child: Container(
+          padding: const EdgeInsets.all(30),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardTheme.color,
+            borderRadius: BorderRadius.circular(25),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.15),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: const CircularProgressIndicator(),
+        ),
+      ).animate().scale(duration: 200.ms, curve: Curves.easeOutBack),
+    );
+
+    await LanguageManager().changeLanguage(langCode);
+    await Future.delayed(const Duration(milliseconds: 800));
+
+    if (context.mounted) {
+      RestartWidget.restartApp(context);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Listen to both Theme and Language managers to update UI instantly
     return ListenableBuilder(
       listenable: Listenable.merge([ThemeManager(), LanguageManager()]),
       builder: (context, child) {
@@ -28,14 +63,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           body: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             children: [
-              _buildSectionHeader('ទូទៅ'),
+              _buildSectionHeader(AppStrings.tr('general_section')),
               _buildPremiumGroup(context, [
                 _buildLanguageTile(context),
                 _buildCustomDivider(context),
                 _buildGlassSwitchTile(
                   context,
                   Icons.dark_mode_rounded,
-                  'ផ្ទៃងងឹត',
+                  AppStrings.tr('dark_mode'),
                   Colors.purple,
                   isDarkMode,
                   (value) {
@@ -46,7 +81,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildGlassSwitchTile(
                   context,
                   Icons.notifications_active_rounded,
-                  'ការជូនដំណឹង',
+                  AppStrings.tr('notification_label'),
                   Colors.orange,
                   isNotification,
                   (v) => setState(() => isNotification = v),
@@ -54,12 +89,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildCustomDivider(context),
               ]),
               const SizedBox(height: 30),
-              _buildSectionHeader('គាំទ្រ'),
+              _buildSectionHeader(AppStrings.tr('support_section')),
               _buildPremiumGroup(context, [
                 _buildPremiumNavTile(
                   context,
                   Icons.headset_mic_rounded,
-                  'ជំនួយ និង ការគាំទ្រ',
+                  AppStrings.tr('help_support_title'),
                   Colors.blue,
                   onTap: () {
                     Navigator.pushNamed(context, AppRoute.helpSupportScreen);
@@ -69,7 +104,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildPremiumNavTile(
                   context,
                   Icons.auto_awesome_motion_rounded,
-                  'អំពីកម្មវិធី',
+                  AppStrings.tr('about_app'),
                   Colors.indigo,
                   trailing: Text(
                     'v1.2.4',
@@ -91,14 +126,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // --- Wrapper for Soft Shadow on Click ---
   Widget _buildAnimatedTileContainer({
     required Widget child,
     required VoidCallback onTap,
     required BuildContext context,
   }) {
     bool isPressed = false;
-
     return StatefulBuilder(
       builder: (context, setLocalState) {
         return AnimatedContainer(
@@ -148,7 +181,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ),
       title: Text(
-        'ការកំណត់',
+        AppStrings.tr('settings_title'),
         style: TextStyle(
           color: Theme.of(context).textTheme.bodyLarge?.color,
           fontWeight: FontWeight.w900,
@@ -200,7 +233,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         Colors.cyan,
       ),
       title: Text(
-        'ភាសា',
+        AppStrings.tr('language_label'),
         style: TextStyle(
           fontWeight: FontWeight.bold,
           fontSize: 16,
@@ -226,13 +259,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _premiumLangBtn(String text, BuildContext context) {
     final String codeToCheck = (text == 'ខ្មែរ') ? 'km' : 'en';
-
     bool active = LanguageManager().locale == codeToCheck;
     bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
       onTap: () {
-        LanguageManager().changeLanguage(codeToCheck);
+        if (!active) {
+          _handleLanguageChange(context, codeToCheck);
+        }
       },
       child: AnimatedContainer(
         duration: 250.ms,
@@ -307,6 +341,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         leading: _buildGradientIcon(icon, color, color.withOpacity(0.5)),
         title: Text(
           title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 16,

@@ -15,7 +15,6 @@ class LeaderboardScreen extends StatefulWidget {
 class _LeaderboardScreenState extends State<LeaderboardScreen> {
   bool isMonthly = true;
 
-  // Mock Database Structure
   final List<Map<String, dynamic>> mockEmployees = [
     {
       "rank": 1,
@@ -81,97 +80,154 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
       "trend": -2,
       "img": "https://i.pravatar.cc/150?u=8",
     },
+    {
+      "rank": 9,
+      "name": "ចាន់ណា",
+      "dept": "km_acc",
+      "score": 84,
+      "trend": 1,
+      "img": "https://i.pravatar.cc/150?u=9",
+    },
+    {
+      "rank": 10,
+      "name": "សម្បត្តិ",
+      "dept": "km_it",
+      "score": 82,
+      "trend": -1,
+      "img": "https://i.pravatar.cc/150?u=10",
+    },
+    {
+      "rank": 11,
+      "name": "ធីតា",
+      "dept": "km_admin",
+      "score": 80,
+      "trend": 3,
+      "img": "https://i.pravatar.cc/150?u=11",
+    },
   ];
 
   @override
   Widget build(BuildContext context) {
-    // Separate podium vs list data
     final topThree = mockEmployees.where((e) => e['rank'] <= 3).toList();
     final nextRankings = mockEmployees.where((e) => e['rank'] > 3).toList();
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios,
-            color: Theme.of(context).iconTheme.color,
-            size: 20,
-          ),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          AppStrings.tr('top_rankings'),
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.primary,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-          ),
-        ).animate().fadeIn(duration: 400.ms).moveY(begin: -10, end: 0),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(
-              Icons.workspace_premium,
-              color: AppColors.secondary,
-              size: 28,
-            ),
-            onPressed: () {
-              Navigator.pushNamed(context, AppRoute.achievementScreen);
-            },
-          ).animate().fadeIn(delay: 500.ms).scale(),
-          const SizedBox(width: 8),
+      appBar: _buildAppBar(),
+      body: Stack(
+        children: [
+          _buildBackgroundContent(topThree),
+          _buildDraggableSheet(nextRankings),
         ],
       ),
-      body: Column(
-        children: [
-          const SizedBox(height: 10),
-          _buildToggleButtons().animate().fadeIn(delay: 200.ms),
-          const SizedBox(height: 20),
+    );
+  }
 
-          _buildPodiumSection(topThree),
-          const SizedBox(height: 20),
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      leading: IconButton(
+        icon: Icon(
+          Icons.arrow_back_ios,
+          color: Theme.of(context).iconTheme.color,
+          size: 20,
+        ),
+        onPressed: () => Navigator.pop(context),
+      ),
+      title: Text(
+        AppStrings.tr('top_rankings'),
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.primary,
+          fontWeight: FontWeight.bold,
+          fontSize: 18,
+        ),
+      ),
+      centerTitle: true,
+      actions: [
+        IconButton(
+          icon: const Icon(
+            Icons.workspace_premium,
+            color: AppColors.secondary,
+            size: 28,
+          ),
+          onPressed: () =>
+              Navigator.pushNamed(context, AppRoute.achievementScreen),
+        ),
+        const SizedBox(width: 8),
+      ],
+    );
+  }
 
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardTheme.color,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(30),
+  Widget _buildBackgroundContent(List<Map<String, dynamic>> topThree) {
+    return Column(
+      children: [
+        const SizedBox(height: 10),
+        _buildToggleButtons().animate().fadeIn(delay: 200.ms),
+        const SizedBox(height: 20),
+        _buildPodiumSection(topThree),
+        const SizedBox(height: 100),
+      ],
+    );
+  }
+
+  Widget _buildDraggableSheet(List<Map<String, dynamic>> nextRankings) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.45,
+      minChildSize: 0.45,
+      maxChildSize: 0.95,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardTheme.color,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 10,
+                spreadRadius: 2,
+                offset: const Offset(0, -2),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              _buildDragHandle(),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 10,
+                ),
+                child: _buildListHeader(),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  controller: scrollController,
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                  itemCount: nextRankings.length,
+                  itemBuilder: (context, index) {
+                    return _buildRankItem(nextRankings[index], index);
+                  },
                 ),
               ),
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 10),
-                    child: _buildListHeader(),
-                  ),
-                  Expanded(
-                    child: ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      itemCount: nextRankings.length,
-                      itemBuilder: (context, index) {
-                        final emp = nextRankings[index];
-                        return _buildRankItem(emp, index);
-                      },
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: _buildGoalCard().animate().scale(
-                      delay: 600.ms,
-                      curve: Curves.bounceOut,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            ],
           ),
-        ],
+        );
+      },
+    );
+  }
+
+  Widget _buildDragHandle() {
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.only(top: 12, bottom: 8),
+        width: 40,
+        height: 5,
+        decoration: BoxDecoration(
+          color: Colors.grey[300],
+          borderRadius: BorderRadius.circular(10),
+        ),
       ),
     );
   }
@@ -186,12 +242,12 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _toggleItem(
+          _buildToggleItem(
             AppStrings.tr('monthly'),
             isMonthly,
             () => setState(() => isMonthly = true),
           ),
-          _toggleItem(
+          _buildToggleItem(
             AppStrings.tr('yearly'),
             !isMonthly,
             () => setState(() => isMonthly = false),
@@ -201,7 +257,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     );
   }
 
-  Widget _toggleItem(String title, bool active, VoidCallback onTap) {
+  Widget _buildToggleItem(String title, bool active, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -227,7 +283,6 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   }
 
   Widget _buildPodiumSection(List<Map<String, dynamic>> topThree) {
-    // Reordering list so rank 2 is left, rank 1 is center, rank 3 is right
     final rank1 = topThree.firstWhere((e) => e['rank'] == 1);
     final rank2 = topThree.firstWhere((e) => e['rank'] == 2);
     final rank3 = topThree.firstWhere((e) => e['rank'] == 3);
@@ -238,21 +293,21 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          _podiumUser(rank2, 90, Colors.grey[400]!, delay: 300.ms),
-          _podiumUser(
+          _buildPodiumUser(rank2, 90, Colors.grey[400]!, delay: 300.ms),
+          _buildPodiumUser(
             rank1,
             130,
             AppColors.secondary,
             hasCrown: true,
             delay: 100.ms,
           ),
-          _podiumUser(rank3, 75, Colors.orange[300]!, delay: 500.ms),
+          _buildPodiumUser(rank3, 75, Colors.orange[300]!, delay: 500.ms),
         ],
       ),
     );
   }
 
-  Widget _podiumUser(
+  Widget _buildPodiumUser(
     Map<String, dynamic> emp,
     double height,
     Color color, {
@@ -320,10 +375,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [
-                color.withValues(alpha: 0.6),
-                color.withValues(alpha: 0.1),
-              ],
+              colors: [color.withOpacity(0.6), color.withOpacity(0.1)],
             ),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
           ),
@@ -366,7 +418,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
 
     return Container(
           margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
             color: Theme.of(context).scaffoldBackgroundColor,
             borderRadius: BorderRadius.circular(20),
@@ -391,16 +443,22 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       emp['name'],
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
                       ),
                     ),
+                    const SizedBox(height: 2),
                     Text(
                       AppStrings.tr(deptKey),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: AppColors.textGrey,
                         fontSize: 11,
@@ -409,12 +467,14 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     "${emp['score']}%",
-                    style:  TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).colorScheme.primary,
                       fontSize: 14,
@@ -425,7 +485,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                       "↑ $trend",
                       style: const TextStyle(
                         color: Colors.green,
-                        fontSize: 9,
+                        fontSize: 10,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -434,7 +494,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                       "↓ ${trend.abs()}",
                       style: const TextStyle(
                         color: Colors.red,
-                        fontSize: 9,
+                        fontSize: 10,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -444,81 +504,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
           ),
         )
         .animate()
-        .fadeIn(delay: (400 + (index * 50)).ms)
+        .fadeIn(delay: (200 + (index * 50)).ms)
         .slideX(begin: 0.1, end: 0);
-  }
-
-  Widget _buildGoalCard() {
-    double progress = 0.85;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary,
-        borderRadius: BorderRadius.circular(25),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.emoji_events,
-                color: AppColors.secondary,
-                size: 24,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      AppStrings.tr('next_goal'),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                    Text(
-                      AppStrings.tr('goal_description'),
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.7),
-                        fontSize: 10,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Text(
-                "${(progress * 100).toInt()}%",
-                style: const TextStyle(
-                  color: AppColors.secondary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: LinearProgressIndicator(
-                    value: progress,
-                    minHeight: 8,
-                    backgroundColor: Colors.white24,
-                    valueColor: const AlwaysStoppedAnimation<Color>(
-                      AppColors.secondary,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
   }
 }

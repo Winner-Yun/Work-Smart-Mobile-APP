@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
+import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 import 'package:flutter_worksmart_mobile_app/features/auth/presentation/change_pas_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/profile&setting_screens/setting_screen.dart';
@@ -56,7 +57,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               Text(
-                'ជ្រើសរើសរូបថត',
+                AppStrings.tr('choose_photo'),
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -70,7 +71,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _buildOptionItem(
                     context,
                     icon: Icons.photo_library_rounded,
-                    label: 'បណ្ណាល័យ',
+                    label: AppStrings.tr('gallery'),
                     color: Theme.of(context).colorScheme.primary,
                     onTap: () {
                       _pickImage(ImageSource.gallery);
@@ -80,7 +81,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _buildOptionItem(
                     context,
                     icon: Icons.camera_alt_rounded,
-                    label: 'ម៉ាស៊ីនថត',
+                    label: AppStrings.tr('camera'),
                     color: AppColors.secondary,
                     onTap: () {
                       _pickImage(ImageSource.camera);
@@ -110,7 +111,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _buildAvatarSection(),
             const SizedBox(height: 15),
             Text(
-              'យុន​​ វិនន័រ',
+              'យុន​​ វិនន័រ', // Replace with user name from state
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
@@ -118,13 +119,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.3, end: 0),
             const Text(
-              'អ្នកគ្រប់គ្រងក្រុមបុរសនៅលីវ',
+              'អ្នកគ្រប់គ្រងក្រុមបុរសនៅលីវ', // Replace with user role
               style: TextStyle(color: AppColors.textGrey),
             ).animate().fadeIn(delay: 300.ms),
             const SizedBox(height: 30),
             _buildInfoCard(context),
             const SizedBox(height: 20),
-            _buildActionTile(Icons.lock_outline, 'ប្តូរលេខសម្ងាត់', context),
+            _buildActionTile(
+              Icons.lock_outline,
+              AppStrings.tr('change_password_action'),
+              context,
+            ),
             const SizedBox(height: 30),
             _buildLogoutButton(),
             const SizedBox(height: 40),
@@ -138,9 +143,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return AppBar(
       backgroundColor: Theme.of(context).colorScheme.primary,
       elevation: 0,
-      title: const Text(
-        'គណនី',
-        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+      title: Text(
+        AppStrings.tr('account_title'),
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+        ),
       ),
       actions: [
         Padding(
@@ -224,7 +232,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: CircleAvatar(
               radius: 18,
               backgroundColor: Theme.of(context).colorScheme.primary,
-              child: Icon(Icons.camera_alt, size: 18, color: Colors.white),
+              child: const Icon(
+                Icons.camera_alt,
+                size: 18,
+                color: Colors.white,
+              ),
             ),
           ),
         ],
@@ -247,7 +259,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _buildInfoRow(
             context,
             Icons.phone_outlined,
-            'លេខទូរស័ព្ទ',
+            AppStrings.tr('phone_label'),
             '096 123 4567',
           ),
           const Divider(height: 30, thickness: 0.5),
@@ -256,7 +268,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _buildInfoRow(
             context,
             Icons.email_outlined,
-            'អ៊ីមែល',
+            AppStrings.tr('email_label'),
             'yun.winner@worksmart.kh',
           ),
         ],
@@ -285,7 +297,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: TextStyle(color: AppColors.textGrey, fontSize: 12),
               ),
               Text(
-                'មិនទាន់ភ្ជាប់',
+                AppStrings.tr('not_connected'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: Colors.red.shade400,
                   fontWeight: FontWeight.bold,
@@ -306,7 +320,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           child: Text(
-            'ភ្ជាប់ឥឡូវ',
+            AppStrings.tr('connect_now'),
             style: TextStyle(
               color: Theme.of(context).colorScheme.primary,
               fontWeight: FontWeight.bold,
@@ -335,21 +349,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         const SizedBox(width: 15),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(color: AppColors.textGrey, fontSize: 12),
-            ),
-            Text(
-              value,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).textTheme.bodyLarge?.color,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(color: AppColors.textGrey, fontSize: 12),
               ),
-            ),
-          ],
+              Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -379,14 +397,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             Icon(icon, color: AppColors.textGrey.withValues(alpha: 0.6)),
             const SizedBox(width: 15),
-            Text(
-              title,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).textTheme.bodyLarge?.color,
+            Expanded(
+              child: Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                ),
               ),
             ),
-            const Spacer(),
             const Icon(
               Icons.arrow_forward_ios,
               size: 14,
@@ -443,18 +464,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         const SizedBox(height: 20),
                         Text(
-                          'ចាកចេញពីគណនី',
-                          style: TextStyle(
+                          AppStrings.tr('confirm_logout_title'),
+                          style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                             color: AppColors.textLight,
                           ),
                         ),
                         const SizedBox(height: 10),
-                        const Text(
-                          'តើអ្នកប្រាកដជាចង់ចាកចេញមែនទេ?',
+                        Text(
+                          AppStrings.tr('confirm_logout_msg'),
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: AppColors.textGrey),
+                          style: const TextStyle(color: AppColors.textGrey),
                         ),
                         const SizedBox(height: 30),
                         Row(
@@ -473,9 +494,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ),
                                   ),
                                 ),
-                                child: const Text(
-                                  'បោះបង់',
-                                  style: TextStyle(color: Colors.grey),
+                                child: Text(
+                                  AppStrings.tr('cancel_button'),
+                                  style: const TextStyle(color: Colors.grey),
                                 ),
                               ),
                             ),
@@ -499,9 +520,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                 ),
-                                child: const Text(
-                                  'ចាកចេញ',
-                                  style: TextStyle(
+                                child: Text(
+                                  AppStrings.tr('logout_button'),
+                                  style: const TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -525,7 +546,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Icon(Icons.logout_rounded, color: Colors.red.shade400, size: 20),
             const SizedBox(width: 10),
             Text(
-              'ចាកចេញពីគណនី',
+              AppStrings.tr('logout_action'),
               style: TextStyle(
                 color: Colors.red.shade400,
                 fontWeight: FontWeight.bold,

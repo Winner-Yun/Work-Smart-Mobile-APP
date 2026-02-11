@@ -18,8 +18,6 @@ class _FaceScanScreenState extends State<FaceScanScreen>
   bool _isRearCameraSelected = false;
   FlashMode _flashMode = FlashMode.off;
 
-  final Color _themeColor = const Color(0xFF065F55);
-
   @override
   void initState() {
     super.initState();
@@ -34,7 +32,6 @@ class _FaceScanScreenState extends State<FaceScanScreen>
     super.dispose();
   }
 
-  // --- CAMERA INITIALIZATION ---
   Future<void> _initCamera() async {
     final status = await Permission.camera.request();
     if (!status.isGranted) return;
@@ -65,24 +62,21 @@ class _FaceScanScreenState extends State<FaceScanScreen>
 
     try {
       await cameraController.initialize();
-
-      // REQUIREMENT: Flash auto off on initialization/camera change
       await cameraController.setFlashMode(FlashMode.off);
 
       if (mounted) {
         setState(() {
           _isCameraInitialized = true;
-          _flashMode = FlashMode.off; // Reset state tracking
+          _flashMode = FlashMode.off;
           _isRearCameraSelected =
               cameraDescription.lensDirection == CameraLensDirection.back;
         });
       }
     } catch (e) {
-      debugPrint('Camera Error: $e');
+      debugPrint('$e');
     }
   }
 
-  // --- ACTIONS ---
   Future<void> _switchCamera() async {
     if (_cameras == null || _cameras!.isEmpty) return;
     setState(() => _isCameraInitialized = false);
@@ -100,7 +94,6 @@ class _FaceScanScreenState extends State<FaceScanScreen>
   }
 
   Future<void> _toggleFlash() async {
-    // REQUIREMENT: Disable if front camera
     if (_controller == null || !_isRearCameraSelected) return;
 
     try {
@@ -110,7 +103,7 @@ class _FaceScanScreenState extends State<FaceScanScreen>
       await _controller!.setFlashMode(newMode);
       setState(() => _flashMode = newMode);
     } catch (e) {
-      debugPrint("Flash Error: $e");
+      debugPrint("$e");
     }
   }
 
@@ -121,22 +114,24 @@ class _FaceScanScreenState extends State<FaceScanScreen>
       return;
     }
     try {
-      final file = await _controller!.takePicture();
-      debugPrint("Photo saved: ${file.path}");
+      final XFile file = await _controller!.takePicture();
+      debugPrint(file.path);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: Theme.of(context).colorScheme.primary,
-            content: Text(AppStrings.tr('scan_success')),
+            content: Text(
+              AppStrings.tr('scan_success'),
+              textAlign: TextAlign.center,
+            ),
           ),
         );
       }
     } catch (e) {
-      debugPrint("Capture Error: $e");
+      debugPrint("$e");
     }
   }
 
-  // --- UI ---
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -177,16 +172,13 @@ class _FaceScanScreenState extends State<FaceScanScreen>
         Padding(
           padding: const EdgeInsets.only(right: 8.0),
           child: _buildGlassButton(
-            // Logic: Icon is always off-style if it's the front camera
             icon: (_flashMode == FlashMode.off || !_isRearCameraSelected)
                 ? Icons.flash_off
                 : Icons.flash_on,
             color: (_flashMode == FlashMode.torch && _isRearCameraSelected)
                 ? Colors.yellow
                 : Colors.white,
-            onTap: _isRearCameraSelected
-                ? _toggleFlash
-                : () {}, // Disable tap on front cam
+            onTap: _isRearCameraSelected ? _toggleFlash : () {},
           ),
         ),
       ],
@@ -204,18 +196,29 @@ class _FaceScanScreenState extends State<FaceScanScreen>
       child: Column(
         children: [
           const SizedBox(height: 20),
-          Text(
-            AppStrings.tr('face_scan_title'),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                AppStrings.tr('face_scan_title'),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 8),
-          Text(
-            AppStrings.tr('face_scan_step'),
-            style: const TextStyle(color: Colors.white70, fontSize: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 30),
+            child: Text(
+              AppStrings.tr('face_scan_step'),
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white70, fontSize: 16),
+            ),
           ),
           const Spacer(),
           _buildBottomPanel(),
@@ -236,12 +239,14 @@ class _FaceScanScreenState extends State<FaceScanScreen>
         children: [
           const CircleAvatar(radius: 4, backgroundColor: Color(0xFFFF8A8A)),
           const SizedBox(width: 8),
-          Text(
-            AppStrings.tr('live_status'),
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
+          Flexible(
+            child: Text(
+              AppStrings.tr('live_status'),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
             ),
           ),
         ],
@@ -261,13 +266,22 @@ class _FaceScanScreenState extends State<FaceScanScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Spacer(flex: 2),
+              // 1. Invisible Expanded spacer to balance the left side
+              const Expanded(child: SizedBox()),
+
+              // 2. The Shutter button stays exactly in the center
               _buildShutterButton(),
-              const Spacer(),
-              _buildActionColumn(
-                icon: Icons.flip_camera_ios,
-                label: AppStrings.tr('switch_camera'),
-                onTap: _switchCamera,
+
+              // 3. Expanded spacer for the right side, containing the aligned switch button
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: _buildActionColumn(
+                    icon: Icons.flip_camera_ios,
+                    label: AppStrings.tr('switch_camera'),
+                    onTap: _switchCamera,
+                  ),
+                ),
               ),
             ],
           ),
@@ -287,10 +301,16 @@ class _FaceScanScreenState extends State<FaceScanScreen>
         padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          border: Border.all(color: _themeColor.withOpacity(0.2), width: 4),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.primary,
+            width: 4,
+          ),
         ),
         child: DecoratedBox(
-          decoration: BoxDecoration(color: _themeColor, shape: BoxShape.circle),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.primary,
+            shape: BoxShape.circle,
+          ),
         ),
       ),
     );
@@ -320,17 +340,23 @@ class _FaceScanScreenState extends State<FaceScanScreen>
       children: [
         IconButton.filled(
           onPressed: onTap,
-          icon: Icon(icon, color: _themeColor),
+          icon: Icon(icon, color: Theme.of(context).colorScheme.primary),
           style: IconButton.styleFrom(
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           ),
         ),
-        Text(
-          label,
-          style: TextStyle(
-            color: _themeColor,
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
+        SizedBox(
+          width: 80,
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.primary,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
       ],
@@ -341,20 +367,29 @@ class _FaceScanScreenState extends State<FaceScanScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: _themeColor.withOpacity(0.05),
+        color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.info, size: 16, color: _themeColor),
+          Icon(
+            Icons.info,
+            size: 16,
+            color: Theme.of(context).colorScheme.primary,
+          ),
           const SizedBox(width: 8),
-          Text(
-            AppStrings.tr('ensure_light'),
-            style: TextStyle(
-              color: _themeColor,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                AppStrings.tr('ensure_light'),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ),
         ],

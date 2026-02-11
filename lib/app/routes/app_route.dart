@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_worksmart_mobile_app/features/auth/presentation/authscreen.dart';
 import 'package:flutter_worksmart_mobile_app/features/auth/presentation/forgot_pas_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/auth/presentation/tutorail_screens/tutorial_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/home/admin/presentation/admin_command_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/home/admin/presentation/edit_staff.dart';
 import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/achievement_screens/achievement_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/attendence_screens/annual_leave_request_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/attendence_screens/attendance_calendar_screen.dart';
@@ -15,6 +17,7 @@ import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/hom
 import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/profile&setting_screens/setting_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/attendence_screens/sick_leave_request_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/profile&setting_screens/telegram_integration.dart';
+
 
 class AppRoute {
   static const String tutorial = '/tutorial';
@@ -34,6 +37,8 @@ class AppRoute {
   static const String settingScreen = '/settingScreen';
   static const String telegramConfig = '/telegramConfig';
   static const String helpSupportScreen = '/helpSupportScreen';
+  static const String admincommandcenterscreen = '/admincommandcenterscreen';
+  static const String editstaff = '/editstaff';
 
   static Map<String, WidgetBuilder> routes = {
     tutorial: (context) => const TutorialScreen(),
@@ -52,5 +57,7 @@ class AppRoute {
     settingScreen: (context) => const SettingsScreen(),
     telegramConfig: (context) => const TelegramIntegration(),
     helpSupportScreen: (context) => const HelpSupportScreen(),
+    admincommandcenterscreen:(context) =>const admincommandcenter(),
+    editstaff:(context) =>const edit_staff(),
   };
 }

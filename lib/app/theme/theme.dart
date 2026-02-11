@@ -19,6 +19,7 @@ class AppThemes {
     colorScheme: ColorScheme.fromSeed(
       seedColor: AppColors.primary,
       primary: AppColors.primary,
+      tertiary: AppColors.primary,
       secondary: AppColors.secondary,
       surface: AppColors.lightSurface,
     ),
@@ -86,6 +87,7 @@ class AppThemes {
     colorScheme: const ColorScheme.dark(
       primary: AppColors.tertiary,
       secondary: AppColors.secondary,
+      tertiary: AppColors.darkSurface,
       surface: AppColors.darkSurface,
       error: AppColors.error,
     ),

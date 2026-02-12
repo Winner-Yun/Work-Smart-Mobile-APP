@@ -40,6 +40,7 @@ class AppRoute {
   static const String helpSupportScreen = '/helpSupportScreen';
   static const String registerFace = '/registerFace';
 
+
   static Map<String, WidgetBuilder> routes = {
     // Auth Routes
     tutorial: (context) => const TutorialScreen(),
@@ -81,6 +82,8 @@ class AppRoute {
     settingScreen: _buildRoute((args) => SettingsScreen(loginData: args)),
     telegramConfig: _buildRoute((args) => TelegramIntegration(loginData: args)),
     helpSupportScreen: (context) => const HelpSupportScreen(),
+
+
   };
 
   static WidgetBuilder _buildRoute(

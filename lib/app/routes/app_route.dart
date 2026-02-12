@@ -1,24 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_worksmart_mobile_app/core/util/database/database_helper.dart';
-import 'package:flutter_worksmart_mobile_app/features/auth/presentation/authscreen.dart';
-import 'package:flutter_worksmart_mobile_app/features/auth/presentation/forgot_pas_screen.dart';
-import 'package:flutter_worksmart_mobile_app/features/auth/presentation/tutorail_screens/tutorial_screen.dart';
-import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/achievement_screens/achievement_screen.dart';
-import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/achievement_screens/empleaderboard_screen.dart';
-import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/attendence_screens/annual_leave_request_screen.dart';
-import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/attendence_screens/attendance_calendar_screen.dart';
-import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/attendence_screens/attendance_detail_screen.dart';
-import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/attendence_screens/leave_all_requests_screen.dart';
-import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/attendence_screens/sick_leave_request_screen.dart';
-import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/homepage_screens/assign_user_face_screen.dart';
-import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/homepage_screens/face_scan_screen.dart';
-import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/homepage_screens/leave_management_screen.dart';
-import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/homepage_screens/notification_screens.dart';
-import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/mainscreen.dart';
-import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/profile&setting_screens/help_support_screen.dart';
-import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/profile&setting_screens/setting_screen.dart';
-import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/profile&setting_screens/telegram_integration.dart';
+import 'package:flutter_worksmart_mobile_app/features/admin/presentation/admin_homepage.dart';
+import 'package:flutter_worksmart_mobile_app/features/admin/presentation/admin_homepage_web.dart';
+import 'package:flutter_worksmart_mobile_app/features/admin/presentation/admin_login_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/auth/presentation/authscreen.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/auth/presentation/forgot_pas_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/auth/presentation/tutorail_screens/tutorial_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/presentation/achievement_screens/achievement_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/presentation/achievement_screens/empleaderboard_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/presentation/attendence_screens/annual_leave_request_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/presentation/attendence_screens/attendance_calendar_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/presentation/attendence_screens/attendance_detail_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/presentation/attendence_screens/leave_all_requests_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/presentation/attendence_screens/sick_leave_request_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/presentation/homepage_screens/assign_user_face_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/presentation/homepage_screens/face_scan_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/presentation/homepage_screens/leave_management_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/presentation/homepage_screens/notification_screens.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/presentation/mainscreen.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/presentation/profile&setting_screens/help_support_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/presentation/profile&setting_screens/setting_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/presentation/profile&setting_screens/telegram_integration.dart';
 
+/// AppRoute: Central routing configuration
+/// Manages all app routes: authentication, admin, employee features
 class AppRoute {
   static const String tutorial = '/tutorial';
   static const String authScreen = '/auth';
@@ -39,7 +44,12 @@ class AppRoute {
   static const String telegramConfig = '/telegramConfig';
   static const String helpSupportScreen = '/helpSupportScreen';
   static const String registerFace = '/registerFace';
+  static const String adminDashboard = '/admin-dashboard';
+  static const String adminDashboardWeb = '/admin-dashboard-web';
+  static const String adminLoginWeb = '/admin-login-web';
 
+  // ──────────────── ROUTE DEFINITIONS ────────────────
+  // Includes auth routes, admin routes, and employee feature routes
   static Map<String, WidgetBuilder> routes = {
     // Auth Routes
     tutorial: (context) => const TutorialScreen(),
@@ -101,6 +111,11 @@ class AppRoute {
     settingScreen: _buildRoute((args) => SettingsScreen(loginData: args)),
     telegramConfig: _buildRoute((args) => TelegramIntegration(loginData: args)),
     helpSupportScreen: (context) => const HelpSupportScreen(),
+
+    // Admin Routes
+    adminDashboard: _buildRoute((args) => AdminHomepage(loginData: args)),
+    adminDashboardWeb: _buildRoute((args) => AdminHomepageWeb(loginData: args)),
+    adminLoginWeb: (context) => const AdminLoginScreen(),
   };
 
   static WidgetBuilder _buildRoute(

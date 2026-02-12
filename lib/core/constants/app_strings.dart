@@ -332,15 +332,67 @@ class AppStrings {
       'ensure_light': 'ធានាថាពន្លឺគ្រប់គ្រាន់',
       'scan_success': 'ស្កេនជោគជ័យ!',
       'camera_error': 'មានបញ្ហាកាមេរ៉ា',
+
+      //=======Admin_screen_ThaSopheak======
+      // WorkAreaScreen
+      'workareasetup': 'ការកំណត់តំបន់ការងារ',
+      'phnompenhpapital, pambodia': 'រាជធានីភ្នំពេញ, ​ប្រទេសកម្ពុជា',
+      'setarearadius': 'កំណត់កាំនៃតំបន់',
+      'saveworkarea': 'រក្សាទុកតំបន់ការងារ',
+      'meters': 'ម៉ែត្រ',
+      'accuracyhigh:': 'ភាពត្រឹមត្រូវ',
+
+      // Notedattendentall
+      'allrecords': 'កំណត់ត្រាទាំងអស់',
+      'lated': 'យឺតយ៉ាវ',
+      'staffoutsidetheoffice': 'បុគ្គលិកក្រៅការិយាល័យ',
+      'approved': 'បានអនុម័ត',
+      'directattendancerecord': 'កំណត់ត្រាវត្តមានផ្ទាល់',
+      'searchemployee': 'ស្វែងរកបុគ្គលិក',
+      'morning': 'ព្រឹក',
+      'minutes ago': 'នាទីមុន',
+      'ontime': 'ទាន់ពេល',
+      'commercialroad, northernarea': 'ផ្លូវពាណិជ្ជកម្ម, តំបន់ខាងជើង',
+      'metersfromcentraloffice': 'ម៉ែត្រ ពីការិយាល័យកណ្តាល',
+      'northernbranchoffice': 'ការិយាល័យរណបខាងជើង',
+      'viewmap': 'មើលផែនទី',
+      'mainhallofcentraloffice': 'សាលធំការិយាល័យកណ្តាល',
+      'restrictedareanotification: jamesWilsonattemptedtorecordattendance5kmawayfromthedesignatedlocation។':
+          'ការជូនដណ្តឹងតំបន់ហាមឃាត់: james Wilson បទចុះវត្តមាននៅចម្ងាយ 5 គីឡូម៉េត្រពីទីតាំងដែលបានកំណត់។'
+          'inspect'
+          'ពិនិត្រមើល',
+
+      // Creationofconfidential_information
+      'createconfidentialinformation': 'ការបង្កើតព័ត៍មានសម្ងាត់',
+      'verified': 'ផ្ទៀងផ្ទាត់រួចរាល់',
+      'approvalsuccessful': 'សេចក្តីអនុម័តជោគជ័យ',
+      'biometricverificationrequired': 'ការផ្ទៀងផ្ទាត់ជីវមាត្រត្រូវបញ្ចាក់',
+      'userconfidentialinformation': 'ព័ត៍មានសម្ងាត់អ្នកប្រើប្រាស់',
+      'pass_word': 'លេខសម្ងាត់',
+      'thispasswordisvalidforonly24 hours':
+          'លេខសម្ងាត់នេះមានសុពលភាពត្រឹមតែ 24 ម៉ោងប៉ុណ្ណោះ',
+      'clickingthebuttonbelowwillautomaticallysendallthisconfidentialinformationtotheemployee’s Telegram account':
+          'ការចុចប៊ូតុងខាងក្រោមនឹងផ្ញើព័ត៍មានសម្ងាត់ទាំងនេះដោយស្វ័យប្រវត្តិទៅកាន់គណនី',
+      'generateandsendtoTelegram': 'បង្គើតនិងផ្ញើទៅTelegram',
+      'giveup': 'បោះបង់',
+
+      // PendingList
+      'pendingapprovllist': 'បញ្ជីរង់ចាំការអនុម័ត',
+      'waiting': 'រងចាំ',
+      'approveded': 'បានអនុម័ត',
+      'rejected': 'បានបដិសេធ',
+      'panel': 'ផ្ទាំង',
+      'record': 'កត់ត្រា',
+      'informationtechnology(IT)': 'បច្ចេកវិទ្យាព័ត៌មាន (IT)',
+      'administration(Admin)': 'រដ្ឋបាល (Admin)',
+      'requestnumber': 'លេខសំណើ៖',
+      'role:': 'តួនាទី',
+      'selfiephoto': 'រូបថត SELFIE',
+      'referencephoto':
+          'រូបថតយោង'
+          'approved'
+          'អនុម័ត',
     },
-
-    //Admin_screen
-   
-
-    
-
-
-
   };
 
   static String tr(String key) {

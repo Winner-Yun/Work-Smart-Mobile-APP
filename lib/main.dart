@@ -26,7 +26,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_worksmart_mobile_app/app/theme/theme.dart';
-import 'package:flutter_worksmart_mobile_app/routes/Screens/PendingList.dart';
+import 'package:flutter_worksmart_mobile_app/routes/Screens/WorkAreaSetup.dart';
 
 void main() {
   runApp(const MainApp());
@@ -43,10 +43,7 @@ class MainApp extends StatelessWidget {
       theme: AppThemes.lightTheme,
       darkTheme: AppThemes.darkTheme,
       themeMode: ThemeMode.system,
-
-    ///  initialRoute: AppRoute.tutorial,
-      //routes: AppRoute.routes,gg
-      home:PendingList(),
+      home:Workareasetup(),
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class CreationofconfidentialInformation extends StatelessWidget {
@@ -17,7 +18,7 @@ class CreationofconfidentialInformation extends StatelessWidget {
         ),
         centerTitle: true,
         title: Text(
-          'ការបង្កើតព័ត៍មានសម្ងាត់',
+          AppStrings.tr('ការបង្កើតព័ត៍មានសម្ងាត់'),
           style: GoogleFonts.hanuman(
             color: Colors.white,
             fontWeight: FontWeight.w700,
@@ -74,7 +75,7 @@ class CreationofconfidentialInformation extends StatelessWidget {
                               size: 18, color: Colors.white),
                           const SizedBox(width: 8),
                           Text(
-                            'ផ្ទៀងផ្ទាត់រួចរាល់',
+                            AppStrings.tr('ផ្ទៀងផ្ទាត់រួចរាល់'),
                             style: GoogleFonts.hanuman(
                               color: Colors.white,
                               fontWeight: FontWeight.w700,
@@ -87,8 +88,8 @@ class CreationofconfidentialInformation extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 35),
-              const Text(
-                'សេចក្តីអនុម័តជោគជ័យ',
+               Text(
+                AppStrings.tr('សេចក្តីអនុម័តជោគជ័យ'),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white,
@@ -97,18 +98,18 @@ class CreationofconfidentialInformation extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'ការផ្ទៀងផ្ទាត់ជីវមាត្រត្រូវបញ្ចាក់',
+               Text(
+               AppStrings.tr( 'ការផ្ទៀងផ្ទាត់ជីវមាត្រត្រូវបញ្ចាក់'),
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Color(0xFFB7C9C7), height: 1.3),
               ),
               const SizedBox(height: 24),
 
               // User confidential info
-              const Align(
+               Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'ព័ត៍មានសម្ងាត់អ្នកប្រើប្រាស់',
+                  AppStrings.tr('ព័ត៍មានសម្ងាត់អ្នកប្រើប្រាស់'),
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w800,
@@ -117,10 +118,10 @@ class CreationofconfidentialInformation extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 14),
-              const Align(
+               Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'កូដ/លេខសម្គាល់',
+                  AppStrings.tr('កូដ/លេខសម្គាល់'),
                   style: TextStyle(
                     color: Color(0xFFB7C9C7),
                     fontWeight: FontWeight.w600,
@@ -150,10 +151,10 @@ class CreationofconfidentialInformation extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 18),
-              const Align(
+               Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'លេខសម្ងាត់',
+                  AppStrings.tr('លេខសម្ងាត់'),
                   style: TextStyle(
                     color: Color(0xFFB7C9C7),
                     fontWeight: FontWeight.w600,
@@ -193,10 +194,10 @@ class CreationofconfidentialInformation extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 10),
-              const Align(
+               Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  '* លេខសម្ងាត់នេះមានសុពលភាពត្រឹមតែ 24 ម៉ោងប៉ុណ្ណោះ',
+                  AppStrings.tr('* លេខសម្ងាត់នេះមានសុពលភាពត្រឹមតែ 24 ម៉ោងប៉ុណ្ណោះ'),
                   style: TextStyle(color: Color(0xFF6F8E8B)),
                 ),
               ),
@@ -208,14 +209,14 @@ class CreationofconfidentialInformation extends StatelessWidget {
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: const Color(0xFF245B57)),
                 ),
-                child: const Row(
+                child:  Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Icon(Icons.info_outline, color: Color(0xFFB7C9C7)),
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'ការចុចប៊ូតុងខាងក្រោមនឹងផ្ញើព័ត៍មានសម្ងាត់ទាំងនេះដោយស្វ័យប្រវត្តិទៅកាន់គណនី Telegram របស់បុគ្គលិក។',
+                        AppStrings.tr('ការចុចប៊ូតុងខាងក្រោមនឹងផ្ញើព័ត៍មានសម្ងាត់ទាំងនេះដោយស្វ័យប្រវត្តិទៅកាន់គណនី Telegram របស់បុគ្គលិក។'),
                         style: TextStyle(color: Color(0xFFB7C9C7), height: 1.3),
                       ),
                     ),
@@ -236,8 +237,8 @@ class CreationofconfidentialInformation extends StatelessWidget {
                     ),
                   ),
                   onPressed: () {},
-                  child: const Text(
-                    'បង្គើត និងផ្ញើទៅ Telegram',
+                  child: Text(
+                    AppStrings.tr('បង្គើត និងផ្ញើទៅ Telegram'),
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
                   ),
                 ),
@@ -245,8 +246,8 @@ class CreationofconfidentialInformation extends StatelessWidget {
               const SizedBox(height: 16),
               TextButton(
                 onPressed: () {},
-                child: const Text(
-                  'បោះបង់',
+                child: Text(
+                  AppStrings.tr('បោះបង់'),
                   style: TextStyle(color: Color(0xFFB7C9C7)),
                 ),
               ),

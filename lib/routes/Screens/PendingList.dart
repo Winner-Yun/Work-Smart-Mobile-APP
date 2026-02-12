@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 
 class PendingList extends StatelessWidget {
@@ -14,22 +15,22 @@ class PendingList extends StatelessWidget {
           backgroundColor: AppColors.darkBg,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios, color: AppColors.primary),
+            icon: const Icon(Icons.arrow_back_ios, color: AppColors.success),
             onPressed: () {},
           ),
           title: Text(
-            'បញ្ជីរង់ចាំការអនុម័ត',
-            style: TextStyle(
-              color: Colors.white, 
-              fontWeight: FontWeight.w600,
-            ),
+            AppStrings.tr('បញ្ជីរង់ចាំការអនុម័ត'),
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
           ),
           actions: [
-            IconButton(icon: const Icon(Icons.search), onPressed: () {}),
+            IconButton(
+              icon: Icon(Icons.search, color: AppColors.success),
+              onPressed: () {},
+            ),
           ],
           bottom: TabBar(
             isScrollable: true,
-            indicatorColor:AppColors.darkgreen,
+            indicatorColor: AppColors.darkgreen,
             tabs: [
               Tab(text: 'រងចាំ (១២)'),
               Tab(text: 'បានអនុម័ត'),
@@ -43,19 +44,19 @@ class PendingList extends StatelessWidget {
           backgroundColor: AppColors.darkBg,
           selectedItemColor: AppColors.darkgreen,
           unselectedItemColor: AppColors.textGrey,
-          items: const [
+          items: [
             BottomNavigationBarItem(
               icon: Icon(Icons.grid_view),
-              label: 'ផ្ទាំង',
+              label: AppStrings.tr('ផ្ទាំង'),
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.playlist_add_check),
-              label: 'កត់ត្រា',
+              label: AppStrings.tr('កត់ត្រា'),
             ),
             BottomNavigationBarItem(icon: Icon(Icons.group), label: 'បុគ្គលិក'),
             BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'កំណត់'),
           ],
-          onTap: (_) {},
+          onTap: (context) {},
         ),
         body: TabBarView(
           children: [
@@ -63,8 +64,8 @@ class PendingList extends StatelessWidget {
               cardColor: AppColors.primary,
               borderColor: AppColors.greenSurface,
             ),
-            _EmptyState(text: 'មិនមានទិន្នន័យ (បានអនុម័ត)'),
-            _EmptyState(text: 'មិនមានទិន្នន័យ (បានបដិសេធ)'),
+            _EmptyState(text: AppStrings.tr('មិនមានទិន្នន័យ (បានអនុម័ត)')),
+            _EmptyState(text: AppStrings.tr('មិនមានទិន្នន័យ (បានបដិសេធ)')),
           ],
         ),
       ),
@@ -84,7 +85,7 @@ class _PendingTab extends StatelessWidget {
       _PendingItem(
         requestId: 'WS-9021',
         name: 'សុន តានីកា',
-        role: 'បច្ចេកវិឡាព័ត៍មាន (IT)',
+        role: AppStrings.tr('បច្ចេកវិឡាព័ត៍មាន (IT)'),
         matchPercent: 98,
         selfieUrl: 'https://picsum.photos/seed/selfie1/600/600',
         referenceUrl: 'https://picsum.photos/seed/ref1/600/600',
@@ -92,7 +93,7 @@ class _PendingTab extends StatelessWidget {
       _PendingItem(
         requestId: 'WS-9025',
         name: 'លី មាលីណា',
-        role: 'រដ្ឋបាល (Admin)',
+        role: AppStrings.tr('រដ្ឋបាល (Admin)'),
         matchPercent: 92,
         selfieUrl: 'https://picsum.photos/seed/selfie2/600/600',
         referenceUrl: 'https://picsum.photos/seed/ref2/600/600',
@@ -185,14 +186,14 @@ class _PendingCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _LabeledImage(
-                  label: 'រូបថត SELFIE',
+                  label: AppStrings.tr('រូបថត SELFIE'),
                   imageUrl: item.selfieUrl,
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: _LabeledImage(
-                  label: 'រូបថតយោង',
+                  label: AppStrings.tr('រូបថតយោង'),
                   imageUrl: item.referenceUrl,
                 ),
               ),
@@ -207,8 +208,8 @@ class _PendingCard extends StatelessWidget {
                 child: OutlinedButton.icon(
                   onPressed: onReject,
                   icon: const Icon(Icons.close, color: AppColors.error),
-                  label: const Text(
-                    'បដិសេធ',
+                  label: Text(
+                        AppStrings.tr('បដិសេធ'),
                     style: TextStyle(color: AppColors.error),
                   ),
                   style: OutlinedButton.styleFrom(
@@ -253,25 +254,22 @@ class _MatchBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = const Color(0xFF0F2A24);
-    final fg = const Color(0xFF20C997);
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: bg,
+        color: AppColors.darkBg,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFF1D4D41)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.verified, size: 18, color: fg),
+          Icon(Icons.verified, size: 18, color: AppColors.darkSurface),
           const SizedBox(width: 6),
           Text(
             '$percent% Match',
             style: const TextStyle(
-              color: Color(0xFFFFC107),
+              color: AppColors.secondary,
               fontWeight: FontWeight.w700,
             ),
           ),

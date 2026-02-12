@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -6,8 +7,7 @@ class Notedattendentall extends StatefulWidget {
   const Notedattendentall({super.key});
 
   @override
-  State<Notedattendentall> createState() =>
-      _NotedattendentallState();
+  State<Notedattendentall> createState() => _NotedattendentallState();
 }
 
 class _NotedattendentallState extends State<Notedattendentall> {
@@ -15,11 +15,11 @@ class _NotedattendentallState extends State<Notedattendentall> {
 
   int selectedIndex = 0;
 
-  final List<String> categories = const [
-    "កំណត់ត្រាទាំងអស់",
-    "យឺតយ៉ាវ",
-    "បុគ្គលិកក្រៅការិយាល័យ",
-    "បានអនុម័ត",
+  final List<String> categories = [
+    AppStrings.tr("កំណត់ត្រាទាំងអស់"),
+    AppStrings.tr("យឺតយ៉ាវ"),
+    AppStrings.tr("បុគ្គលិកក្រៅការិយាល័យ"),
+    AppStrings.tr("បានអនុម័ត"),
   ];
 
   @override
@@ -69,7 +69,7 @@ class _NotedattendentallState extends State<Notedattendentall> {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  'កំណត់ត្រាវត្តមានផ្ទាល់',
+                  AppStrings.tr('កំណត់ត្រាវត្តមានផ្ទាល់'),
                   style: GoogleFonts.hanuman(
                     fontSize: 12,
                     color: AppColors.lightSurface.withOpacity(0.7),
@@ -171,132 +171,138 @@ class _NotedattendentallState extends State<Notedattendentall> {
     );
   }
 
- Widget _buildNotedStaff() {
-  return Stack(
-    clipBehavior: Clip.none, // IMPORTANT: allows the dot to show outside the card
-    children: [
-      Positioned(
-        left: -6,
-        top: 24,
-        child: Container(
-          width: 12,
-          height: 12,
-          decoration: const BoxDecoration(
-            color: AppColors.primary,
-            shape: BoxShape.circle,
+  Widget _buildNotedStaff() {
+    return Stack(
+      clipBehavior:
+          Clip.none, // IMPORTANT: allows the dot to show outside the card
+      children: [
+        Positioned(
+          left: -6,
+          top: 24,
+          child: Container(
+            width: 12,
+            height: 12,
+            decoration: const BoxDecoration(
+              color: AppColors.primary,
+              shape: BoxShape.circle,
+            ),
           ),
         ),
-      ),
 
-      Container(
-        width: double.infinity, // helps avoid unbounded-width issues in rows
-        margin: const EdgeInsets.only(left: 8),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.darkSurface.withOpacity(0.9),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const CircleAvatar(
-                  radius: 24,
-                  backgroundImage: AssetImage('assets/avatar.png'),
-                ),
-                const SizedBox(width: 12),
+        Container(
+          width: double.infinity, // helps avoid unbounded-width issues in rows
+          margin: const EdgeInsets.only(left: 8),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.darkSurface.withOpacity(0.9),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const CircleAvatar(
+                    radius: 24,
+                    backgroundImage: AssetImage('assets/avatar.png'),
+                  ),
+                  const SizedBox(width: 12),
 
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text(
-                        "Marcus Chen",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text(
+                          "Marcus Chen",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        "០៩:៤១ ព្រឹក • ២ នាទីមុន",
-                        style: TextStyle(color: Colors.white60, fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ),
-
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF2E4A34),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppColors.success, width: 2),
-                  ),
-                  child: const Text(
-                    "ទាន់ពេល",
-                    style: TextStyle(
-                      color: AppColors.success,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
+                        SizedBox(height: 4),
+                        Text(
+                          "០៩:៤១ ព្រឹក • ២ នាទីមុន",
+                          style: TextStyle(color: Colors.white60, fontSize: 12),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ],
-            ),
 
-            const SizedBox(height: 16),
-
-            Row(
-              children: const [
-                Icon(Icons.location_on, color: Colors.amber, size: 18),
-                SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    "១២៣ ផ្លូវពាណិជ្ជកម្ម, តំបន់ខាងជើង",
-                    style: TextStyle(color: Colors.white70, fontSize: 13),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-
-            ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Stack(
-                children: [
-                  Image.asset(
-                    "assets/map_preview.png",
-                    height: 120,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
-                  Positioned(
-                    bottom: 10,
-                    right: 10,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.65),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Text(
-                        "២០០ ម៉ែត្រ ពីការិយាល័យកណ្តាល",
-                        style: TextStyle(color: Colors.white, fontSize: 11),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2E4A34),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: AppColors.success, width: 2),
+                    ),
+                    child: Text(
+                      AppStrings.tr("ទាន់ពេល"),
+                      style: TextStyle(
+                        color: AppColors.success,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
                 ],
               ),
-            ),
-          ],
-        ),
-      ),
-    ],
-  );
-}
 
+              const SizedBox(height: 16),
+
+              Row(
+                children: [
+                  Icon(Icons.location_on, color: Colors.amber, size: 18),
+                  SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      AppStrings.tr("១២៣ ផ្លូវពាណិជ្ជកម្ម, តំបន់ខាងជើង"),
+                      style: TextStyle(color: Colors.white70, fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+
+              ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Stack(
+                  children: [
+                    Image.asset(
+                      "assets/map_preview.png",
+                      height: 120,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
+                    Positioned(
+                      bottom: 10,
+                      right: 10,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.65),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          AppStrings.tr("២០០ ម៉ែត្រ ពីការិយាល័យកណ្តាល"),
+                          style: TextStyle(color: Colors.white, fontSize: 11),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 }

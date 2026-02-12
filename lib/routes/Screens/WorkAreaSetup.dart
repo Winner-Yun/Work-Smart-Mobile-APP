@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
@@ -62,27 +63,32 @@ class _WorkareasetupState extends State<Workareasetup> {
   }
 
   Set<Circle> get _circles => {
-        Circle(
-          circleId: const CircleId('work_area'),
-          center: _center,
-          radius: _radius, 
-          fillColor: const Color(0xFF0BD6C6).withOpacity(0.18),
-          strokeColor: const Color(0xFF0BD6C6).withOpacity(0.55),
-          strokeWidth: 2,
-        ),
-      };
+    Circle(
+      circleId: const CircleId('work_area'),
+      center: _center,
+      radius: _radius,
+      fillColor: const Color(0xFF0BD6C6).withOpacity(0.18),
+      strokeColor: const Color(0xFF0BD6C6).withOpacity(0.55),
+      strokeWidth: 2,
+    ),
+  };
 
   Set<Marker> get _markers => {
-        Marker(
-          markerId: const MarkerId('center_pin'),
-          position: _center,
-        )
-      };
+    Marker(markerId: const MarkerId('center_pin'), position: _center),
+  };
 
   String _kmNum(int n) {
     const m = {
-      '0': '០','1': '១','2': '២','3': '៣','4': '៤',
-      '5': '៥','6': '៦','7': '៧','8': '៨','9': '៩',
+      '0': '០',
+      '1': '១',
+      '2': '២',
+      '3': '៣',
+      '4': '៤',
+      '5': '៥',
+      '6': '៦',
+      '7': '៧',
+      '8': '៨',
+      '9': '៩',
     };
     return n.toString().split('').map((c) => m[c] ?? c).join();
   }
@@ -132,7 +138,7 @@ class _WorkareasetupState extends State<Workareasetup> {
           ),
         ),
         title: Text(
-          "ការកំណត់តំបន់ការងារ",
+          AppStrings.tr("ការកំណត់តំបន់ការងារ"),
           style: GoogleFonts.hanuman(
             color: AppColors.textLight,
             fontWeight: FontWeight.bold,
@@ -157,7 +163,9 @@ class _WorkareasetupState extends State<Workareasetup> {
                     context: context,
                     builder: (context) => AlertDialog(
                       title: const Text("Help"),
-                      content: const Text("This is the Work Area Setup screen."),
+                      content: const Text(
+                        "This is the Work Area Setup screen.",
+                      ),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(context),
@@ -204,12 +212,7 @@ class _WorkareasetupState extends State<Workareasetup> {
                       },
                     ),
             ),
-            Positioned(
-              left: 16,
-              right: 16,
-              top: 10,
-              child: _buildSearch(),
-            ),
+            Positioned(left: 16, right: 16, top: 10, child: _buildSearch()),
             Positioned(
               right: 16,
               top: 150,
@@ -291,9 +294,13 @@ class _WorkareasetupState extends State<Workareasetup> {
                 borderRadius: BorderRadius.circular(16),
                 borderSide: BorderSide(color: Colors.grey.shade600, width: 1.5),
               ),
-              hintText: 'រាជធានីភ្នំពេញ, ​ប្រទេសកម្ពុជា',
+              hintText: AppStrings.tr('រាជធានីភ្នំពេញ, ​ប្រទេសកម្ពុជា'),
               hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 14),
-              prefixIcon: Icon(Icons.search, color: AppColors.secondary, size: 22),
+              prefixIcon: Icon(
+                Icons.search,
+                color: AppColors.secondary,
+                size: 22,
+              ),
             ),
           ),
         ),
@@ -314,7 +321,7 @@ class _WorkareasetupState extends State<Workareasetup> {
                 Icon(Icons.circle, size: 11, color: AppColors.primary),
                 const SizedBox(width: 8),
                 Text(
-                  "ភាពត្រឹមត្រូវ៖ ខ្ពស់ (៣ម)",
+                  AppStrings.tr("ភាពត្រឹមត្រូវ៖ ខ្ពស់ (៣ម)"),
                   style: GoogleFonts.hanuman(
                     color: AppColors.primary,
                     fontWeight: FontWeight.bold,
@@ -329,101 +336,103 @@ class _WorkareasetupState extends State<Workareasetup> {
     );
   }
 
- Widget _buildBottomPanel() {
-  return Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: const Color.fromARGB(255, 3, 21, 21),
-      borderRadius: BorderRadius.circular(18),
-    ),
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Text(
-                "កំណត់កាំនៃតំបន់",
-                style: GoogleFonts.hanuman(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 18,
-                ),
-              ),
-            ),
-            Text(
-              _kmNum(_radius.round()),
-              style: GoogleFonts.hanuman(
-                color: const Color(0xFFF2A100),
-                fontWeight: FontWeight.w800,
-                fontSize: 28,
-              ),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              "ម៉ែត្រ",
-              style: GoogleFonts.hanuman(
-                color: Colors.white70,
-                fontWeight: FontWeight.w700,
-                fontSize: 14,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Slider(
-          min: 50,
-          max: 300,
-          divisions: 5,
-          value: _radius,
-          activeColor: const Color(0xFF0BD6C6),
-          inactiveColor: const Color(0xFF0BD6C6).withOpacity(0.25),
-          onChanged: (v) => setState(() => _radius = v),
-        ),
-        const SizedBox(height: 2),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [50, 100, 150, 200, 250, 300]
-              .map(
-                (n) => Text(
-                  _kmNum(n),
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
+  Widget _buildBottomPanel() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color.fromARGB(255, 3, 21, 21),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  AppStrings.tr("កំណត់កាំនៃតំបន់"),
+                  style: GoogleFonts.hanuman(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 18,
                   ),
                 ),
-              )
-              .toList(),
-        ),
-        const SizedBox(height: 14),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0E6B6A),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
+              ),
+              Text(
+                _kmNum(_radius.round()),
+                style: GoogleFonts.hanuman(
+                  color: const Color(0xFFF2A100),
+                  fontWeight: FontWeight.w800,
+                  fontSize: 28,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                AppStrings.tr("ម៉ែត្រ"),
+                style: GoogleFonts.hanuman(
+                  color: Colors.white70,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Slider(
+            min: 50,
+            max: 300,
+            divisions: 5,
+            value: _radius,
+            activeColor: AppColors.secondary,
+            inactiveColor: const Color(0xFF0BD6C6).withOpacity(0.25),
+            onChanged: (v) => setState(() => _radius = v),
+          ),
+          const SizedBox(height: 2),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [50, 100, 150, 200, 250, 300]
+                .map(
+                  (n) => Text(
+                    _kmNum(n),
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                )
+                .toList(),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0E6B6A),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("Saved radius: ${_radius.round()}m")),
+                );
+              },
+              child: Row(
+                mainAxisSize: MainAxisSize.min, 
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    AppStrings.tr( "រក្សាទុកតំបន់ការងារ"),
+                    style: GoogleFonts.hanuman(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(width: 8), 
+                  const Icon(Icons.check, size: 20, color: Colors.white),
+                ],
               ),
             ),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text("Saved radius: ${_radius.round()}m"),
-                ),
-              );
-            },
-            child: Text(
-              "រក្សាទុកតំបន់ការងារ",
-              style: GoogleFonts.hanuman(fontWeight: FontWeight.w700),
-            ),
           ),
-        ),
-      ],
-    ),
-  );
-}
-
+        ],
+      ),
+    );
+  }
 }

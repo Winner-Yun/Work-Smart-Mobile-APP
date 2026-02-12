@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 
 class NotificationScreen extends StatefulWidget {
@@ -13,13 +14,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
   final List<Map<String, dynamic>> _notifications = [
     {
       "id": 1,
-      "title": "ការស្នើសុំច្បាប់",
-      "subtitle": "ច្បាប់សម្រាកប្រចាំឆ្នាំរបស់អ្នកត្រូវបានអនុម័ត។",
-      "time": "២ ម៉ោងមុន",
+      "title": "leave_request",
+      "subtitle": "leave_approved_msg",
+      "time": "time_ago_2h",
       "type": "approval",
       "is_read": false,
     },
-    // ... other notifications
   ];
 
   void _deleteNotification(int index) {
@@ -29,8 +29,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         backgroundColor: Theme.of(context).colorScheme.primary,
-        content: Text("បានលុបការជូនដំណឹង"),
-        duration: Duration(seconds: 1),
+        content: Text(AppStrings.tr('notif_deleted')),
+        duration: const Duration(seconds: 1),
       ),
     );
   }
@@ -68,7 +68,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
               if (!isRead)
                 _buildMenuButton(
                   icon: Icons.done_all_rounded,
-                  label: "សម្គាល់ថាបានអាន",
+                  label: AppStrings.tr('mark_read'),
                   color: Theme.of(context).colorScheme.primary,
                   onTap: () {
                     setState(() => _notifications[index]['is_read'] = true);
@@ -78,7 +78,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
               if (!isRead) const SizedBox(height: 12),
               _buildMenuButton(
                 icon: Icons.delete_outline_rounded,
-                label: "លុបការជូនដំណឹងនេះ",
+                label: AppStrings.tr('delete_notif'),
                 color: Colors.redAccent,
                 onTap: () {
                   Navigator.pop(context);
@@ -116,7 +116,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
         onPressed: () => Navigator.pop(context),
       ),
       title: Text(
-        "ការជូនដំណឹង",
+        AppStrings.tr('notifications_title'),
         style: TextStyle(
           color: Theme.of(context).colorScheme.primary,
           fontWeight: FontWeight.bold,
@@ -129,7 +129,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
             Icons.done_all,
             color: Theme.of(context).colorScheme.primary,
           ),
-          tooltip: "អានទាំងអស់",
+          tooltip: AppStrings.tr('read_all'),
           onPressed: () => setState(() {
             for (var n in _notifications) {
               n['is_read'] = true;
@@ -223,7 +223,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      data['title'],
+                      AppStrings.tr(data['title']),
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
@@ -231,7 +231,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       ),
                     ),
                     Text(
-                      data['time'],
+                      AppStrings.tr(data['time']),
                       style: const TextStyle(
                         color: AppColors.textGrey,
                         fontSize: 11,
@@ -241,7 +241,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 ),
                 const SizedBox(height: 5),
                 Text(
-                  data['subtitle'],
+                  AppStrings.tr(data['subtitle']),
                   style: TextStyle(
                     color: Theme.of(
                       context,
@@ -307,9 +307,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
             color: Colors.grey[300],
           ),
           const SizedBox(height: 15),
-          const Text(
-            "មិនទាន់មានការជូនដំណឹងនៅឡើយទេ",
-            style: TextStyle(color: AppColors.textGrey),
+          Text(
+            AppStrings.tr('no_notif'),
+            style: const TextStyle(color: AppColors.textGrey),
           ),
         ],
       ),

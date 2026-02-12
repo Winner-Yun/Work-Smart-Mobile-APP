@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 
 class AchievementScreen extends StatelessWidget {
@@ -17,10 +18,9 @@ class AchievementScreen extends StatelessWidget {
           _buildStatsRow(context),
           const SizedBox(height: 30),
           Expanded(child: _buildBadgesGrid(context)),
-          _buildBottomGoalCard(context).animate().scale(
-            delay: 600.ms,
-            curve: Curves.bounceOut,
-          ),
+          _buildBottomGoalCard(
+            context,
+          ).animate().scale(delay: 600.ms, curve: Curves.bounceOut),
         ],
       ),
     );
@@ -39,9 +39,12 @@ class AchievementScreen extends StatelessWidget {
         ),
         onPressed: () => Navigator.pop(context),
       ),
-      title:  Text(
-        "សមិទ្ធផលរបស់ខ្ញុំ",
-        style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
+      title: Text(
+        AppStrings.tr('my_achievements'),
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.primary,
+          fontWeight: FontWeight.bold,
+        ),
       ),
       centerTitle: true,
     );
@@ -79,16 +82,16 @@ class AchievementScreen extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Text(
-          "សួស្តី, វិនន័រ",
+          "${AppStrings.tr('hello')}, Winner",
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
             color: Theme.of(context).textTheme.bodyLarge?.color,
           ),
         ),
-        const Text(
-          "អ្នកបម្រើការផ្នែក IT",
-          style: TextStyle(color: AppColors.textGrey, fontSize: 14),
+        Text(
+          AppStrings.tr('role_it_staff'),
+          style: const TextStyle(color: AppColors.textGrey, fontSize: 14),
         ),
       ],
     ).animate().fadeIn().scale();
@@ -99,9 +102,19 @@ class AchievementScreen extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
-          _statItem(context, "មេដាយសរុប", "១២", Icons.military_tech),
+          _statItem(
+            context,
+            AppStrings.tr('total_medals'),
+            "12",
+            Icons.military_tech,
+          ),
           const SizedBox(width: 15),
-          _statItem(context, "ចំណាត់ថ្នាក់", "#៥", Icons.leaderboard_outlined),
+          _statItem(
+            context,
+            AppStrings.tr('rank_label'),
+            "#5",
+            Icons.leaderboard_outlined,
+          ),
         ],
       ),
     );
@@ -134,7 +147,7 @@ class AchievementScreen extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   value,
-                  style:  TextStyle(
+                  style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: Theme.of(context).colorScheme.primary,
@@ -151,37 +164,37 @@ class AchievementScreen extends StatelessWidget {
   Widget _buildBadgesGrid(BuildContext context) {
     final badges = [
       {
-        "name": "មកដល់មុនគេ",
+        "name": AppStrings.tr('badge_early_bird'),
         "icon": Icons.wb_sunny_outlined,
         "color": Colors.orange,
         "locked": false,
       },
       {
-        "name": "វត្តមានឥតខ្ចោះ",
+        "name": AppStrings.tr('badge_perfect_atd'),
         "icon": Icons.calendar_today_outlined,
         "color": Colors.teal,
         "locked": false,
       },
       {
-        "name": "ឆ្នើមប្រចាំខែ",
+        "name": AppStrings.tr('badge_emp_month'),
         "icon": Icons.military_tech_outlined,
         "color": Colors.pink,
         "locked": false,
       },
       {
-        "name": "លឿនរហ័ស",
+        "name": AppStrings.tr('badge_speed'),
         "icon": Icons.rocket_launch_outlined,
         "color": Colors.blue,
         "locked": false,
       },
       {
-        "name": "សហការល្អ",
+        "name": AppStrings.tr('badge_collab'),
         "icon": Icons.handshake_outlined,
         "color": Colors.grey,
         "locked": true,
       },
       {
-        "name": "គំនិតច្នៃប្រឌិត",
+        "name": AppStrings.tr('badge_creative'),
         "icon": Icons.lightbulb_outline,
         "color": Colors.grey,
         "locked": true,
@@ -197,16 +210,16 @@ class AchievementScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "មេដាយដែលទទួលបាន",
+                AppStrings.tr('earned_badges'),
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
               ),
-              const Text(
-                "មើលទាំងអស់",
-                style: TextStyle(color: Colors.teal, fontSize: 12),
+              Text(
+                AppStrings.tr('view_all'),
+                style: const TextStyle(color: Colors.teal, fontSize: 12),
               ),
             ],
           ),
@@ -276,7 +289,7 @@ class AchievementScreen extends StatelessWidget {
       margin: const EdgeInsets.all(24),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary,
+        color: Theme.of(context).colorScheme.tertiary,
         borderRadius: BorderRadius.circular(25),
       ),
       child: Column(
@@ -289,27 +302,30 @@ class AchievementScreen extends StatelessWidget {
                 size: 28,
               ),
               const SizedBox(width: 15),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "គោលដៅបន្ទាប់",
-                      style: TextStyle(
+                      AppStrings.tr('next_goal'),
+                      style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),
                     ),
                     Text(
-                      "បន្ត ៥ ថ្ងៃទៀតដើម្បីបានមេដាយ 'វីរៈបុរស'",
-                      style: TextStyle(color: Colors.white70, fontSize: 11),
+                      AppStrings.tr('goal_hero_desc'),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 11,
+                      ),
                     ),
                   ],
                 ),
               ),
               const Text(
-                "៨០%",
+                "80%",
                 style: TextStyle(
                   color: AppColors.secondary,
                   fontWeight: FontWeight.bold,
@@ -326,16 +342,16 @@ class AchievementScreen extends StatelessWidget {
             valueColor: AlwaysStoppedAnimation<Color>(AppColors.secondary),
           ),
           const SizedBox(height: 10),
-          const Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "វឌ្ឍនភាព",
-                style: TextStyle(color: Colors.white70, fontSize: 10),
+                AppStrings.tr('progress'),
+                style: const TextStyle(color: Colors.white70, fontSize: 10),
               ),
               Text(
-                "២០/២៥ ថ្ងៃ",
-                style: TextStyle(color: Colors.white70, fontSize: 10),
+                "20/25 ${AppStrings.tr('days')}",
+                style: const TextStyle(color: Colors.white70, fontSize: 10),
               ),
             ],
           ),

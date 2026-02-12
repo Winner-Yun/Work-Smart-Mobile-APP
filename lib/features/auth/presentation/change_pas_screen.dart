@@ -1,18 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
-import 'package:flutter_worksmart_mobile_app/core/constants/app_img.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
+import 'package:flutter_worksmart_mobile_app/core/constants/app_img.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   final bool isFromProfile;
 
-  const ResetPasswordScreen({
-    super.key,
-    this.isFromProfile = false, // Default to false
-  });
+  const ResetPasswordScreen({super.key, this.isFromProfile = false});
 
   @override
   State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
@@ -44,6 +40,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: Theme.of(context).cardTheme.color,
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -61,26 +58,32 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             Text(
               AppStrings.tr('success_message'),
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.grey),
+              style: TextStyle(
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
             ),
             const SizedBox(height: 25),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                   padding: const EdgeInsets.symmetric(vertical: 15),
                 ),
                 onPressed: () {
-                  Navigator.pop(context); // Close dialog
+                  Navigator.pop(context);
                   Navigator.popUntil(context, (route) => route.isFirst);
                 },
                 child: Text(
                   AppStrings.tr('back_to_login'),
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimary,
+                  ),
                 ),
               ),
             ),
@@ -93,12 +96,12 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: const SystemUiOverlayStyle(
+      value: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.light,
       ),
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).cardTheme.color,
         body: SingleChildScrollView(
           child: Column(children: [_buildHeader(), _buildFormContainer()]),
         ),
@@ -172,14 +175,15 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   }
 
   Widget _buildFormContainer() {
+    final theme = Theme.of(context);
     return Transform.translate(
       offset: const Offset(0, -30),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
           boxShadow: [
             BoxShadow(
               color: Colors.black12,
@@ -208,8 +212,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 () => setState(() => _obscureConfirm = !_obscureConfirm),
                 isConfirm: true,
               ),
-
-              // Only show Forgot Password if coming from Profile
               if (widget.isFromProfile) ...[
                 Align(
                   alignment: Alignment.centerRight,
@@ -219,8 +221,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     },
                     child: Text(
                       AppStrings.tr('forgot_password'),
-                      style: const TextStyle(
-                        color: AppColors.primary,
+                      style: TextStyle(
+                        color: theme.colorScheme.primary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -228,7 +230,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 ),
               ] else
                 const SizedBox(height: 20),
-
               const SizedBox(height: 20),
               _buildSubmitButton(),
             ],
@@ -246,6 +247,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     VoidCallback toggle, {
     bool isConfirm = false,
   }) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -255,11 +257,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         ),
         const SizedBox(height: 10),
         Theme(
-          data: Theme.of(context).copyWith(
+          data: theme.copyWith(
             textSelectionTheme: TextSelectionThemeData(
-              cursorColor: AppColors.primary,
-              selectionHandleColor: AppColors.primary,
-              selectionColor: AppColors.primary.withValues(alpha: 0.2),
+              cursorColor: theme.colorScheme.primary,
+              selectionHandleColor: theme.colorScheme.primary,
+              selectionColor: theme.colorScheme.primary.withValues(alpha: 0.2),
             ),
           ),
           child: TextFormField(
@@ -278,43 +280,21 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             },
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
-              prefixIcon: const Icon(
+              prefixIcon: Icon(
                 Icons.lock_reset_rounded,
-                color: AppColors.primary,
+                color: theme.colorScheme.primary,
               ),
               suffixIcon: IconButton(
                 icon: Icon(
                   obscure
                       ? Icons.visibility_outlined
                       : Icons.visibility_off_outlined,
-                  color: Colors.grey[400],
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   size: 20,
                 ),
                 onPressed: toggle,
               ),
-              filled: true,
-              fillColor: Colors.grey[50],
               contentPadding: const EdgeInsets.symmetric(vertical: 18),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(15),
-                borderSide: BorderSide.none,
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(15),
-                borderSide: BorderSide(color: Colors.grey[100]!),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(15),
-                borderSide: const BorderSide(
-                  color: AppColors.primary,
-                  width: 1.5,
-                ),
-              ),
-              errorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(15),
-                borderSide: const BorderSide(color: Colors.redAccent, width: 1),
-              ),
             ),
           ),
         ),
@@ -323,6 +303,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   }
 
   Widget _buildSubmitButton() {
+    final theme = Theme.of(context);
     return Container(
       width: double.infinity,
       height: 58,
@@ -330,7 +311,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.3),
+            color: theme.colorScheme.primary.withValues(alpha: 0.3),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -338,8 +319,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       ),
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
+          backgroundColor: theme.colorScheme.primary,
+          foregroundColor: theme.colorScheme.onPrimary,
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),

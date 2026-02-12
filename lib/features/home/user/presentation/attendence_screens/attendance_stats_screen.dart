@@ -66,12 +66,12 @@ class _AttendanceStatsScreenState extends State<AttendanceStatsScreen> {
     return percs[index % percs.length];
   }
 
-  // Use your actual history data here (abbreviated for the example)
+  // UPDATED: Using keys for localization
   final List<Map<String, dynamic>> _historyData = [
     {
       "date": "25 Sep 2023",
-      "day": "ថ្ងៃច័ន្ទ",
-      "status": "វត្តមាន",
+      "day": "monday",
+      "status": "present",
       "color": Colors.green,
       "checkIn": "08:00 AM",
       "checkOut": "05:00 PM",
@@ -80,8 +80,8 @@ class _AttendanceStatsScreenState extends State<AttendanceStatsScreen> {
     },
     {
       "date": "22 Sep 2023",
-      "day": "ថ្ងៃសុក្រ",
-      "status": "វត្តមាន",
+      "day": "friday",
+      "status": "present",
       "color": Colors.green,
       "checkIn": "08:15 AM",
       "checkOut": "05:00 PM",
@@ -90,8 +90,8 @@ class _AttendanceStatsScreenState extends State<AttendanceStatsScreen> {
     },
     {
       "date": "21 Sep 2023",
-      "day": "អវត្តមាន",
-      "status": "អវត្តមាន",
+      "day": "absent",
+      "status": "absent",
       "color": Colors.red,
       "checkIn": "--:--",
       "checkOut": "--:--",
@@ -106,7 +106,7 @@ class _AttendanceStatsScreenState extends State<AttendanceStatsScreen> {
       return _historyData.where((e) => e['isLate'] == true).toList();
     }
     if (_selectedFilter == 'Absent') {
-      return _historyData.where((e) => e['status'] == "អវត្តមាន").toList();
+      return _historyData.where((e) => e['status'] == 'absent').toList();
     }
     return _historyData;
   }
@@ -144,8 +144,6 @@ class _AttendanceStatsScreenState extends State<AttendanceStatsScreen> {
       ),
     );
   }
-
-  // --- WIDGET MODULES ---
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
@@ -374,8 +372,6 @@ class _AttendanceStatsScreenState extends State<AttendanceStatsScreen> {
     );
   }
 
-  // --- PRIVATE HELPER METHODS ---
-
   Widget _buildYearChip(int year) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -399,7 +395,12 @@ class _AttendanceStatsScreenState extends State<AttendanceStatsScreen> {
       onTap: () => Navigator.pushNamed(
         context,
         AppRoute.attendanceDetail,
-        arguments: item,
+        arguments: {
+          ...item,
+          'status': AppStrings.tr(
+            item['status'],
+          ), // Ensure status is translated before passing
+        },
       ),
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
@@ -429,7 +430,7 @@ class _AttendanceStatsScreenState extends State<AttendanceStatsScreen> {
                   ),
                 ),
                 Text(
-                  item['day'],
+                  AppStrings.tr(item['day']),
                   style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.textGrey,
@@ -445,6 +446,7 @@ class _AttendanceStatsScreenState extends State<AttendanceStatsScreen> {
   }
 
   Widget _buildStatusBadge(Map<String, dynamic> item) {
+    final statusText = AppStrings.tr(item['status']);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
@@ -454,9 +456,9 @@ class _AttendanceStatsScreenState extends State<AttendanceStatsScreen> {
       child: Row(
         children: [
           Icon(
-            item['status'] == "ឈប់"
+            item['status'] == 'leave'
                 ? Icons.access_time
-                : item['status'] == "អវត្តមាន"
+                : item['status'] == 'absent'
                 ? Icons.cancel
                 : Icons.check_circle,
             size: 14,
@@ -464,7 +466,7 @@ class _AttendanceStatsScreenState extends State<AttendanceStatsScreen> {
           ),
           const SizedBox(width: 5),
           Text(
-            item['status'],
+            statusText,
             style: TextStyle(
               color: item['color'],
               fontWeight: FontWeight.bold,

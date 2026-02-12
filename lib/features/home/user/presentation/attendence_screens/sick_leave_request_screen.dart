@@ -1,6 +1,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 
 class SickLeaveRequestScreen extends StatefulWidget {
   const SickLeaveRequestScreen({super.key});
@@ -43,25 +44,28 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildSectionTitle('ព័ត៌មានលម្អិតនៃសំណើ', context),
+                  _buildSectionTitle(AppStrings.tr('request_details'), context),
                   const SizedBox(height: 15),
                   _buildInputCard(context, [
-                    _buildLabel('មូលហេតុនៃជំងឺ', context),
+                    _buildLabel(AppStrings.tr('reason_for_sickness'), context),
                     _buildTextField(
                       context: context,
-                      hint: 'បញ្ជាក់ពីអាការៈជំងឺ...',
+                      hint: AppStrings.tr('sickness_reason_hint'),
                       icon: Icons.edit_note,
                     ),
                     const SizedBox(height: 20),
-                    _buildLabel('កាលបរិច្ឆេទឈប់សម្រាក', context),
+                    _buildLabel(AppStrings.tr('leave_date'), context),
                     _buildTextField(
                       context: context,
-                      hint: 'ជ្រើសរើសថ្ងៃខែឆ្នាំ',
+                      hint: AppStrings.tr('select_date_hint'),
                       icon: Icons.calendar_today_rounded,
                     ),
                   ]),
                   const SizedBox(height: 25),
-                  _buildSectionTitle('ឯកសារវេជ្ជសាស្ត្រ', context),
+                  _buildSectionTitle(
+                    AppStrings.tr('medical_documents'),
+                    context,
+                  ),
                   const SizedBox(height: 15),
                   _buildUploadArea(context),
                   const SizedBox(height: 40),
@@ -76,8 +80,6 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
     );
   }
 
-  // --- Formal UI Components ---
-
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -88,7 +90,7 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
         onPressed: () => Navigator.pop(context),
       ),
       title: Text(
-        'ពាក្យសុំច្បាប់ឈឺ',
+        AppStrings.tr('request_sick_leave_title'),
         style: TextStyle(
           color: Theme.of(context).textTheme.bodyLarge?.color,
           fontSize: 18,
@@ -127,12 +129,12 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'ប្រភេទច្បាប់',
-                style: TextStyle(color: Colors.grey, fontSize: 12),
+              Text(
+                AppStrings.tr('leave_type'),
+                style: const TextStyle(color: Colors.grey, fontSize: 12),
               ),
               Text(
-                'ច្បាប់ឈឺ (Sick Leave)',
+                AppStrings.tr('sick_leave'),
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
@@ -195,8 +197,8 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
             const SizedBox(height: 10),
             Text(
               _pickedFile != null
-                  ? 'ឯកសារភ្ជាប់៖ ${_pickedFile!.name}'
-                  : 'ចុចទីនេះដើម្បីភ្ជាប់លិខិតបញ្ជាក់ពីពេទ្យ',
+                  ? '${AppStrings.tr('attached_file')}${_pickedFile!.name}'
+                  : AppStrings.tr('upload_medical_cert'),
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: _pickedFile != null
@@ -211,7 +213,7 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
             if (_pickedFile != null) ...[
               const SizedBox(height: 8),
               Text(
-                "ចុចម្ដងទៀតដើម្បីប្ដូរឯកសារ",
+                AppStrings.tr('tap_to_change_file'),
                 style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
               ),
             ],
@@ -244,9 +246,9 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
           ),
           elevation: 0,
         ),
-        child: const Text(
-          'បញ្ជូនសំណើផ្លូវការ',
-          style: TextStyle(
+        child: Text(
+          AppStrings.tr('submit_official_request'),
+          style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
             fontSize: 16,

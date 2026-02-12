@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 
 class TelegramIntegration extends StatefulWidget {
@@ -49,7 +50,7 @@ class _TelegramIntegrationState extends State<TelegramIntegration> {
         onPressed: () => Navigator.pop(context),
       ),
       title: Text(
-        'ការកំណត់ Telegram',
+        AppStrings.tr('telegram_setup_title'),
         style: TextStyle(
           fontSize: 20,
           color: Theme.of(context).colorScheme.primary,
@@ -97,7 +98,8 @@ class _TelegramIntegrationState extends State<TelegramIntegration> {
     return Column(
       children: [
         Text(
-          'ភ្ជាប់ជាមួយ Telegram',
+          AppStrings.tr('connect_telegram_title'),
+          textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,
@@ -106,9 +108,9 @@ class _TelegramIntegrationState extends State<TelegramIntegration> {
         ),
         const SizedBox(height: 10),
         Text(
-          'ទទួលបានការជូនដំណឹងភ្លាមៗអំពីការងារ និងវត្តមាន\nរបស់អ្នកតាមរយៈ Telegram Bot។',
+          AppStrings.tr('connect_telegram_desc'),
           textAlign: TextAlign.center,
-          style: TextStyle(color: AppColors.textGrey, height: 1.5),
+          style: const TextStyle(color: AppColors.textGrey, height: 1.5),
         ),
       ],
     ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.1, end: 0);
@@ -127,14 +129,14 @@ class _TelegramIntegrationState extends State<TelegramIntegration> {
             borderRadius: BorderRadius.circular(15),
           ),
         ),
-        child: const Row(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              'ភ្ជាប់ឥឡូវនេះ ',
-              style: TextStyle(fontSize: 18, color: Colors.white),
+              AppStrings.tr('connect_now_button'),
+              style: const TextStyle(fontSize: 18, color: Colors.white),
             ),
-            Icon(Icons.arrow_forward, color: Colors.white),
+            const Icon(Icons.arrow_forward, color: Colors.white),
           ],
         ),
       ),
@@ -158,9 +160,9 @@ class _TelegramIntegrationState extends State<TelegramIntegration> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text(
-            'ស្កេនកូដ QR ដើម្បីចូលរួម',
-            style: TextStyle(color: AppColors.textGrey),
+          Text(
+            AppStrings.tr('scan_qr_title'),
+            style: const TextStyle(color: AppColors.textGrey),
           ),
           const SizedBox(height: 20),
           Container(
@@ -210,7 +212,7 @@ class _TelegramIntegrationState extends State<TelegramIntegration> {
         Align(
           alignment: Alignment.centerLeft,
           child: Text(
-            'របៀបភ្ជាប់៖',
+            AppStrings.tr('how_to_connect'),
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -222,21 +224,21 @@ class _TelegramIntegrationState extends State<TelegramIntegration> {
         ...[
           _buildStepItem(
             context,
-            '១',
-            'ស្កេនកូដ QR',
-            'បើកកាមេរ៉ាទូរស័ព្ទរបស់អ្នក ដើម្បីស្កេនកូដខាងលើ។',
+            '១', // Keep number as is or move to AppStrings if needed
+            AppStrings.tr('step_1_title'),
+            AppStrings.tr('step_1_desc'),
           ),
           _buildStepItem(
             context,
             '២',
-            'ចុចប៊ូតុង ចាប់ផ្តើម (Start)',
-            'ផ្ញើសារ /start ទៅកាន់ប៊ូត ដើម្បីធ្វើការចុះឈ្មោះ។',
+            AppStrings.tr('step_2_title'),
+            AppStrings.tr('step_2_desc'),
           ),
           _buildStepItem(
             context,
             '៣',
-            'ទទួលបានការជូនដំណឹង',
-            'អ្នកនឹងទទួលបានការជូនដំណឹងដោយស្វ័យប្រវត្តិតាម Telegram។',
+            AppStrings.tr('step_3_title'),
+            AppStrings.tr('step_3_desc'),
           ),
         ].asMap().entries.map((entry) {
           return entry.value

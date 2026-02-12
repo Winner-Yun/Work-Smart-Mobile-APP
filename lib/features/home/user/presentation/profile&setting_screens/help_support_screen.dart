@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_img.dart';
+import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 
 class HelpSupportScreen extends StatelessWidget {
@@ -21,9 +22,9 @@ class HelpSupportScreen extends StatelessWidget {
           ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'ជំនួយ និង ការគាំទ្រ',
-          style: TextStyle(
+        title: Text(
+          AppStrings.tr('help_support_title'),
+          style: const TextStyle(
             color: AppColors.textLight,
             fontWeight: FontWeight.bold,
           ),
@@ -34,31 +35,31 @@ class HelpSupportScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSectionHeader('ទំនាក់ទំនងមកយើង', context),
+            _buildSectionHeader(AppStrings.tr('contact_us'), context),
             const SizedBox(height: 15),
             _buildSupportCard(
               context,
               icon: Icons.headset_mic_rounded,
-              title: 'ផ្នែកបម្រើអតិថិជន',
-              subtitle: 'ឆ្លើយតបរហ័ស ២៤/៧',
+              title: AppStrings.tr('customer_service'),
+              subtitle: AppStrings.tr('quick_response'),
               color: Colors.blue,
-              onTap: () {}, // Add Telegram link logic
+              onTap: () {},
             ),
             const SizedBox(height: 15),
             _buildSupportCard(
               context,
               icon: Icons.mail_rounded,
-              title: 'ផ្ញើអ៊ីមែល',
+              title: AppStrings.tr('send_email'),
               subtitle: 'support@worksmart.kh',
               color: Colors.orange,
               onTap: () {},
             ),
             const SizedBox(height: 30),
-            _buildSectionHeader('សំណួរដែលសួរញឹកញាប់ (FAQ)', context),
+            _buildSectionHeader(AppStrings.tr('faq_title'), context),
             const SizedBox(height: 15),
-            _buildFAQTile('របៀបប្តូរលេខសម្ងាត់?', context),
-            _buildFAQTile('តើធ្វើដូចម្តេចដើម្បីភ្ជាប់ Telegram?', context),
-            _buildFAQTile('បញ្ហាការចុះឈ្មោះចូលប្រើប្រាស់', context),
+            _buildFAQTile(AppStrings.tr('faq_change_pass'), context),
+            _buildFAQTile(AppStrings.tr('faq_connect_tele'), context),
+            _buildFAQTile(AppStrings.tr('faq_login_issue'), context),
             const SizedBox(height: 40),
             _buildVersionInfo(context),
           ],
@@ -122,6 +123,8 @@ class HelpSupportScreen extends StatelessWidget {
                     children: [
                       Text(
                         title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 15,
@@ -129,6 +132,8 @@ class HelpSupportScreen extends StatelessWidget {
                       ),
                       Text(
                         subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           color: AppColors.textGrey,
                           fontSize: 13,
@@ -158,7 +163,12 @@ class HelpSupportScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(15),
       ),
       child: ListTile(
-        title: Text(question, style: const TextStyle(fontSize: 14)),
+        title: Text(
+          question,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontSize: 14),
+        ),
         trailing: Icon(
           Icons.add,
           size: 20,

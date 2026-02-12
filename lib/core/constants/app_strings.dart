@@ -1,15 +1,17 @@
+import 'package:flutter_worksmart_mobile_app/config/language_manager.dart';
+
 class AppStrings {
-  static const String currentLang = 'km';
+  static String get currentLang => LanguageManager().locale;
 
   static const Map<String, Map<String, String>> data = {
     'en': {
-      //menu bottomAppbar
+      // --- Menu ---
       'home_menu': 'Home',
       'atd_menu': 'Attendent',
       'leave_menu': 'Leave',
       'profile_menu': 'Profile',
 
-      // Auth Screen
+      // --- Auth ---
       'logging_in_employee': 'Logging in to Employee account...',
       'logging_in_admin': 'Logging in to Admin account...',
       'smart_hr_system': 'Smart HR Management System',
@@ -34,7 +36,6 @@ class AppStrings {
       'admin_login_button': 'Login as Admin',
       'forgot_password': 'Forgot Password?',
       'app_version': 'WorkSmart v1.0 • ',
-
       "forgot_password_desc":
           "Please enter your email address to receive a verification code.",
       "email_label": "Email Address",
@@ -54,14 +55,13 @@ class AppStrings {
       "confirm_password_label": "Confirm Password",
       "confirm_password_hint": "Re-enter new password",
       "password_empty_error": "Please enter password",
-
       "password_mismatch_error": "Passwords do not match",
       "change_password_button": "Change Password",
       "success_title": "Success!",
       "success_message": "Your password has been changed successfully.",
       "back_to_login": "Back to Login",
 
-      // Tutorial Screen
+      // --- Tutorial ---
       'skip': 'Skip',
       'start': 'Start',
       'next': 'Next',
@@ -74,7 +74,7 @@ class AppStrings {
       'tutorial_subtitle_3':
           'Achieve achievements and good ranking in the company',
 
-      // Homepage
+      // --- Home & Map Status ---
       'greeting': 'Good Morning,',
       'safety': 'Safety',
       'greet_pronoun_man': 'Mr',
@@ -95,7 +95,6 @@ class AppStrings {
       'role_ios': 'iOS Developer',
       'role_designer': 'Designer',
       'days': 'Days',
-
       'office_zone': 'Office Zone',
       'outside_zone': 'Outside Zone',
       'gps_status': 'GPS Status',
@@ -103,8 +102,27 @@ class AppStrings {
       'too_far': 'Too Far',
       'distance': 'Distance',
       'get_directions': 'Get Directions',
+      'finding_location': 'Finding location...',
+      'perm_needed': 'Location permission needed',
+      'enable_loc_settings': 'Please enable location in settings',
+      'waiting_loc': 'Waiting for location...',
+      'in_office_area': 'You are in the office area',
+      'far_from_office': 'Away',
+      'from_office': 'from office',
+      'mock_date': 'Mon, 24 Oct 2023',
+      'face_required_title': 'Please Verify Your Face',
+      'face_required_desc':
+          'Please press the button below to scan your face for attendance check-in',
+      'register_now': 'Register Now',
+      'waiting_admin': 'Waiting for Admin...',
+      'pending_approval_title': 'Scan Under Review',
+      'pending_approval_desc':
+          'Your identity is being verified. Please wait for admin approval.',
+      'processing': 'Processing...',
+      'points_label': 'Pts',
+      'punctuality': 'Punctuality',
 
-      // Attd screen display
+      // --- Attendance ---
       'my_stats': 'My Statistics',
       'attendance_rate': 'Attendance Rate',
       'present': 'Present',
@@ -112,7 +130,7 @@ class AppStrings {
       'absent': 'Absent',
       'monthly_trend': 'Monthly Attendance Trends',
       'all_shifts': 'All Shifts',
-      'monthly_attendance': 'Attendance for September',
+      'monthly_attendance': 'Monthly Attendance',
       'attendance_details': 'Attendance Details',
       'check_in_title': 'Check-In',
       'check_out_title': 'Check-Out',
@@ -122,22 +140,67 @@ class AppStrings {
       'on_time': 'On Time',
       'location_label': 'Location',
       'phnom_penh': 'Phnom Penh',
+      'date_label': 'Date',
+      'no_records': 'No records available',
+      'no_data_for_today': 'No data for today',
 
-      // Months (All 12)
-      'month_jan': 'Jan',
-      'month_feb': 'Feb',
-      'month_mar': 'Mar',
-      'month_apr': 'Apr',
-      'month_may': 'May',
-      'month_jun': 'Jun',
-      'month_jul': 'Jul',
-      'month_aug': 'Aug',
-      'month_sep': 'Sep',
-      'month_oct': 'Oct',
-      'month_nov': 'Nov',
-      'month_dec': 'Dec',
+      // --- Leave Management & Requests ---
+      'leave_details_title': 'Leave Details',
+      'usage_stats': 'Usage Statistics',
+      'request_history': 'Request History',
+      'you_have_remaining_leave': 'You have',
+      'this_year': 'of leave remaining for this year.',
+      'remaining': 'Remaining',
+      'used': 'Used',
+      'request_sick_leave': 'Request Sick Leave',
+      'request_annual_leave': 'Request Annual Leave',
+      'status_approved': 'Approved',
+      'status_rejected': 'Rejected',
+      'status_pending': 'Pending',
+      'sick_leave_fever': 'Sick Leave (Fever)',
+      'personal_leave': 'Personal Leave',
+      'special_leave': 'Special Leave',
+      'days_remaining': 'Days Remaining',
+      'recent_requests': 'Recent Requests',
 
-      // Leaderboard Screen
+      // Annual Leave Request Screen
+      'request_annual_leave_title': 'Annual Leave Request',
+      'annual_leave_balance_msg':
+          'You have 12 days of annual leave remaining for this year.',
+      'select_date': 'Select Date',
+      'start_date': 'Start Date',
+      'end_date': 'End Date',
+      'reason_for_request': 'Reason for Request',
+      'enter_reason_hint': 'Enter reason here...',
+      'submit_request': 'Submit Request',
+
+      // Sick Leave Request Screen
+      'request_sick_leave_title': 'Sick Leave Request',
+      'leave_type': 'Leave Type',
+      'sick_leave_type_label': 'Sick Leave',
+      'request_details': 'Request Details',
+      'reason_for_sickness': 'Reason for Sickness',
+      'sickness_reason_hint': 'Describe symptoms...',
+      'leave_date': 'Leave Date',
+      'select_date_hint': 'Select Date',
+      'medical_documents': 'Medical Documents',
+      'attached_file': 'Attached File: ',
+      'upload_medical_cert': 'Click here to upload medical certificate',
+      'tap_to_change_file': 'Tap again to change file',
+      'submit_official_request': 'Submit Official Request',
+
+      // --- Notifications ---
+      'notifications_title': 'Notifications',
+      'mark_read': 'Mark as read',
+      'delete_notif': 'Delete this notification',
+      'read_all': 'Read All',
+      'no_notif': 'No notifications yet',
+      'notif_deleted': 'Notification deleted',
+      'leave_request': 'Leave Request',
+      'leave_approved_msg': 'Your annual leave has been approved.',
+      'time_ago_2h': '2 hours ago',
+
+      // --- Leaderboard ---
       'top_rankings': 'Top Rankings',
       'monthly': 'Monthly',
       'yearly': 'Yearly',
@@ -150,31 +213,124 @@ class AppStrings {
       'acc_department': 'Accounting Department',
       'admin_department': 'Admin Department',
 
-      // in callender
+      // --- Achievement Screen ---
+      'my_achievements': 'My Achievements',
+      'hello': 'Hello',
+      'role_it_staff': 'IT Staff',
+      'total_medals': 'Total Medals',
+      'rank_label': 'Rank',
+      'earned_badges': 'Earned Badges',
+      'progress': 'Progress',
+      'goal_hero_desc': 'Continue 5 more days to get "Hero" medal',
+      'badge_early_bird': 'Early Bird',
+      'badge_perfect_atd': 'Perfect Attendance',
+      'badge_emp_month': 'Employee of Month',
+      'badge_speed': 'Fast Learner',
+      'badge_collab': 'Good Teamwork',
+      'badge_creative': 'Creative Mind',
+
+      // --- Calendar ---
       'no_data': 'No Data',
       'total_work_hours': 'Total Work Hours',
+      'hours_unit': 'Hours',
       'attendance_calendar_title': 'Attendance Calendar',
       'download_report': 'Downloading report...',
       'day_label': 'Day',
       'avg_attendance': 'Average Attendance',
 
-      //face scanner screen
+      // --- Face Scan ---
       'face_scan_title': 'Please place your face in the circle',
-      'face_scan_step': 'Step 2: Scan Face',
+      'face_scan_step': 'Next Step: Scan Face',
       'live_status': 'LIVE',
-      'switch_camera': 'Switch Camera',
+      'switch_camera': 'Switch',
       'ensure_light': 'Ensure enough light',
       'scan_success': 'Scan Success!',
       'camera_error': 'Camera Error',
+
+      // --- Help & Support ---
+      'help_support_title': 'Help & Support',
+      'contact_us': 'Contact Us',
+      'customer_service': 'Customer Service',
+      'quick_response': 'Fast response 24/7',
+      'send_email': 'Send Email',
+      'faq_title': 'FAQ',
+      'faq_change_pass': 'How to change password?',
+      'faq_connect_tele': 'How to connect Telegram?',
+      'faq_login_issue': 'Login issues',
+
+      // --- Profile ---
+      'account_title': 'Account',
+      'choose_photo': 'Choose Photo',
+      'gallery': 'Gallery',
+      'camera': 'Camera',
+      'phone_label': 'Phone Number',
+      'not_connected': 'Not Connected',
+      'connect_now': 'Connect Now',
+      'change_password_action': 'Change Password',
+      'logout_action': 'Logout',
+      'confirm_logout_title': 'Logout Account',
+      'confirm_logout_msg': 'Are you sure you want to logout?',
+      'cancel_button': 'Cancel',
+      'logout_button': 'Logout',
+
+      // --- Settings ---
+      'settings_title': 'Settings',
+      'general_section': 'General',
+      'language_label': 'Language',
+      'dark_mode': 'Dark Mode',
+      'notification_label': 'Notification',
+      'support_section': 'Support',
+      'about_app': 'About App',
+
+      // --- Telegram Integration ---
+      'telegram_setup_title': 'Telegram Setup',
+      'connect_telegram_title': 'Connect with Telegram',
+      'connect_telegram_desc':
+          'Get instant notifications about work and attendance via Telegram Bot.',
+      'connect_now_button': 'Connect Now ',
+      'scan_qr_title': 'Scan QR to Join',
+      'how_to_connect': 'How to connect:',
+      'step_1_title': 'Scan QR Code',
+      'step_1_desc': 'Open your phone camera to scan the code above.',
+      'step_2_title': 'Press Start Button',
+      'step_2_desc': 'Send /start message to the bot to register.',
+      'step_3_title': 'Receive Notifications',
+      'step_3_desc': 'You will receive automatic notifications via Telegram.',
+
+      // --- Date & Time ---
+      'month_jan': 'Jan',
+      'month_feb': 'Feb',
+      'month_mar': 'Mar',
+      'month_apr': 'Apr',
+      'month_may': 'May',
+      'month_jun': 'Jun',
+      'month_jul': 'Jul',
+      'month_aug': 'Aug',
+      'month_sep': 'Sep',
+      'month_oct': 'Oct',
+      'month_nov': 'Nov',
+      'month_dec': 'Dec',
+      'monday': 'Monday', 'tuesday': 'Tuesday', 'wednesday': 'Wednesday',
+      'thursday': 'Thursday',
+      'friday': 'Friday',
+      'saturday': 'Saturday',
+      'sunday': 'Sunday',
+
+      'mock_gps_label': 'Mock GPS Detected!',
+      'mock_gps_warning': 'Fake GPS Detected! Please disable mock location.',
+      
+      'face_training_title': 'Face ID Training',
+      'take_photo_step': 'Step',
+      'face_registered_success': 'Face registered successfully!',
     },
     'km': {
-      //menu bottomAppbar
+      // --- Menu ---
       'home_menu': 'ទំព័រដើម',
       'atd_menu': 'វត្តមាន',
       'leave_menu': 'ច្បាប់ឈប់សម្រាក',
       'profile_menu': 'ប្រវត្តិរូប',
 
-      // Auth Screen
+      // --- Auth ---
       'logging_in_employee': 'កំពុងចូលក្នុងគណនីបុគ្គលិក...',
       'logging_in_admin': 'កំពុងចូលក្នុងគណនីអ្នកគ្រប់គ្រង...',
       'smart_hr_system': 'ប្រព័ន្ធគ្រប់គ្រងបុគ្គលិកវ័យឆ្លាត',
@@ -200,7 +356,6 @@ class AppStrings {
       'admin_login_button': 'ចូលក្នុងនាមជា Admin',
       'forgot_password': 'ភ្លេចពាក្យសម្ងាត់?',
       'app_version': 'WorkSmart v1.0 • ',
-
       "forgot_password_desc":
           "សូមបញ្ចូលអាសយដ្ឋានអ៊ីមែលរបស់អ្នក ដើម្បីទទួលបានលេខកូដផ្ទៀងផ្ទាត់។",
       "email_label": "អាសយដ្ឋានអ៊ីមែល",
@@ -226,7 +381,7 @@ class AppStrings {
       "success_message": "លេខសម្ងាត់របស់អ្នកត្រូវបានផ្លាស់ប្តូររួចរាល់ហើយ។",
       "back_to_login": "ត្រឡប់ទៅទំព័រចូល",
 
-      // Tutorial Screen
+      // --- Tutorial ---
       'skip': 'រំលង',
       'start': 'ចាប់ផ្តើម',
       'next': 'បន្ទាប់',
@@ -239,7 +394,7 @@ class AppStrings {
       'tutorial_title_3': 'បង្កើនប្រសិទ្ធភាពការងារ',
       'tutorial_subtitle_3': 'ទទួលបានសមិទ្ធផល និងចំណាត់ថ្នាក់ល្អក្នុងក្រុមហ៊ុន',
 
-      // Homepage
+      // --- Home & Map Status ---
       'greeting': 'អរុណសួស្តី,',
       'safety': 'សុវត្ថិភាព',
       'check_in': 'ចូល',
@@ -260,7 +415,6 @@ class AppStrings {
       'role_ios': 'អ្នកអភិវឌ្ឍន៍ iOS',
       'role_designer': 'អ្នករចនា',
       'days': 'ថ្ងៃ',
-
       'office_zone': 'ក្នុងតំបន់ការិយាល័យ',
       'outside_zone': 'ក្រៅតំបន់ការិយាល័យ',
       'gps_status': 'ស្ថានភាព GPS',
@@ -268,8 +422,27 @@ class AppStrings {
       'too_far': 'នៅឆ្ងាយពេក',
       'distance': 'ចម្ងាយ',
       'get_directions': 'នាំផ្លូវទៅកាន់ការិយាល័យ',
+      'finding_location': 'កំពុងស្វែងរកទីតាំង...',
+      'perm_needed': 'ត្រូវការការអនុញ្ញាតទីតាំង',
+      'enable_loc_settings': 'សូមបើកសិទ្ធិទីតាំងនៅក្នុងការកំណត់',
+      'waiting_loc': 'កំពុងរង់ចាំទីតាំង...',
+      'in_office_area': 'អ្នកស្ថិតក្នុងបរិវេណការិយាល័យ',
+      'far_from_office': 'នៅឆ្ងាយ',
+      'from_office': 'ពីការិយាល័យ',
+      'mock_date': 'ថ្ងៃចន្ទ, ២៤ តុលា ២០២៣',
+      'face_required_title': 'សូមធ្វើការចុះអត្តសញ្ញាណមុខ',
+      'face_required_desc':
+          'សូមចុចប៊ូតុងខាងក្រោម ដើម្បីធ្វើការស្កេនមុខ សម្រាប់ការចុះវត្តមាន',
+      'register_now': 'ចុះឈ្មោះឥឡូវនេះ',
+      'waiting_admin': 'កំពុងរង់ចាំការអនុម័ត...',
+      'pending_approval_title': 'កំពុងត្រួតពិនិត្យ',
+      'pending_approval_desc':
+          'អត្តសញ្ញាណរបស់អ្នកកំពុងត្រូវបានផ្ទៀងផ្ទាត់។ សូមរង់ចាំការអនុម័ត។',
+      'processing': 'កំពុងដំណើរការ...',
+      'points_label': 'ពិន្ទុ',
+      'punctuality': 'ភាពទាន់ពេល',
 
-      // Attd screen display
+      // --- Attendance ---
       'my_stats': 'ស្ថិតិរបស់ខ្ញុំ',
       'attendance_rate': 'អត្រាវត្តមាន',
       'present': 'វត្តមាន',
@@ -277,7 +450,7 @@ class AppStrings {
       'absent': 'អវត្តមាន',
       'monthly_trend': 'និន្នាការវត្តមានប្រចាំខែ',
       'all_shifts': 'គ្រប់វេន',
-      'monthly_attendance': 'វត្តមានប្រចាំខែកញ្ញា',
+      'monthly_attendance': 'វត្តមានប្រចាំខែ',
       'attendance_details': 'ព័ត៌មានលម្អិតនៃវត្តមាន',
       'check_in_title': 'ការចុះវត្តមានចូល',
       'check_out_title': 'ការចុះវត្តមានចេញ',
@@ -287,22 +460,67 @@ class AppStrings {
       'on_time': 'ទាន់ពេល',
       'location_label': 'ទីតាំង',
       'phnom_penh': 'ការិយាល័យកណ្ដាល',
+      'date_label': 'កាលបរិច្ឆេទ',
+      'no_records': 'មិនមានកំណត់ត្រាណាមួយ',
+      'no_data_for_today': 'មិនមានទិន្នន័យសម្រាប់ថ្ងៃនេះទេ',
 
-      // Months (All 12)
-      'month_jan': 'មករា',
-      'month_feb': 'កុម្ភៈ',
-      'month_mar': 'មីនា',
-      'month_apr': 'មេសា',
-      'month_may': 'ឧសភា',
-      'month_jun': 'មិថុនា',
-      'month_jul': 'កក្កដា',
-      'month_aug': 'សីហា',
-      'month_sep': 'កញ្ញា',
-      'month_oct': 'តុលា',
-      'month_nov': 'វិច្ឆិកា',
-      'month_dec': 'ធ្នូ',
+      // --- Leave Management & Requests ---
+      'leave_details_title': 'ព័ត៌មានលម្អិតការឈប់សម្រាក',
+      'usage_stats': 'ស្ថិតិប្រើប្រាស់',
+      'request_history': 'ប្រវត្តិការស្នើសុំ',
+      'you_have_remaining_leave': 'អ្នកនៅសល់ច្បាប់សម្រាកចំនួន',
+      'this_year': 'សម្រាប់ឆ្នាំនេះ។',
+      'remaining': 'នៅសល់',
+      'used': 'ប្រើអស់',
+      'request_sick_leave': 'ស្នើច្បាប់ឈឺ',
+      'request_annual_leave': 'ស្នើច្បាប់ប្រចាំឆ្នាំ',
+      'status_approved': 'បានអនុម័ត',
+      'status_rejected': 'បានបដិសេធ',
+      'status_pending': 'រង់ចាំ',
+      'sick_leave_fever': 'ឈប់ច្បាប់ឈឺ (គ្រុនក្ដៅ)',
+      'personal_leave': 'ឈប់សម្រាកផ្ទាល់ខ្លួន',
+      'special_leave': 'ឈប់សម្រាកពិសេស',
+      'days_remaining': 'ថ្ងៃនៅសល់',
+      'recent_requests': 'សំណើថ្មីៗ',
 
-      // Leaderboard Screen
+      // Annual Leave Request Screen
+      'request_annual_leave_title': 'ពាក្យសុំច្បាប់ប្រចាំឆ្នាំ',
+      'annual_leave_balance_msg':
+          'អ្នកនៅសល់ច្បាប់សម្រាកចំនួន ១២ ថ្ងៃសម្រាប់ឆ្នាំនេះ។',
+      'select_date': 'ជ្រើសរើសកាលបរិច្ឆេទ',
+      'start_date': 'ថ្ងៃចាប់ផ្តើម',
+      'end_date': 'ថ្ងៃបញ្ចប់',
+      'reason_for_request': 'មូលហេតុនៃការស្នើសុំ',
+      'enter_reason_hint': 'បញ្ជាក់មូលហេតុនៅទីនេះ...',
+      'submit_request': 'ផ្ញើសំណើឈប់សម្រាក',
+
+      // Sick Leave Request Screen
+      'request_sick_leave_title': 'ពាក្យសុំច្បាប់ឈឺ',
+      'leave_type': 'ប្រភេទច្បាប់',
+      'sick_leave_type_label': 'ច្បាប់ឈឺ (Sick Leave)',
+      'request_details': 'ព័ត៌មានលម្អិតនៃសំណើ',
+      'reason_for_sickness': 'មូលហេតុនៃជំងឺ',
+      'sickness_reason_hint': 'បញ្ជាក់ពីអាការៈជំងឺ...',
+      'leave_date': 'កាលបរិច្ឆេទឈប់សម្រាក',
+      'select_date_hint': 'ជ្រើសរើសថ្ងៃខែឆ្នាំ',
+      'medical_documents': 'ឯកសារវេជ្ជសាស្ត្រ',
+      'attached_file': 'ឯកសារភ្ជាប់៖ ',
+      'upload_medical_cert': 'ចុចទីនេះដើម្បីភ្ជាប់លិខិតបញ្ជាក់ពីពេទ្យ',
+      'tap_to_change_file': 'ចុចម្ដងទៀតដើម្បីប្ដូរឯកសារ',
+      'submit_official_request': 'បញ្ជូនសំណើផ្លូវការ',
+
+      // --- Notifications ---
+      'notifications_title': 'ការជូនដំណឹង',
+      'mark_read': 'សម្គាល់ថាបានអាន',
+      'delete_notif': 'លុបការជូនដំណឹងនេះ',
+      'read_all': 'អានទាំងអស់',
+      'no_notif': 'មិនទាន់មានការជូនដំណឹងនៅឡើយទេ',
+      'notif_deleted': 'បានលុបការជូនដំណឹង',
+      'leave_request': 'ការស្នើសុំច្បាប់',
+      'leave_approved_msg': 'ច្បាប់សម្រាកប្រចាំឆ្នាំរបស់អ្នកត្រូវបានអនុម័ត។',
+      'time_ago_2h': '២ ម៉ោងមុន',
+
+      // --- Leaderboard ---
       'top_rankings': 'ចំណាត់ថ្នាក់បុគ្គលិកឆ្នើម',
       'monthly': 'ប្រចាំខែ',
       'yearly': 'ប្រចាំឆ្នាំ',
@@ -315,7 +533,23 @@ class AppStrings {
       'acc_department': 'ផ្នែកគណនេយ្យ',
       'admin_department': 'ផ្នែករដ្ឋបាល',
 
-      // in callender
+      // --- Achievement Screen ---
+      'my_achievements': 'សមិទ្ធផលរបស់ខ្ញុំ',
+      'hello': 'សួស្តី',
+      'role_it_staff': 'អ្នកបម្រើការផ្នែក IT',
+      'total_medals': 'មេដាយសរុប',
+      'rank_label': 'ចំណាត់ថ្នាក់',
+      'earned_badges': 'មេដាយដែលទទួលបាន',
+      'progress': 'វឌ្ឍនភាព',
+      'goal_hero_desc': "បន្ត ៥ ថ្ងៃទៀតដើម្បីបានមេដាយ 'វីរៈបុរស'",
+      'badge_early_bird': 'មកដល់មុនគេ',
+      'badge_perfect_atd': 'វត្តមានឥតខ្ចោះ',
+      'badge_emp_month': 'ឆ្នើមប្រចាំខែ',
+      'badge_speed': 'លឿនរហ័ស',
+      'badge_collab': 'សហការល្អ',
+      'badge_creative': 'គំនិតច្នៃប្រឌិត',
+
+      // --- Calendar ---
       'no_data': 'គ្មានទិន្នន័យ',
       'total_work_hours': 'សរុបម៉ោងការងារ',
       'hours_unit': 'ម៉ោង',
@@ -324,7 +558,7 @@ class AppStrings {
       'day_label': 'ថ្ងៃទី',
       'avg_attendance': 'មធ្យមភាគវត្តមាន',
 
-      //face scanner screen
+      // --- Face Scan ---
       'face_scan_title': 'សូមដាក់ផ្ទៃមុខឱ្យចំរង្វង់',
       'face_scan_step': 'ជំហានទី ២: ស្កេនផ្ទៃមុខ',
       'live_status': 'បន្តផ្ទាល់',
@@ -332,66 +566,6 @@ class AppStrings {
       'ensure_light': 'ធានាថាពន្លឺគ្រប់គ្រាន់',
       'scan_success': 'ស្កេនជោគជ័យ!',
       'camera_error': 'មានបញ្ហាកាមេរ៉ា',
-
-      //=======Admin_screen_ThaSopheak======
-      // WorkAreaScreen
-      'workareasetup': 'ការកំណត់តំបន់ការងារ',
-      'phnompenhpapital, pambodia': 'រាជធានីភ្នំពេញ, ​ប្រទេសកម្ពុជា',
-      'setarearadius': 'កំណត់កាំនៃតំបន់',
-      'saveworkarea': 'រក្សាទុកតំបន់ការងារ',
-      'meters': 'ម៉ែត្រ',
-      'accuracyhigh:': 'ភាពត្រឹមត្រូវ',
-
-      // Notedattendentall
-      'allrecords': 'កំណត់ត្រាទាំងអស់',
-      'lated': 'យឺតយ៉ាវ',
-      'staffoutsidetheoffice': 'បុគ្គលិកក្រៅការិយាល័យ',
-      'approved': 'បានអនុម័ត',
-      'directattendancerecord': 'កំណត់ត្រាវត្តមានផ្ទាល់',
-      'searchemployee': 'ស្វែងរកបុគ្គលិក',
-      'morning': 'ព្រឹក',
-      'minutes ago': 'នាទីមុន',
-      'ontime': 'ទាន់ពេល',
-      'commercialroad, northernarea': 'ផ្លូវពាណិជ្ជកម្ម, តំបន់ខាងជើង',
-      'metersfromcentraloffice': 'ម៉ែត្រ ពីការិយាល័យកណ្តាល',
-      'northernbranchoffice': 'ការិយាល័យរណបខាងជើង',
-      'viewmap': 'មើលផែនទី',
-      'mainhallofcentraloffice': 'សាលធំការិយាល័យកណ្តាល',
-      'restrictedareanotification: jamesWilsonattemptedtorecordattendance5kmawayfromthedesignatedlocation។':
-          'ការជូនដណ្តឹងតំបន់ហាមឃាត់: james Wilson បទចុះវត្តមាននៅចម្ងាយ 5 គីឡូម៉េត្រពីទីតាំងដែលបានកំណត់។'
-          'inspect'
-          'ពិនិត្រមើល',
-
-      // Creationofconfidential_information
-      'createconfidentialinformation': 'ការបង្កើតព័ត៍មានសម្ងាត់',
-      'verified': 'ផ្ទៀងផ្ទាត់រួចរាល់',
-      'approvalsuccessful': 'សេចក្តីអនុម័តជោគជ័យ',
-      'biometricverificationrequired': 'ការផ្ទៀងផ្ទាត់ជីវមាត្រត្រូវបញ្ចាក់',
-      'userconfidentialinformation': 'ព័ត៍មានសម្ងាត់អ្នកប្រើប្រាស់',
-      'pass_word': 'លេខសម្ងាត់',
-      'thispasswordisvalidforonly24 hours':
-          'លេខសម្ងាត់នេះមានសុពលភាពត្រឹមតែ 24 ម៉ោងប៉ុណ្ណោះ',
-      'clickingthebuttonbelowwillautomaticallysendallthisconfidentialinformationtotheemployee’s Telegram account':
-          'ការចុចប៊ូតុងខាងក្រោមនឹងផ្ញើព័ត៍មានសម្ងាត់ទាំងនេះដោយស្វ័យប្រវត្តិទៅកាន់គណនី',
-      'generateandsendtoTelegram': 'បង្គើតនិងផ្ញើទៅTelegram',
-      'giveup': 'បោះបង់',
-
-      // PendingList
-      'pendingapprovllist': 'បញ្ជីរង់ចាំការអនុម័ត',
-      'waiting': 'រងចាំ',
-      'approveded': 'បានអនុម័ត',
-      'rejected': 'បានបដិសេធ',
-      'panel': 'ផ្ទាំង',
-      'record': 'កត់ត្រា',
-      'informationtechnology(IT)': 'បច្ចេកវិទ្យាព័ត៌មាន (IT)',
-      'administration(Admin)': 'រដ្ឋបាល (Admin)',
-      'requestnumber': 'លេខសំណើ៖',
-      'role:': 'តួនាទី',
-      'selfiephoto': 'រូបថត SELFIE',
-      'referencephoto':
-          'រូបថតយោង'
-          'approved'
-          'អនុម័ត',
     },
   };
 

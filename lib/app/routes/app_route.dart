@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+<<<<<<< HEAD
 import 'package:flutter_worksmart_mobile_app/features/auth/presentation/authscreen.dart';
 import 'package:flutter_worksmart_mobile_app/features/auth/presentation/forgot_pas_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/auth/presentation/tutorail_screens/tutorial_screen.dart';
@@ -15,7 +16,33 @@ import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/hom
 import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/profile&setting_screens/setting_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/attendence_screens/sick_leave_request_screen.dart';
 import 'package:flutter_worksmart_mobile_app/shared/telegram_integration.dart';
+=======
+import 'package:flutter_worksmart_mobile_app/core/util/database/database_helper.dart';
+import 'package:flutter_worksmart_mobile_app/features/admin/presentation/admin_homepage.dart';
+import 'package:flutter_worksmart_mobile_app/features/admin/presentation/admin_homepage_web.dart';
+import 'package:flutter_worksmart_mobile_app/features/admin/presentation/admin_login_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/auth/presentation/authscreen.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/auth/presentation/forgot_pas_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/auth/presentation/tutorail_screens/tutorial_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/presentation/achievement_screens/achievement_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/presentation/achievement_screens/empleaderboard_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/presentation/attendence_screens/annual_leave_request_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/presentation/attendence_screens/attendance_calendar_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/presentation/attendence_screens/attendance_detail_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/presentation/attendence_screens/leave_all_requests_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/presentation/attendence_screens/sick_leave_request_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/presentation/homepage_screens/assign_user_face_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/presentation/homepage_screens/face_scan_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/presentation/homepage_screens/leave_management_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/presentation/homepage_screens/notification_screens.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/presentation/mainscreen.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/presentation/profile&setting_screens/help_support_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/presentation/profile&setting_screens/setting_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/presentation/profile&setting_screens/telegram_integration.dart';
+>>>>>>> 8f57aa06023bbf0bc95db6e5b814d79fa9786560
 
+/// AppRoute: Central routing configuration
+/// Manages all app routes: authentication, admin, employee features
 class AppRoute {
   static const String tutorial = '/tutorial';
   static const String authScreen = '/auth';
@@ -31,26 +58,123 @@ class AppRoute {
   static const String attendanceScreen = '/attendance-screen';
   static const String sickleaveScreen = '/sickleaveScreen';
   static const String annualleaveScreen = '/annualleaveScreen-screen';
+  static const String leaveAllRequestsScreen = '/leaveAllRequestsScreen';
   static const String settingScreen = '/settingScreen';
   static const String telegramConfig = '/telegramConfig';
   static const String helpSupportScreen = '/helpSupportScreen';
+  static const String registerFace = '/registerFace';
+  static const String adminDashboard = '/admin-dashboard';
+  static const String adminDashboardWeb = '/admin-dashboard-web';
+  static const String adminLoginWeb = '/admin-login-web';
 
+  // ──────────────── ROUTE DEFINITIONS ────────────────
+  // Includes auth routes, admin routes, and employee feature routes
   static Map<String, WidgetBuilder> routes = {
+    // Auth Routes
     tutorial: (context) => const TutorialScreen(),
     authScreen: (context) => const Authscreen(),
-    appmain: (context) => const MainScreen(),
-    attendanceDetail: (context) => const AttendanceDetailScreen(),
-    leaderboardScreen: (context) => const LeaderboardScreen(),
-    achievementScreen: (context) => const AchievementScreen(),
-    attendanCalendarScreen: (context) => const AttendanceCalendarScreen(),
-    notificationScreen: (context) => const NotificationScreen(),
     forgotpassScreen: (context) => const ForgotPasswordScreen(),
-    leaveDatailScreen: (context) => const LeaveDetailScreen(),
-    faceScanScreen: (context) => const FaceScanScreen(),
-    sickleaveScreen: (context) => const SickLeaveRequestScreen(),
-    annualleaveScreen: (context) => const AnnualLeaveRequestScreen(),
-    settingScreen: (context) => const SettingsScreen(),
-    telegramConfig: (context) => const TelegramIntegration(),
+
+    // Main App
+    appmain: (context) {
+      final args =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      if (args != null) {
+        return MainScreen(loginData: args);
+      }
+      return const _CachedLoginGate();
+    },
+
+    // Achievement Routes
+    leaderboardScreen: _buildRoute(
+      (args) => LeaderboardScreen(loginData: args),
+    ),
+    achievementScreen: _buildRoute(
+      (args) => AchievementScreen(loginData: args),
+    ),
+
+    // Attendance Routes
+    attendanceDetail: _buildRoute(
+      (args) => AttendanceDetailScreen(loginData: args),
+    ),
+    attendanCalendarScreen: _buildRoute(
+      (args) => AttendanceCalendarScreen(loginData: args),
+    ),
+    leaveDatailScreen: _buildRoute(
+      (args) => LeaveDetailScreen(loginData: args),
+    ),
+
+    // Leave Request Routes
+    sickleaveScreen: _buildRoute(
+      (args) => SickLeaveRequestScreen(loginData: args),
+    ),
+    annualleaveScreen: _buildRoute(
+      (args) => AnnualLeaveRequestScreen(loginData: args),
+    ),
+    leaveAllRequestsScreen: _buildRoute(
+      (args) => LeaveAllRequestsScreen(loginData: args),
+    ),
+
+    // Face Recognition Routes
+    faceScanScreen: _buildRoute((args) => FaceScanScreen(loginData: args)),
+    registerFace: _buildRoute(
+      (args) => RegisterFaceScanScreen(loginData: args),
+    ),
+
+    // Notification Routes
+    notificationScreen: _buildRoute(
+      (args) => NotificationScreen(loginData: args),
+    ),
+
+    // Settings Routes
+    settingScreen: _buildRoute((args) => SettingsScreen(loginData: args)),
+    telegramConfig: _buildRoute((args) => TelegramIntegration(loginData: args)),
     helpSupportScreen: (context) => const HelpSupportScreen(),
+
+    // Admin Routes
+    adminDashboard: _buildRoute((args) => AdminHomepage(loginData: args)),
+    adminDashboardWeb: _buildRoute((args) => AdminHomepageWeb(loginData: args)),
+    adminLoginWeb: (context) => const AdminLoginScreen(),
   };
+
+  static WidgetBuilder _buildRoute(
+    Widget Function(Map<String, dynamic>?) builder,
+  ) {
+    return (context) {
+      final args =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      return builder(args);
+    };
+  }
+}
+
+class _CachedLoginGate extends StatelessWidget {
+  const _CachedLoginGate();
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: DatabaseHelper().getCachedLogin(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        final cachedLogin = snapshot.data;
+        if (cachedLogin == null) {
+          return const Authscreen();
+        }
+
+        final loginData = {
+          'uid': cachedLogin['user_id'],
+          'username': cachedLogin['username'],
+          'userType': cachedLogin['user_type'],
+        };
+
+        return MainScreen(loginData: loginData);
+      },
+    );
+  }
 }

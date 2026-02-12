@@ -318,7 +318,7 @@ class AppStrings {
 
       'mock_gps_label': 'Mock GPS Detected!',
       'mock_gps_warning': 'Fake GPS Detected! Please disable mock location.',
-
+      
       'face_training_title': 'Face ID Training',
       'take_photo_step': 'Step',
       'face_registered_success': 'Face registered successfully!',

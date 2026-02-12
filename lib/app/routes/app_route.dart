@@ -40,7 +40,6 @@ class AppRoute {
   static const String helpSupportScreen = '/helpSupportScreen';
   static const String registerFace = '/registerFace';
 
-
   static Map<String, WidgetBuilder> routes = {
     // Auth Routes
     tutorial: (context) => const TutorialScreen(),
@@ -58,32 +57,50 @@ class AppRoute {
     },
 
     // Achievement Routes
-    leaderboardScreen: _buildRoute((args) => LeaderboardScreen(loginData: args)),
-    achievementScreen: _buildRoute((args) => AchievementScreen(loginData: args)),
+    leaderboardScreen: _buildRoute(
+      (args) => LeaderboardScreen(loginData: args),
+    ),
+    achievementScreen: _buildRoute(
+      (args) => AchievementScreen(loginData: args),
+    ),
 
     // Attendance Routes
-    attendanceDetail: _buildRoute((args) => AttendanceDetailScreen(loginData: args)),
-    attendanCalendarScreen: _buildRoute((args) => AttendanceCalendarScreen(loginData: args)),
-    leaveDatailScreen: _buildRoute((args) => LeaveDetailScreen(loginData: args)),
+    attendanceDetail: _buildRoute(
+      (args) => AttendanceDetailScreen(loginData: args),
+    ),
+    attendanCalendarScreen: _buildRoute(
+      (args) => AttendanceCalendarScreen(loginData: args),
+    ),
+    leaveDatailScreen: _buildRoute(
+      (args) => LeaveDetailScreen(loginData: args),
+    ),
 
     // Leave Request Routes
-    sickleaveScreen: _buildRoute((args) => SickLeaveRequestScreen(loginData: args)),
-    annualleaveScreen: _buildRoute((args) => AnnualLeaveRequestScreen(loginData: args)),
-    leaveAllRequestsScreen: _buildRoute((args) => LeaveAllRequestsScreen(loginData: args)),
+    sickleaveScreen: _buildRoute(
+      (args) => SickLeaveRequestScreen(loginData: args),
+    ),
+    annualleaveScreen: _buildRoute(
+      (args) => AnnualLeaveRequestScreen(loginData: args),
+    ),
+    leaveAllRequestsScreen: _buildRoute(
+      (args) => LeaveAllRequestsScreen(loginData: args),
+    ),
 
     // Face Recognition Routes
     faceScanScreen: _buildRoute((args) => FaceScanScreen(loginData: args)),
-    registerFace: _buildRoute((args) => RegisterFaceScanScreen(loginData: args)),
+    registerFace: _buildRoute(
+      (args) => RegisterFaceScanScreen(loginData: args),
+    ),
 
     // Notification Routes
-    notificationScreen: _buildRoute((args) => NotificationScreen(loginData: args)),
+    notificationScreen: _buildRoute(
+      (args) => NotificationScreen(loginData: args),
+    ),
 
     // Settings Routes
     settingScreen: _buildRoute((args) => SettingsScreen(loginData: args)),
     telegramConfig: _buildRoute((args) => TelegramIntegration(loginData: args)),
     helpSupportScreen: (context) => const HelpSupportScreen(),
-
-
   };
 
   static WidgetBuilder _buildRoute(

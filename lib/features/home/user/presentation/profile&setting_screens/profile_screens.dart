@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/database/database_helper.dart';
 import 'package:flutter_worksmart_mobile_app/core/util/mock_data/userFinalData.dart';
 import 'package:flutter_worksmart_mobile_app/features/auth/presentation/change_pas_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/profile&setting_screens/setting_screen.dart';
@@ -12,7 +13,9 @@ import 'package:flutter_worksmart_mobile_app/shared/model/user_model/user_profil
 import 'package:image_picker/image_picker.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  final Map<String, dynamic>? loginData;
+
+  const ProfileScreen({super.key, this.loginData});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -31,7 +34,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _loadData() {
     final currentUserData = usersFinalData.firstWhere(
-      (user) => user['uid'] == "user_winner_777",
+      (user) => user['uid'] == (widget.loginData?['uid'] ?? "user_winner_777"),
       orElse: () => usersFinalData[0],
     );
     _currentUser = UserProfile.fromJson(currentUserData);
@@ -342,8 +345,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         if (!isConnected)
           TextButton(
-            onPressed: () =>
-                Navigator.pushNamed(context, AppRoute.telegramConfig),
+            onPressed: () => Navigator.pushNamed(
+              context,
+              AppRoute.telegramConfig,
+              arguments: widget.loginData,
+            ),
             style: TextButton.styleFrom(
               backgroundColor: Theme.of(
                 context,
@@ -536,12 +542,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             const SizedBox(width: 15),
                             Expanded(
                               child: ElevatedButton(
-                                onPressed: () {
-                                  Navigator.pushNamedAndRemoveUntil(
-                                    context,
-                                    AppRoute.authScreen,
-                                    (route) => false,
-                                  );
+                                onPressed: () async {
+                                  // Clear cached login before logout
+                                  final dbHelper = DatabaseHelper();
+                                  await dbHelper.clearCachedLogin();
+
+                                  if (context.mounted) {
+                                    Navigator.pushNamedAndRemoveUntil(
+                                      context,
+                                      AppRoute.authScreen,
+                                      (route) => false,
+                                    );
+                                  }
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.red.shade400,

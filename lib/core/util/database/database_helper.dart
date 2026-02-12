@@ -20,7 +20,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE settings (
@@ -28,6 +28,30 @@ class DatabaseHelper {
             value TEXT
           )
         ''');
+        await db.execute('''
+          CREATE TABLE login_cache (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL,
+            password TEXT NOT NULL,
+            user_type TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            cached_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          )
+        ''');
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          await db.execute('''
+            CREATE TABLE login_cache (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              username TEXT NOT NULL,
+              password TEXT NOT NULL,
+              user_type TEXT NOT NULL,
+              user_id TEXT NOT NULL,
+              cached_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+          ''');
+        }
       },
     );
   }
@@ -52,5 +76,40 @@ class DatabaseHelper {
       return maps.first['value'] as String;
     }
     return null;
+  }
+
+  // Save login credentials for auto-login
+  Future<void> saveCachedLogin(
+    String username,
+    String password,
+    String userId,
+    String userType,
+  ) async {
+    final db = await database;
+    // Clear previous cache and save new login
+    await db.delete('login_cache');
+    await db.insert('login_cache', {
+      'username': username,
+      'password': password,
+      'user_id': userId,
+      'user_type': userType,
+    });
+  }
+
+  // Retrieve cached login credentials
+  Future<Map<String, dynamic>?> getCachedLogin() async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query('login_cache');
+
+    if (maps.isNotEmpty) {
+      return maps.first;
+    }
+    return null;
+  }
+
+  // Clear cached login (on logout)
+  Future<void> clearCachedLogin() async {
+    final db = await database;
+    await db.delete('login_cache');
   }
 }

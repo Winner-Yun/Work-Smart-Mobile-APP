@@ -9,6 +9,7 @@ abstract class AttendanceStatsLogic extends State<AttendanceStatsScreen> {
   late UserProfile currentUser;
   late List<AttendanceRecord> userAttendanceRecords;
   late List<Map<String, dynamic>> monthlyStats;
+  late String? loggedInUserId;
 
   bool animateChart = false;
   String selectedFilter = 'All';
@@ -34,6 +35,7 @@ abstract class AttendanceStatsLogic extends State<AttendanceStatsScreen> {
   @override
   void initState() {
     super.initState();
+    loggedInUserId = widget.loginData?['uid'];
     _loadData();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       setState(() => animateChart = true);
@@ -43,7 +45,7 @@ abstract class AttendanceStatsLogic extends State<AttendanceStatsScreen> {
   void _loadData() {
     // Load current user
     final currentUserData = usersFinalData.firstWhere(
-      (user) => user['uid'] == "user_winner_777",
+      (user) => user['uid'] == (loggedInUserId ?? "user_winner_777"),
       orElse: () => usersFinalData[0],
     );
     currentUser = UserProfile.fromJson(currentUserData);

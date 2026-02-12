@@ -14,6 +14,7 @@ class UserProfile {
   final String email;
   final String officeId;
   final String departmentId;
+  final String gender;
   final Biometrics biometrics;
   final List<LeaveRecord> leaveRecords;
   final TelegramAccount telegram;
@@ -29,6 +30,7 @@ class UserProfile {
     required this.email,
     required this.officeId,
     required this.departmentId,
+    required this.gender,
     required this.biometrics,
     required this.telegram,
     required this.leaveRecords,
@@ -46,6 +48,7 @@ class UserProfile {
       email: json['email'] ?? '',
       officeId: json['office_id'] ?? '',
       departmentId: json['department_id'] ?? '',
+      gender: json['gender'] ?? 'male',
       biometrics: Biometrics.fromJson(json['biometrics'] ?? {}),
       telegram: TelegramAccount.fromJson(json['telegram'] ?? {}),
       leaveRecords:

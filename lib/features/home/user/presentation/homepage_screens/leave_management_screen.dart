@@ -10,7 +10,9 @@ import 'package:flutter_worksmart_mobile_app/shared/model/user_model/user_profil
 import 'package:intl/intl.dart';
 
 class LeaveDetailScreen extends StatefulWidget {
-  const LeaveDetailScreen({super.key});
+  final Map<String, dynamic>? loginData;
+
+  const LeaveDetailScreen({super.key, this.loginData});
 
   @override
   State<LeaveDetailScreen> createState() => _LeaveDetailScreenState();
@@ -54,7 +56,7 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
 
   void _loadData() {
     final currentUserData = usersFinalData.firstWhere(
-      (user) => user['uid'] == "user_winner_777",
+      (user) => user['uid'] == (widget.loginData?['uid'] ?? "user_winner_777"),
       orElse: () => usersFinalData[0],
     );
     _currentUser = UserProfile.fromJson(currentUserData);
@@ -429,7 +431,11 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
           InkWell(
             borderRadius: BorderRadius.circular(10),
             onTap: () {
-              Navigator.pushNamed(context, AppRoute.leaveAllRequestsScreen);
+              Navigator.pushNamed(
+                context,
+                AppRoute.leaveAllRequestsScreen,
+                arguments: widget.loginData,
+              );
             },
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
@@ -464,7 +470,11 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
           Expanded(
             child: OutlinedButton(
               onPressed: () {
-                Navigator.pushNamed(context, AppRoute.sickleaveScreen);
+                Navigator.pushNamed(
+                  context,
+                  AppRoute.sickleaveScreen,
+                  arguments: widget.loginData,
+                );
               },
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(0, 55),
@@ -488,7 +498,11 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
           Expanded(
             child: ElevatedButton(
               onPressed: () {
-                Navigator.pushNamed(context, AppRoute.annualleaveScreen);
+                Navigator.pushNamed(
+                  context,
+                  AppRoute.annualleaveScreen,
+                  arguments: widget.loginData,
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.primary,

@@ -4,7 +4,9 @@ import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 
 class TelegramIntegration extends StatefulWidget {
-  const TelegramIntegration({super.key});
+  final Map<String, dynamic>? loginData;
+
+  const TelegramIntegration({super.key, this.loginData});
 
   @override
   State<TelegramIntegration> createState() => _TelegramIntegrationState();

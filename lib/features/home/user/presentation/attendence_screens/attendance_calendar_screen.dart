@@ -9,7 +9,9 @@ import 'package:flutter_worksmart_mobile_app/shared/model/user_model/user_profil
 import 'package:intl/intl.dart';
 
 class AttendanceCalendarScreen extends StatefulWidget {
-  const AttendanceCalendarScreen({super.key});
+  final Map<String, dynamic>? loginData;
+
+  const AttendanceCalendarScreen({super.key, this.loginData});
 
   @override
   State<AttendanceCalendarScreen> createState() =>
@@ -19,6 +21,7 @@ class AttendanceCalendarScreen extends StatefulWidget {
 class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
   late UserProfile _currentUser;
   late List<AttendanceRecord> _userAttendanceRecords;
+  late String? loggedInUserId;
 
   late int _selectedDay;
   late DateTime _currentViewDate;
@@ -30,12 +33,13 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
     final now = DateTime.now();
     _selectedDay = now.day;
     _currentViewDate = DateTime(now.year, now.month);
+    loggedInUserId = widget.loginData?['uid'];
     _loadData();
   }
 
   void _loadData() {
     final currentUserData = usersFinalData.firstWhere(
-      (user) => user['uid'] == "user_winner_777",
+      (user) => user['uid'] == (loggedInUserId ?? "user_winner_777"),
       orElse: () => usersFinalData[0],
     );
     _currentUser = UserProfile.fromJson(currentUserData);

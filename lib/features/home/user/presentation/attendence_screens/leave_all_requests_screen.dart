@@ -9,7 +9,9 @@ import 'package:flutter_worksmart_mobile_app/shared/model/user_model/user_profil
 import 'package:intl/intl.dart';
 
 class LeaveAllRequestsScreen extends StatefulWidget {
-  const LeaveAllRequestsScreen({super.key});
+  final Map<String, dynamic>? loginData;
+
+  const LeaveAllRequestsScreen({super.key, this.loginData});
 
   @override
   State<LeaveAllRequestsScreen> createState() => _LeaveAllRequestsScreenState();
@@ -19,6 +21,7 @@ class _LeaveAllRequestsScreenState extends State<LeaveAllRequestsScreen> {
   late UserProfile _currentUser;
   late List<LeaveRecord> _history;
   late List<LeaveRecord> _filteredHistory;
+  late String? loggedInUserId;
   DateTime? _selectedDate;
 
   final DateFormat _dateFormatter = DateFormat('dd MMM yyyy');
@@ -26,12 +29,13 @@ class _LeaveAllRequestsScreenState extends State<LeaveAllRequestsScreen> {
   @override
   void initState() {
     super.initState();
+    loggedInUserId = widget.loginData?['uid'];
     _loadData();
   }
 
   void _loadData() {
     final currentUserData = usersFinalData.firstWhere(
-      (user) => user['uid'] == "user_winner_777",
+      (user) => user['uid'] == (loggedInUserId ?? "user_winner_777"),
       orElse: () => usersFinalData[0],
     );
     _currentUser = UserProfile.fromJson(currentUserData);

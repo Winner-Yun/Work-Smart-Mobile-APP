@@ -4,7 +4,9 @@ import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 
 class NotificationScreen extends StatefulWidget {
-  const NotificationScreen({super.key});
+  final Map<String, dynamic>? loginData;
+
+  const NotificationScreen({super.key, this.loginData});
 
   @override
   State<NotificationScreen> createState() => _NotificationScreenState();

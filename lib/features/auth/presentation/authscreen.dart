@@ -6,6 +6,8 @@ import 'package:flutter_worksmart_mobile_app/config/language_manager.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_img.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/database/database_helper.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/mock_data/userFinalData.dart';
 
 class Authscreen extends StatefulWidget {
   const Authscreen({super.key});
@@ -22,6 +24,63 @@ class _AuthscreenState extends State<Authscreen> {
   final PageController _pageController = PageController();
   bool isEmployee = true;
   bool obscurePassword = true;
+
+  // Admin credentials database only
+  static const Map<String, String> adminUsers = {
+    'admin': 'admin123',
+    'manager': 'manager123',
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _checkCachedLogin();
+  }
+
+  // Check for cached login and auto-login if credentials exist
+  Future<void> _checkCachedLogin() async {
+    final dbHelper = DatabaseHelper();
+    final cachedLogin = await dbHelper.getCachedLogin();
+
+    if (cachedLogin != null && mounted) {
+      final username = cachedLogin['username'] as String;
+      final userType = cachedLogin['user_type'] as String;
+      final userId = cachedLogin['user_id'] as String;
+
+      // Auto-login with cached credentials
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                userType == 'employee'
+                    ? AppStrings.tr('logging_in_employee')
+                    : AppStrings.tr('logging_in_admin'),
+              ),
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              duration: const Duration(seconds: 1),
+            ),
+          );
+
+          Future.delayed(const Duration(milliseconds: 800), () {
+            if (mounted) {
+              final loginData = {
+                'uid': userId,
+                'username': username,
+                'userType': userType,
+              };
+
+              Navigator.pushReplacementNamed(
+                context,
+                AppRoute.appmain,
+                arguments: loginData,
+              );
+            }
+          });
+        }
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -42,9 +101,53 @@ class _AuthscreenState extends State<Authscreen> {
 
   void _handleLogin() {
     final currentKey = isEmployee ? _formKey : _adminFormKey;
+    final username = _usernameController.text.trim();
+    final password = _passwordController.text.trim();
 
     if (currentKey.currentState != null &&
         currentKey.currentState!.validate()) {
+      // Validate credentials
+      bool credentialsValid = false;
+      String? userId;
+      String userType = isEmployee ? 'employee' : 'admin';
+
+      if (isEmployee) {
+        // Check employee credentials from userFinalData
+        final user = usersFinalData.firstWhere(
+          (u) =>
+              (u['uid'] == username ||
+                  u['display_name'].toLowerCase().contains(
+                    username.toLowerCase(),
+                  )) &&
+              u['password'] == password,
+          orElse: () => {},
+        );
+
+        if (user.isNotEmpty) {
+          credentialsValid = true;
+          userId = user['uid'];
+        }
+      } else {
+        // Check admin credentials
+        if (adminUsers.containsKey(username) &&
+            adminUsers[username] == password) {
+          credentialsValid = true;
+          userId = username;
+        }
+      }
+
+      if (!credentialsValid) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppStrings.tr('invalid_credentials')),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        return;
+      }
+
+      // Success - navigate to main app
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -55,7 +158,31 @@ class _AuthscreenState extends State<Authscreen> {
           backgroundColor: Theme.of(context).colorScheme.primary,
         ),
       );
-      Navigator.pushReplacementNamed(context, AppRoute.appmain);
+
+      // Store user info and navigate
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          // Save login credentials to cache
+          final dbHelper = DatabaseHelper();
+          dbHelper.saveCachedLogin(username, password, userId!, userType);
+
+          // Pass full user data to the app
+          final loginData = {
+            'uid': userId,
+            'username': username,
+            'userType': userType,
+          };
+
+          Navigator.pushReplacementNamed(
+            context,
+            AppRoute.appmain,
+            arguments: loginData,
+          );
+          // Clear form
+          _usernameController.clear();
+          _passwordController.clear();
+        }
+      });
     }
   }
 
@@ -406,6 +533,7 @@ class _AuthscreenState extends State<Authscreen> {
               ],
             ),
           ),
+
           const SizedBox(height: 24),
           Text(
             forEmployee

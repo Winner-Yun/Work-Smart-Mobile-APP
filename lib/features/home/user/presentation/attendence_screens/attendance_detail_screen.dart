@@ -4,7 +4,9 @@ import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 
 class AttendanceDetailScreen extends StatelessWidget {
-  const AttendanceDetailScreen({super.key});
+  final Map<String, dynamic>? loginData;
+
+  const AttendanceDetailScreen({super.key, this.loginData});
 
   @override
   Widget build(BuildContext context) {

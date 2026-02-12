@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/mock_data/userFinalData.dart';
+import 'package:flutter_worksmart_mobile_app/shared/model/user_model/user_profile.dart';
 import 'package:intl/intl.dart';
 
 class AnnualLeaveRequestScreen extends StatefulWidget {
-  const AnnualLeaveRequestScreen({super.key});
+  final Map<String, dynamic>? loginData;
+
+  const AnnualLeaveRequestScreen({super.key, this.loginData});
 
   @override
   State<AnnualLeaveRequestScreen> createState() =>
@@ -15,6 +19,8 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
   static const int _annualLeaveTotal = 18;
   late int _annualLeaveUsed;
   late int _annualLeaveRemaining;
+  late UserProfile _currentUser;
+  late String? loggedInUserId;
 
   DateTime? _startDate;
   DateTime? _endDate;
@@ -23,8 +29,29 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
   @override
   void initState() {
     super.initState();
-    // For demo: assuming user has used 6 annual leave days
-    _annualLeaveUsed = 6;
+    loggedInUserId = widget.loginData?['uid'];
+    _loadData();
+  }
+
+  void _loadData() {
+    final currentUserData = usersFinalData.firstWhere(
+      (user) => user['uid'] == (loggedInUserId ?? "user_winner_777"),
+      orElse: () => usersFinalData[0],
+    );
+    _currentUser = UserProfile.fromJson(currentUserData);
+
+    // Calculate annual leave used from leave records - sum actual days, not record count
+    final annualLeaves = _currentUser.leaveRecords
+        .where(
+          (leave) =>
+              leave.type.toLowerCase().contains('annual') ||
+              leave.type.toLowerCase().contains('casual'),
+        )
+        .toList();
+    _annualLeaveUsed = annualLeaves.fold(
+      0,
+      (sum, leave) => sum + leave.durationInDays,
+    );
     _annualLeaveRemaining = _annualLeaveTotal - _annualLeaveUsed;
   }
 

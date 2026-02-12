@@ -7,7 +7,9 @@ import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 import 'package:flutter_worksmart_mobile_app/features/home/user/logic/leaderboard_logic.dart';
 
 class LeaderboardScreen extends StatefulWidget {
-  const LeaderboardScreen({super.key});
+  final Map<String, dynamic>? loginData;
+
+  const LeaderboardScreen({super.key, this.loginData});
 
   @override
   State<LeaderboardScreen> createState() => _LeaderboardScreenState();

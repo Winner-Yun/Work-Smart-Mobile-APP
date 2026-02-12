@@ -6,17 +6,19 @@ import 'package:flutter_worksmart_mobile_app/shared/model/user_model/user_profil
 abstract class AchievementLogic extends State<AchievementScreen> {
   late UserProfile currentUser;
   late List<UserProfile> allEmployees;
+  late String? loggedInUserId;
 
   @override
   void initState() {
     super.initState();
+    loggedInUserId = widget.loginData?['uid'];
     _loadData();
   }
 
   void _loadData() {
-    // Load current user (simulating logged-in user "Winner")
+    // Load current user from login data
     final currentUserData = usersFinalData.firstWhere(
-      (user) => user['uid'] == "user_winner_777",
+      (user) => user['uid'] == (loggedInUserId ?? "user_winner_777"),
       orElse: () => usersFinalData[0],
     );
     currentUser = UserProfile.fromJson(currentUserData);

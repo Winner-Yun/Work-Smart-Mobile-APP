@@ -4,7 +4,9 @@ import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/features/home/user/logic/face_scan_logic.dart';
 
 class FaceScanScreen extends StatefulWidget {
-  const FaceScanScreen({super.key});
+  final Map<String, dynamic>? loginData;
+
+  const FaceScanScreen({super.key, this.loginData});
 
   @override
   State<FaceScanScreen> createState() => _FaceScanScreenState();

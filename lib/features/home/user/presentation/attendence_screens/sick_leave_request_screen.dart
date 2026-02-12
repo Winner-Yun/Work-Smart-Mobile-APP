@@ -2,10 +2,14 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/mock_data/userFinalData.dart';
+import 'package:flutter_worksmart_mobile_app/shared/model/user_model/user_profile.dart';
 import 'package:intl/intl.dart';
 
 class SickLeaveRequestScreen extends StatefulWidget {
-  const SickLeaveRequestScreen({super.key});
+  final Map<String, dynamic>? loginData;
+
+  const SickLeaveRequestScreen({super.key, this.loginData});
 
   @override
   State<SickLeaveRequestScreen> createState() => _SickLeaveRequestScreenState();
@@ -15,6 +19,8 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
   static const int _sickLeaveTotal = 5;
   late int _sickLeaveUsed;
   late int _sickLeaveRemaining;
+  late UserProfile _currentUser;
+  late String? loggedInUserId;
 
   PlatformFile? _pickedFile;
   DateTime? _selectedDate;
@@ -23,8 +29,25 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
   @override
   void initState() {
     super.initState();
-    // For demo: assuming user has used 2 sick leave days
-    _sickLeaveUsed = 2;
+    loggedInUserId = widget.loginData?['uid'];
+    _loadData();
+  }
+
+  void _loadData() {
+    final currentUserData = usersFinalData.firstWhere(
+      (user) => user['uid'] == (loggedInUserId ?? "user_winner_777"),
+      orElse: () => usersFinalData[0],
+    );
+    _currentUser = UserProfile.fromJson(currentUserData);
+
+    // Calculate sick leave used from leave records - sum actual days, not record count
+    final sickLeaves = _currentUser.leaveRecords
+        .where((leave) => leave.type.toLowerCase().contains('sick'))
+        .toList();
+    _sickLeaveUsed = sickLeaves.fold(
+      0,
+      (sum, leave) => sum + leave.durationInDays,
+    );
     _sickLeaveRemaining = _sickLeaveTotal - _sickLeaveUsed;
   }
 

@@ -7,7 +7,9 @@ import 'package:flutter_worksmart_mobile_app/features/home/user/logic/assign_use
 import 'package:flutter_worksmart_mobile_app/shared/widget/modern_face_painter.dart';
 
 class RegisterFaceScanScreen extends StatefulWidget {
-  const RegisterFaceScanScreen({super.key});
+  final Map<String, dynamic>? loginData;
+
+  const RegisterFaceScanScreen({super.key, this.loginData});
 
   @override
   State<RegisterFaceScanScreen> createState() => _RegisterFaceScanScreenState();

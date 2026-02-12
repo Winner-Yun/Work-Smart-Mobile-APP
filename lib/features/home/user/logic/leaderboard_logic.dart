@@ -5,11 +5,13 @@ import 'package:flutter_worksmart_mobile_app/shared/model/user_model/user_profil
 
 abstract class LeaderboardLogic extends State<LeaderboardScreen> {
   late List<UserProfile> allEmployees;
+  late String? loggedInUserId;
   bool isMonthly = true;
 
   @override
   void initState() {
     super.initState();
+    loggedInUserId = widget.loginData?['uid'];
     _loadData();
   }
 

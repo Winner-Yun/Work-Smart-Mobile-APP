@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_worksmart_mobile_app/features/auth/presentation/tutorail_screens/tutorial_content.dart';
-import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart'; // Added AppColors
-import 'package:flutter_worksmart_mobile_app/core/constants/app_img.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
+import 'package:flutter_worksmart_mobile_app/core/constants/app_img.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart'; // Added AppStrings
+import 'package:flutter_worksmart_mobile_app/core/util/database/database_helper.dart';
+import 'package:flutter_worksmart_mobile_app/features/auth/presentation/tutorail_screens/tutorial_content.dart';
 
 class TutorialScreen extends StatefulWidget {
   const TutorialScreen({super.key});
@@ -75,12 +75,21 @@ class _TutorialScreenState extends State<TutorialScreen> {
         curve: Curves.easeIn,
       );
     } else {
+      _completeTutorial();
+    }
+  }
+
+  Future<void> _completeTutorial() async {
+    final dbHelper = DatabaseHelper();
+    await dbHelper.saveConfig('tutorial_seen', 'true');
+    if (mounted) {
       Navigator.pushReplacementNamed(context, AppRoute.authScreen);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -88,12 +97,10 @@ class _TutorialScreenState extends State<TutorialScreen> {
             Align(
               alignment: Alignment.topRight,
               child: TextButton(
-                onPressed: () {
-                  Navigator.pushReplacementNamed(context, AppRoute.authScreen);
-                },
+                onPressed: _completeTutorial,
                 child: Text(
                   AppStrings.tr('skip'), // "រំលង"
-                  style: const TextStyle(color: AppColors.textGrey),
+                  style: TextStyle(color: theme.textTheme.bodySmall?.color),
                 ),
               ),
             ),
@@ -132,8 +139,8 @@ class _TutorialScreenState extends State<TutorialScreen> {
                       height: 8,
                       decoration: BoxDecoration(
                         color: index == _currentPage
-                            ? AppColors.primary
-                            : Colors.grey[300],
+                            ? theme.colorScheme.primary
+                            : theme.dividerColor,
                         borderRadius: BorderRadius.circular(4),
                       ),
                     );
@@ -150,7 +157,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
                     height: 50,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
+                        backgroundColor: theme.colorScheme.primary,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -160,8 +167,8 @@ class _TutorialScreenState extends State<TutorialScreen> {
                         _currentPage == 2
                             ? AppStrings.tr('start') // "ចាប់ផ្តើម"
                             : AppStrings.tr('next'), // "បន្ទាប់"
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: theme.colorScheme.onPrimary,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),

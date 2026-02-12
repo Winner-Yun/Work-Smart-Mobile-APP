@@ -9,8 +9,9 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class HomePageScreen extends StatefulWidget {
   final VoidCallback? onProfileTap;
+  final Map<String, dynamic>? loginData;
 
-  const HomePageScreen({super.key, this.onProfileTap});
+  const HomePageScreen({super.key, this.onProfileTap, this.loginData});
 
   @override
   State<HomePageScreen> createState() => _HomePageScreenState();
@@ -410,7 +411,7 @@ class _HomePageScreenState extends HomePageLogic {
                 ),
                 // Dynamic User Name
                 Text(
-                  "${AppStrings.tr('greet_pronoun_man')} ${currentUser.displayName}",
+                  "${AppStrings.tr(currentUser.gender == 'male' ? 'greet_pronoun_man' : 'greet_pronoun_woman')} ${currentUser.displayName}",
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.primary,
                     fontSize: 18,
@@ -424,8 +425,11 @@ class _HomePageScreenState extends HomePageLogic {
       ),
       actions: [
         IconButton(
-          onPressed: () =>
-              Navigator.pushNamed(context, AppRoute.notificationScreen),
+          onPressed: () => Navigator.pushNamed(
+            context,
+            AppRoute.notificationScreen,
+            arguments: widget.loginData,
+          ),
           icon: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
@@ -599,8 +603,11 @@ class _HomePageScreenState extends HomePageLogic {
       children: leaveStatisticsData.map((data) {
         return Expanded(
           child: GestureDetector(
-            onTap: () =>
-                Navigator.pushNamed(context, AppRoute.leaveDatailScreen),
+            onTap: () => Navigator.pushNamed(
+              context,
+              AppRoute.leaveDatailScreen,
+              arguments: widget.loginData,
+            ),
             child: Row(
               children: [
                 Expanded(
@@ -738,7 +745,11 @@ class _HomePageScreenState extends HomePageLogic {
     return Column(
       children: employeeListDisplayData.asMap().entries.map((entry) {
         return GestureDetector(
-          onTap: () => Navigator.pushNamed(context, AppRoute.leaderboardScreen),
+          onTap: () => Navigator.pushNamed(
+            context,
+            AppRoute.leaderboardScreen,
+            arguments: widget.loginData,
+          ),
           child:
               _buildEmployeeRow(
                     context,
@@ -817,15 +828,8 @@ class _HomePageScreenState extends HomePageLogic {
                     AppRoute.registerFace,
                   );
                   if (result != null) {
-                    setState(() => currentFaceStatus = 'pending');
-
-                    Future.delayed(const Duration(seconds: 10), () {
-                      if (mounted) {
-                        setState(() {
-                          currentFaceStatus = 'approved';
-                        });
-                      }
-                    });
+                    // Call handler to update face status: pending -> approved after 5 seconds
+                    handleFaceRegistrationComplete();
                   }
                 },
                 style: ElevatedButton.styleFrom(

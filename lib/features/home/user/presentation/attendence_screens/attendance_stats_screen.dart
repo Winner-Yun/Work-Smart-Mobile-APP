@@ -6,7 +6,9 @@ import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 import 'package:flutter_worksmart_mobile_app/features/home/user/logic/attendance_stats_logic.dart';
 
 class AttendanceStatsScreen extends StatefulWidget {
-  const AttendanceStatsScreen({super.key});
+  final Map<String, dynamic>? loginData;
+
+  const AttendanceStatsScreen({super.key, this.loginData});
 
   @override
   State<AttendanceStatsScreen> createState() => _AttendanceStatsScreenState();
@@ -60,7 +62,11 @@ class _AttendanceStatsScreenState extends AttendanceStatsLogic {
       actions: [
         IconButton(
           onPressed: () {
-            Navigator.pushNamed(context, AppRoute.attendanCalendarScreen);
+            Navigator.pushNamed(
+              context,
+              AppRoute.attendanCalendarScreen,
+              arguments: widget.loginData,
+            );
           },
           icon: Icon(
             Icons.calendar_month,

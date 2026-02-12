@@ -19,6 +19,7 @@ abstract class HomePageLogic extends State<HomePageScreen> {
   // --- Data Models ---
   late UserProfile currentUser;
   late List<UserProfile> allEmployees;
+  late String? loggedInUserId;
 
   // --- State Variables ---
   GoogleMapController? mapController;
@@ -48,6 +49,8 @@ abstract class HomePageLogic extends State<HomePageScreen> {
   @override
   void initState() {
     super.initState();
+    // Get logged-in user ID from login data
+    loggedInUserId = widget.loginData?['uid'];
     _loadData();
 
     // Initialize services
@@ -57,10 +60,9 @@ abstract class HomePageLogic extends State<HomePageScreen> {
   }
 
   void _loadData() {
-    // 1. Load Current User (Simulating logged-in user "Winner")
-    // In a real app, this would come from an Auth Provider or SharedPrefs
+    // 1. Load Current User from login data
     final currentUserData = usersFinalData.firstWhere(
-      (user) => user['uid'] == "user_winner_777",
+      (user) => user['uid'] == loggedInUserId,
       orElse: () => usersFinalData[0],
     );
     currentUser = UserProfile.fromJson(currentUserData);
@@ -466,5 +468,27 @@ abstract class HomePageLogic extends State<HomePageScreen> {
         ),
       );
     }
+  }
+
+  // --- Face Status Management ---
+  /// Updates the face status (3 states: not_registered, pending, approved)
+  void updateFaceStatus(String newStatus) {
+    if (mounted) {
+      setState(() {
+        currentFaceStatus = newStatus;
+      });
+    }
+  }
+
+  /// Handles face registration completion
+  /// Sets status to 'pending' immediately, then 'approved' after 5 seconds
+  void handleFaceRegistrationComplete() {
+    updateFaceStatus('pending');
+
+    Future.delayed(const Duration(seconds: 5), () {
+      if (mounted) {
+        updateFaceStatus('approved');
+      }
+    });
   }
 }

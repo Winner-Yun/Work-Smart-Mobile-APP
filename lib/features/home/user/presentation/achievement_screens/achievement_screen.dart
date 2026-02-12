@@ -5,7 +5,9 @@ import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 import 'package:flutter_worksmart_mobile_app/features/home/user/logic/achievement_logic.dart';
 
 class AchievementScreen extends StatefulWidget {
-  const AchievementScreen({super.key});
+  final Map<String, dynamic>? loginData;
+
+  const AchievementScreen({super.key, this.loginData});
 
   @override
   State<AchievementScreen> createState() => _AchievementScreenState();

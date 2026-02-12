@@ -9,7 +9,9 @@ import 'package:flutter_worksmart_mobile_app/shared/model/user_model/user_profil
 import 'package:flutter_worksmart_mobile_app/shared/widget/restartwidget.dart';
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key});
+  final Map<String, dynamic>? loginData;
+
+  const SettingsScreen({super.key, this.loginData});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -17,17 +19,19 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   late UserProfile _currentUser;
+  late String? loggedInUserId;
   bool isNotification = true;
 
   @override
   void initState() {
     super.initState();
+    loggedInUserId = widget.loginData?['uid'];
     _loadData();
   }
 
   void _loadData() {
     final currentUserData = usersFinalData.firstWhere(
-      (user) => user['uid'] == "user_winner_777",
+      (user) => user['uid'] == (loggedInUserId ?? "user_winner_777"),
       orElse: () => usersFinalData[0],
     );
     _currentUser = UserProfile.fromJson(currentUserData);

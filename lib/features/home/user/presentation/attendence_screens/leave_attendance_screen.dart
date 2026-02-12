@@ -18,7 +18,9 @@ void main() {
 }
 
 class LeaveAttendanceScreen extends StatefulWidget {
-  const LeaveAttendanceScreen({super.key});
+  final Map<String, dynamic>? loginData;
+
+  const LeaveAttendanceScreen({super.key, this.loginData});
 
   @override
   State<LeaveAttendanceScreen> createState() => _LeaveAttendanceScreenState();
@@ -35,18 +37,20 @@ class _LeaveAttendanceScreenState extends State<LeaveAttendanceScreen> {
   late int _sickUsed;
   late int _annualRemaining;
   late int _sickRemaining;
+  late Map<String, dynamic>? loginData;
 
   final DateFormat _dateFormatter = DateFormat('dd MMM yyyy');
 
   @override
   void initState() {
     super.initState();
+    loginData = widget.loginData;
     _loadData();
   }
 
   void _loadData() {
     final currentUserData = usersFinalData.firstWhere(
-      (user) => user['uid'] == "user_winner_777",
+      (user) => user['uid'] == (widget.loginData?['uid'] ?? "user_winner_777"),
       orElse: () => usersFinalData[0],
     );
     _currentUser = UserProfile.fromJson(currentUserData);
@@ -155,8 +159,11 @@ class _LeaveAttendanceScreenState extends State<LeaveAttendanceScreen> {
       ),
       actions: [
         IconButton(
-          onPressed: () =>
-              Navigator.pushNamed(context, AppRoute.notificationScreen),
+          onPressed: () => Navigator.pushNamed(
+            context,
+            AppRoute.notificationScreen,
+            arguments: loginData,
+          ),
           icon: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
@@ -230,7 +237,11 @@ class _LeaveAttendanceScreenState extends State<LeaveAttendanceScreen> {
         ),
         TextButton(
           onPressed: () {
-            Navigator.pushNamed(context, AppRoute.leaveAllRequestsScreen);
+            Navigator.pushNamed(
+              context,
+              AppRoute.leaveAllRequestsScreen,
+              arguments: loginData,
+            );
           },
           child: Text(
             AppStrings.tr('view_all'),
@@ -261,7 +272,11 @@ class _LeaveAttendanceScreenState extends State<LeaveAttendanceScreen> {
           Expanded(
             child: OutlinedButton(
               onPressed: () {
-                Navigator.pushNamed(context, AppRoute.sickleaveScreen);
+                Navigator.pushNamed(
+                  context,
+                  AppRoute.sickleaveScreen,
+                  arguments: loginData,
+                );
               },
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(0, 55),
@@ -285,7 +300,11 @@ class _LeaveAttendanceScreenState extends State<LeaveAttendanceScreen> {
           Expanded(
             child: ElevatedButton(
               onPressed: () {
-                Navigator.pushNamed(context, AppRoute.annualleaveScreen);
+                Navigator.pushNamed(
+                  context,
+                  AppRoute.annualleaveScreen,
+                  arguments: loginData,
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.primary,

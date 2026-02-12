@@ -263,10 +263,19 @@ final List<Map<String, dynamic>> attendanceRecords = [
     "status": "late",
     "lat_lng": {"lat": 11.572, "lng": 104.893},
   },
-
-  // January 2026 - user_developer_888
   {
-    "uid": "user_developer_888",
+    "uid": "user_winner_777",
+    "date": "2026-02-11",
+    "check_in": "08:00 AM",
+    "check_out": "05:00 PM",
+    "total_hours": 9.0,
+    "status": "on_time",
+    "lat_lng": {"lat": 11.572, "lng": 104.893},
+  },
+
+  // January 2026 - user_sophy_888
+  {
+    "uid": "user_sophy_888",
     "date": "2026-01-02",
     "check_in": "08:20 AM",
     "check_out": "05:00 PM",
@@ -275,7 +284,7 @@ final List<Map<String, dynamic>> attendanceRecords = [
     "lat_lng": {"lat": 11.575, "lng": 104.895},
   },
   {
-    "uid": "user_developer_888",
+    "uid": "user_sophy_888",
     "date": "2026-01-03",
     "check_in": "08:15 AM",
     "check_out": "05:00 PM",
@@ -284,7 +293,7 @@ final List<Map<String, dynamic>> attendanceRecords = [
     "lat_lng": {"lat": 11.575, "lng": 104.895},
   },
   {
-    "uid": "user_developer_888",
+    "uid": "user_sophy_888",
     "date": "2026-01-06",
     "check_in": "08:00 AM",
     "check_out": "05:00 PM",
@@ -293,7 +302,7 @@ final List<Map<String, dynamic>> attendanceRecords = [
     "lat_lng": {"lat": 11.575, "lng": 104.895},
   },
   {
-    "uid": "user_developer_888",
+    "uid": "user_sophy_888",
     "date": "2026-01-07",
     "check_in": "08:30 AM",
     "check_out": "05:00 PM",
@@ -302,7 +311,7 @@ final List<Map<String, dynamic>> attendanceRecords = [
     "lat_lng": {"lat": 11.575, "lng": 104.895},
   },
   {
-    "uid": "user_developer_888",
+    "uid": "user_sophy_888",
     "date": "2026-01-08",
     "check_in": "08:20 AM",
     "check_out": "05:00 PM",
@@ -311,7 +320,7 @@ final List<Map<String, dynamic>> attendanceRecords = [
     "lat_lng": {"lat": 11.575, "lng": 104.895},
   },
   {
-    "uid": "user_developer_888",
+    "uid": "user_sophy_888",
     "date": "2026-01-09",
     "check_in": "08:00 AM",
     "check_out": "05:00 PM",
@@ -320,7 +329,7 @@ final List<Map<String, dynamic>> attendanceRecords = [
     "lat_lng": {"lat": 11.575, "lng": 104.895},
   },
   {
-    "uid": "user_developer_888",
+    "uid": "user_sophy_888",
     "date": "2026-01-10",
     "check_in": "08:25 AM",
     "check_out": "05:00 PM",
@@ -329,7 +338,7 @@ final List<Map<String, dynamic>> attendanceRecords = [
     "lat_lng": {"lat": 11.575, "lng": 104.895},
   },
   {
-    "uid": "user_developer_888",
+    "uid": "user_sophy_888",
     "date": "2026-01-13",
     "check_in": "08:15 AM",
     "check_out": "05:00 PM",
@@ -338,7 +347,7 @@ final List<Map<String, dynamic>> attendanceRecords = [
     "lat_lng": {"lat": 11.575, "lng": 104.895},
   },
   {
-    "uid": "user_developer_888",
+    "uid": "user_sophy_888",
     "date": "2026-01-14",
     "check_in": "08:30 AM",
     "check_out": "05:00 PM",
@@ -347,7 +356,7 @@ final List<Map<String, dynamic>> attendanceRecords = [
     "lat_lng": {"lat": 11.575, "lng": 104.895},
   },
   {
-    "uid": "user_developer_888",
+    "uid": "user_sophy_888",
     "date": "2026-01-15",
     "check_in": "08:00 AM",
     "check_out": "05:00 PM",
@@ -356,7 +365,7 @@ final List<Map<String, dynamic>> attendanceRecords = [
     "lat_lng": {"lat": 11.575, "lng": 104.895},
   },
   {
-    "uid": "user_developer_888",
+    "uid": "user_sophy_888",
     "date": "2026-01-16",
     "check_in": "08:10 AM",
     "check_out": "05:00 PM",
@@ -365,7 +374,7 @@ final List<Map<String, dynamic>> attendanceRecords = [
     "lat_lng": {"lat": 11.575, "lng": 104.895},
   },
   {
-    "uid": "user_developer_888",
+    "uid": "user_sophy_888",
     "date": "2026-01-17",
     "check_in": "08:00 AM",
     "check_out": "05:00 PM",
@@ -374,9 +383,9 @@ final List<Map<String, dynamic>> attendanceRecords = [
     "lat_lng": {"lat": 11.575, "lng": 104.895},
   },
 
-  // February 2026 - user_developer_888
+  // February 2026 - user_sophy_888
   {
-    "uid": "user_developer_888",
+    "uid": "user_sophy_888",
     "date": "2026-02-02",
     "check_in": "08:15 AM",
     "check_out": "05:00 PM",
@@ -385,7 +394,7 @@ final List<Map<String, dynamic>> attendanceRecords = [
     "lat_lng": {"lat": 11.575, "lng": 104.895},
   },
   {
-    "uid": "user_developer_888",
+    "uid": "user_sophy_888",
     "date": "2026-02-03",
     "check_in": "08:20 AM",
     "check_out": "05:00 PM",
@@ -394,7 +403,7 @@ final List<Map<String, dynamic>> attendanceRecords = [
     "lat_lng": {"lat": 11.575, "lng": 104.895},
   },
   {
-    "uid": "user_developer_888",
+    "uid": "user_sophy_888",
     "date": "2026-02-04",
     "check_in": "08:00 AM",
     "check_out": "05:00 PM",
@@ -403,7 +412,7 @@ final List<Map<String, dynamic>> attendanceRecords = [
     "lat_lng": {"lat": 11.575, "lng": 104.895},
   },
   {
-    "uid": "user_developer_888",
+    "uid": "user_sophy_888",
     "date": "2026-02-08",
     "check_in": "08:25 AM",
     "check_out": "05:15 PM",
@@ -412,7 +421,7 @@ final List<Map<String, dynamic>> attendanceRecords = [
     "lat_lng": {"lat": 11.575, "lng": 104.895},
   },
   {
-    "uid": "user_developer_888",
+    "uid": "user_sophy_888",
     "date": "2026-02-09",
     "check_in": "07:55 AM",
     "check_out": "04:50 PM",
@@ -421,11 +430,20 @@ final List<Map<String, dynamic>> attendanceRecords = [
     "lat_lng": {"lat": 11.575, "lng": 104.895},
   },
   {
-    "uid": "user_developer_888",
+    "uid": "user_sophy_888",
     "date": "2026-02-10",
     "check_in": "08:15 AM",
     "check_out": "05:05 PM",
     "total_hours": 8.8,
+    "status": "late",
+    "lat_lng": {"lat": 11.575, "lng": 104.895},
+  },
+  {
+    "uid": "user_sophy_888",
+    "date": "2026-02-11",
+    "check_in": "08:20 AM",
+    "check_out": "05:00 PM",
+    "total_hours": 8.6,
     "status": "late",
     "lat_lng": {"lat": 11.575, "lng": 104.895},
   },
@@ -592,6 +610,15 @@ final List<Map<String, dynamic>> attendanceRecords = [
     "check_in": "08:02 AM",
     "check_out": "05:00 PM",
     "total_hours": 8.97,
+    "status": "on_time",
+    "lat_lng": {"lat": 11.568, "lng": 104.890},
+  },
+  {
+    "uid": "user_rith_123",
+    "date": "2026-02-11",
+    "check_in": "07:58 AM",
+    "check_out": "05:00 PM",
+    "total_hours": 9.03,
     "status": "on_time",
     "lat_lng": {"lat": 11.568, "lng": 104.890},
   },

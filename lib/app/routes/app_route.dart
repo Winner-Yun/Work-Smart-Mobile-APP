@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/database/database_helper.dart';
 import 'package:flutter_worksmart_mobile_app/features/auth/presentation/authscreen.dart';
 import 'package:flutter_worksmart_mobile_app/features/auth/presentation/forgot_pas_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/auth/presentation/tutorail_screens/tutorial_screen.dart';
@@ -40,23 +41,86 @@ class AppRoute {
   static const String registerFace = '/registerFace';
 
   static Map<String, WidgetBuilder> routes = {
+    // Auth Routes
     tutorial: (context) => const TutorialScreen(),
     authScreen: (context) => const Authscreen(),
-    appmain: (context) => const MainScreen(),
-    attendanceDetail: (context) => const AttendanceDetailScreen(),
-    leaderboardScreen: (context) => const LeaderboardScreen(),
-    achievementScreen: (context) => const AchievementScreen(),
-    attendanCalendarScreen: (context) => const AttendanceCalendarScreen(),
-    notificationScreen: (context) => const NotificationScreen(),
     forgotpassScreen: (context) => const ForgotPasswordScreen(),
-    leaveDatailScreen: (context) => const LeaveDetailScreen(),
-    faceScanScreen: (context) => const FaceScanScreen(),
-    sickleaveScreen: (context) => const SickLeaveRequestScreen(),
-    annualleaveScreen: (context) => const AnnualLeaveRequestScreen(),
-    leaveAllRequestsScreen: (context) => const LeaveAllRequestsScreen(),
-    settingScreen: (context) => const SettingsScreen(),
-    telegramConfig: (context) => const TelegramIntegration(),
+
+    // Main App
+    appmain: (context) {
+      final args =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      if (args != null) {
+        return MainScreen(loginData: args);
+      }
+      return const _CachedLoginGate();
+    },
+
+    // Achievement Routes
+    leaderboardScreen: _buildRoute((args) => LeaderboardScreen(loginData: args)),
+    achievementScreen: _buildRoute((args) => AchievementScreen(loginData: args)),
+
+    // Attendance Routes
+    attendanceDetail: _buildRoute((args) => AttendanceDetailScreen(loginData: args)),
+    attendanCalendarScreen: _buildRoute((args) => AttendanceCalendarScreen(loginData: args)),
+    leaveDatailScreen: _buildRoute((args) => LeaveDetailScreen(loginData: args)),
+
+    // Leave Request Routes
+    sickleaveScreen: _buildRoute((args) => SickLeaveRequestScreen(loginData: args)),
+    annualleaveScreen: _buildRoute((args) => AnnualLeaveRequestScreen(loginData: args)),
+    leaveAllRequestsScreen: _buildRoute((args) => LeaveAllRequestsScreen(loginData: args)),
+
+    // Face Recognition Routes
+    faceScanScreen: _buildRoute((args) => FaceScanScreen(loginData: args)),
+    registerFace: _buildRoute((args) => RegisterFaceScanScreen(loginData: args)),
+
+    // Notification Routes
+    notificationScreen: _buildRoute((args) => NotificationScreen(loginData: args)),
+
+    // Settings Routes
+    settingScreen: _buildRoute((args) => SettingsScreen(loginData: args)),
+    telegramConfig: _buildRoute((args) => TelegramIntegration(loginData: args)),
     helpSupportScreen: (context) => const HelpSupportScreen(),
-    registerFace: (context) => const RegisterFaceScanScreen(),
   };
+
+  static WidgetBuilder _buildRoute(
+    Widget Function(Map<String, dynamic>?) builder,
+  ) {
+    return (context) {
+      final args =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      return builder(args);
+    };
+  }
+}
+
+class _CachedLoginGate extends StatelessWidget {
+  const _CachedLoginGate();
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: DatabaseHelper().getCachedLogin(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        final cachedLogin = snapshot.data;
+        if (cachedLogin == null) {
+          return const Authscreen();
+        }
+
+        final loginData = {
+          'uid': cachedLogin['user_id'],
+          'username': cachedLogin['username'],
+          'userType': cachedLogin['user_type'],
+        };
+
+        return MainScreen(loginData: loginData);
+      },
+    );
+  }
 }

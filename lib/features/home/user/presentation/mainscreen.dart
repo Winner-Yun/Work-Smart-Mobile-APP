@@ -7,7 +7,9 @@ import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/hom
 import 'package:flutter_worksmart_mobile_app/features/home/user/presentation/profile&setting_screens/profile_screens.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  final Map<String, dynamic>? loginData;
+
+  const MainScreen({super.key, this.loginData});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -22,15 +24,16 @@ class _MainScreenState extends State<MainScreen> {
 
     final List<Widget> screens = [
       HomePageScreen(
+        loginData: widget.loginData,
         onProfileTap: () {
           setState(() {
             _currentIndex = 3;
           });
         },
       ),
-      const AttendanceStatsScreen(),
-      const LeaveAttendanceScreen(),
-      const ProfileScreen(),
+      AttendanceStatsScreen(loginData: widget.loginData),
+      LeaveAttendanceScreen(loginData: widget.loginData),
+      ProfileScreen(loginData: widget.loginData),
     ];
 
     return AnnotatedRegion<SystemUiOverlayStyle>(

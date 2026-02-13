@@ -27,7 +27,7 @@ class MainApp extends StatelessWidget {
           theme: AppThemes.lightTheme,
           darkTheme: AppThemes.darkTheme,
           themeMode: ThemeManager().themeMode,
-          initialRoute: AppRoute.appmain,
+          initialRoute: AppRoute.editstaff,
           routes: AppRoute.routes,
         );
       },

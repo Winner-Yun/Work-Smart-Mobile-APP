@@ -2,7 +2,7 @@ final List<Map<String, dynamic>> attendanceRecords = [
   // January 2026 - user_winner_777 (20 workdays)
   {
     "uid": "user_winner_777",
-    "date": "2026-01-02",
+    "date": "2026-02-14",
     "check_in": "08:00 AM",
     "check_out": "05:00 PM",
     "total_hours": 9.0,

@@ -6,7 +6,7 @@ import 'package:flutter_worksmart_mobile_app/config/theme_manager.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/util/mock_data/userFinalData.dart';
 import 'package:flutter_worksmart_mobile_app/shared/model/user_model/user_profile.dart';
-import 'package:flutter_worksmart_mobile_app/shared/widget/restartwidget.dart';
+import 'package:flutter_worksmart_mobile_app/shared/widget/user/restartwidget.dart';
 
 class SettingsScreen extends StatefulWidget {
   final Map<String, dynamic>? loginData;

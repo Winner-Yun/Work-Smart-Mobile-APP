@@ -6,4 +6,5 @@ class AppImg {
   static String appIcon = 'assets/icons/appIcon.png';
   static String crown = 'assets/icons/icons8-crown-48.png';
   static String pinIcon = 'assets/icons/pinIcon.png';
+  static String appIconDark = 'assets/icons/appIconDarkMode.png';
 }

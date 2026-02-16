@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_img.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/map_styles.dart';
-import 'package:flutter_worksmart_mobile_app/core/util/mock_data/leave_attendance.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/mock_data/attendance_record.dart';
 import 'package:flutter_worksmart_mobile_app/core/util/mock_data/officeMasterData.dart';
 import 'package:flutter_worksmart_mobile_app/core/util/mock_data/userFinalData.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/presentation/homepage_screens/homepagescreen.dart';

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
-import 'package:flutter_worksmart_mobile_app/core/util/mock_data/leave_attendance.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/mock_data/attendance_record.dart';
 import 'package:flutter_worksmart_mobile_app/core/util/mock_data/userFinalData.dart';
 import 'package:flutter_worksmart_mobile_app/shared/model/activity_models/attendance_record.dart';
 import 'package:flutter_worksmart_mobile_app/shared/model/user_model/user_profile.dart';

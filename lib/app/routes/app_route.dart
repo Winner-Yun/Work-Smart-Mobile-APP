@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_worksmart_mobile_app/core/util/database/database_helper.dart';
-import 'package:flutter_worksmart_mobile_app/features/admin/presentation/admin_homepage.dart';
-import 'package:flutter_worksmart_mobile_app/features/admin/presentation/admin_homepage_web.dart';
-import 'package:flutter_worksmart_mobile_app/features/admin/presentation/admin_login_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/auth/presentation/authscreen.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/auth/presentation/forgot_pas_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/auth/presentation/tutorail_screens/tutorial_screen.dart';
@@ -22,9 +19,13 @@ import 'package:flutter_worksmart_mobile_app/features/user/presentation/profile&
 import 'package:flutter_worksmart_mobile_app/features/user/presentation/profile&setting_screens/setting_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/presentation/profile&setting_screens/telegram_integration.dart';
 
+import 'app_admin_route.dart';
+
 /// AppRoute: Central routing configuration
-/// Manages all app routes: authentication, admin, employee features
+/// 
 class AppRoute {
+  static const String adminTutorial = AppAdminRoute.adminTutorial;
+
   static const String tutorial = '/tutorial';
   static const String authScreen = '/auth';
   static const String appmain = '/appmain';
@@ -44,9 +45,6 @@ class AppRoute {
   static const String telegramConfig = '/telegramConfig';
   static const String helpSupportScreen = '/helpSupportScreen';
   static const String registerFace = '/registerFace';
-  static const String adminDashboard = '/admin-dashboard';
-  static const String adminDashboardWeb = '/admin-dashboard-web';
-  static const String adminLoginWeb = '/admin-login-web';
 
   // ──────────────── ROUTE DEFINITIONS ────────────────
   // Includes auth routes, admin routes, and employee feature routes
@@ -113,9 +111,9 @@ class AppRoute {
     helpSupportScreen: (context) => const HelpSupportScreen(),
 
     // Admin Routes
-    adminDashboard: _buildRoute((args) => AdminHomepage(loginData: args)),
-    adminDashboardWeb: _buildRoute((args) => AdminHomepageWeb(loginData: args)),
-    adminLoginWeb: (context) => const AdminLoginScreen(),
+    ...AppAdminRoute.routes,
+
+    
   };
 
   static WidgetBuilder _buildRoute(

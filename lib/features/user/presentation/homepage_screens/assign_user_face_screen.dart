@@ -4,7 +4,7 @@ import 'package:flutter_worksmart_mobile_app/config/language_manager.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/logic/assign_user_face_logic.dart';
-import 'package:flutter_worksmart_mobile_app/shared/widget/modern_face_painter.dart';
+import 'package:flutter_worksmart_mobile_app/shared/widget/user/modern_face_painter.dart';
 
 class RegisterFaceScanScreen extends StatefulWidget {
   final Map<String, dynamic>? loginData;

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_worksmart_mobile_app/features/admin/auth/presentation/auth_page/auth_admin_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/admin/auth/presentation/toturail_page/admin_tutorial_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/admin/dashboard/presentation/analytics__screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/admin/dashboard/presentation/geofencing_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/admin/dashboard/presentation/homepage_dashboard_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/admin/dashboard/presentation/manage_users_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/admin/dashboard/presentation/mange_leaveemp_dashboard_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/admin/dashboard/presentation/performance_leaderboard_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/admin/dashboard/presentation/system_settings_screen.dart';
 
 class AppAdminRoute {
   static const String adminTutorial = '/admin-tutorial';
@@ -24,11 +27,9 @@ class AppAdminRoute {
     adminDashboard: (context) => const AdminDashboardScreen(),
     staffManagement: (context) => const ManageUsersScreen(),
     geofencing: (context) => const GeofencingScreen(),
-    performanceLeaderboard: (context) =>
-        const AdminDashboardScreen(), // Placeholder
-    leaveRequests: (context) =>
-        const MangeLeaveEmpDashboardScreen(), // Placeholder
-    analyticsReports: (context) => const AdminDashboardScreen(), // Placeholder
-    systemSettings: (context) => const AdminDashboardScreen(), // Placeholder
+    performanceLeaderboard: (context) => const PerformanceLeaderboardScreen(),
+    leaveRequests: (context) => const MangeLeaveEmpDashboardScreen(),
+    analyticsReports: (context) => const AnalyticsScreen(),
+    systemSettings: (context) => const AdminSystemSettingsScreen(),
   };
 }

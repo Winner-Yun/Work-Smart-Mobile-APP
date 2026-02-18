@@ -10,14 +10,14 @@ class AdminSideBar extends StatelessWidget {
       geofencingSelected,
       leaderboardSelected,
       leaverequestsSelected,
-      reportsSelected,
+      analyticsSelected,
       settingsSelected;
   final VoidCallback? onDashboardTap,
       onStaffTap,
       onGeofencingTap,
       onLeaderboardTap,
       onLeaveRequestsTap,
-      onReportsTap,
+      onAnalyticsTap,
       onSettingsTap;
 
   const AdminSideBar({
@@ -28,14 +28,14 @@ class AdminSideBar extends StatelessWidget {
     this.geofencingSelected = false,
     this.leaderboardSelected = false,
     this.leaverequestsSelected = false,
-    this.reportsSelected = false,
+    this.analyticsSelected = false,
     this.settingsSelected = false,
     this.onDashboardTap,
     this.onStaffTap,
     this.onGeofencingTap,
     this.onLeaderboardTap,
     this.onLeaveRequestsTap,
-    this.onReportsTap,
+    this.onAnalyticsTap,
     this.onSettingsTap,
   });
 
@@ -117,9 +117,9 @@ class AdminSideBar extends StatelessWidget {
           _buildNavItem(
             context,
             Icons.description_rounded,
-            AppStrings.tr('analytics_reports'),
-            reportsSelected,
-            onReportsTap,
+            AppStrings.tr('analytics'),
+            analyticsSelected,
+            onAnalyticsTap,
           ),
           _buildNavItem(
             context,
@@ -152,25 +152,22 @@ class AdminSideBar extends StatelessWidget {
         color: color,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(12),
-            hoverColor: isActive
-                ? theme.colorScheme.primary.withOpacity(0.8)
-                : theme.colorScheme.primary.withOpacity(0.1),
-            child: ListTile(
-              minLeadingWidth: 20,
-              leading: Icon(icon, color: textColor),
-              title: Text(
-                label,
-                style: TextStyle(
-                  color: textColor,
-                  fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-                ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          hoverColor: isActive
+              ? theme.colorScheme.primary.withOpacity(0.8)
+              : theme.colorScheme.primary.withOpacity(0.1),
+          child: ListTile(
+            minLeadingWidth: 20,
+            leading: Icon(icon, color: textColor),
+            title: Text(
+              label,
+              style: TextStyle(
+                color: textColor,
+                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
               ),
             ),
           ),

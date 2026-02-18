@@ -46,6 +46,7 @@ class LeaveRequestsController extends ChangeNotifier {
   String _searchQuery = '';
   DateTime? _startDate;
   DateTime? _endDate;
+  bool _isLoading = false;
 
   LeaveRequestsController() {
     _allRequests = _getLeaveRequestsFromMockData();
@@ -56,6 +57,12 @@ class LeaveRequestsController extends ChangeNotifier {
   String get searchQuery => _searchQuery;
   DateTime? get startDate => _startDate;
   DateTime? get endDate => _endDate;
+  bool get isLoading => _isLoading;
+
+  void _setLoading(bool value) {
+    _isLoading = value;
+    notifyListeners();
+  }
 
   void filterRequests(String query) {
     _searchQuery = query.toLowerCase();
@@ -63,18 +70,22 @@ class LeaveRequestsController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setDateRange(DateTime? start, DateTime? end) {
+  Future<void> setDateRange(DateTime? start, DateTime? end) async {
+    _setLoading(true);
     _startDate = start;
     _endDate = end;
     _applyFilters();
-    notifyListeners();
+    await Future.delayed(const Duration(milliseconds: 400));
+    _setLoading(false);
   }
 
-  void clearDateRange() {
+  Future<void> clearDateRange() async {
+    _setLoading(true);
     _startDate = null;
     _endDate = null;
     _applyFilters();
-    notifyListeners();
+    await Future.delayed(const Duration(milliseconds: 400));
+    _setLoading(false);
   }
 
   void _applyFilters() {

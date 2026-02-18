@@ -8,11 +8,13 @@ class ManageUsersController extends ChangeNotifier {
   String _searchQuery = '';
   String _selectedStatus = 'all';
   String _selectedDepartment = 'all';
+  bool _isLoading = false;
 
   List<UserEmployee> get filteredUsers => _filteredUsers;
   String get searchQuery => _searchQuery;
   String get selectedStatus => _selectedStatus;
   String get selectedDepartment => _selectedDepartment;
+  bool get isLoading => _isLoading;
 
   ManageUsersController() {
     _loadUsers();
@@ -36,14 +38,25 @@ class ManageUsersController extends ChangeNotifier {
     _applyFilters();
   }
 
-  void setStatus(String status) {
-    _selectedStatus = status;
-    _applyFilters();
+  void _setLoading(bool value) {
+    _isLoading = value;
+    notifyListeners();
   }
 
-  void setDepartment(String department) {
+  Future<void> setStatus(String status) async {
+    _setLoading(true);
+    _selectedStatus = status;
+    _applyFilters();
+    await Future.delayed(const Duration(milliseconds: 400));
+    _setLoading(false);
+  }
+
+  Future<void> setDepartment(String department) async {
+    _setLoading(true);
     _selectedDepartment = department;
     _applyFilters();
+    await Future.delayed(const Duration(milliseconds: 400));
+    _setLoading(false);
   }
 
   void _applyFilters() {

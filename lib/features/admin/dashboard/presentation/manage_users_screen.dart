@@ -53,23 +53,66 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
 
             final mainContent = Column(
               children: [
-                AdminHeaderBar(_scaffoldKey),
+                AdminHeaderBar(_scaffoldKey, isCompact: !isDesktop),
                 Expanded(
-                  child: Container(
-                    color: Theme.of(context).scaffoldBackgroundColor,
-                    child: SingleChildScrollView(
-                      padding: EdgeInsets.all(isCompact ? 16 : 32),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildUserStats(),
-                          const SizedBox(height: 32),
-                          _buildUsersTable(
-                            isCompact,
-                          ).animate().fade().slideY(begin: 0.2),
-                        ],
+                  child: Stack(
+                    children: [
+                      Container(
+                        color: Theme.of(context).scaffoldBackgroundColor,
+                        child: SingleChildScrollView(
+                          padding: EdgeInsets.all(isCompact ? 16 : 32),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildUserStats(),
+                              const SizedBox(height: 32),
+                              _buildUsersTable(
+                                isCompact,
+                              ).animate().fade().slideY(begin: 0.2),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
+                      // Loading Overlay
+                      if (_controller.isLoading)
+                        AnimatedOpacity(
+                          opacity: _controller.isLoading ? 1.0 : 0.0,
+                          duration: const Duration(milliseconds: 300),
+                          child: Container(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surface.withOpacity(0.7),
+                            child: Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SizedBox(
+                                    width: 50,
+                                    height: 50,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 3,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Theme.of(context).colorScheme.primary,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'Loading...',
+                                    style: TextStyle(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ],
@@ -93,7 +136,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                             _navigateTo(AppAdminRoute.performanceLeaderboard),
                         onLeaveRequestsTap: () =>
                             _navigateTo(AppAdminRoute.leaveRequests),
-                        onReportsTap: () =>
+                        onAnalyticsTap: () =>
                             _navigateTo(AppAdminRoute.analyticsReports),
                         onSettingsTap: () =>
                             _navigateTo(AppAdminRoute.systemSettings),
@@ -115,7 +158,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                           _navigateTo(AppAdminRoute.performanceLeaderboard),
                       onLeaveRequestsTap: () =>
                           _navigateTo(AppAdminRoute.leaveRequests),
-                      onReportsTap: () =>
+                      onAnalyticsTap: () =>
                           _navigateTo(AppAdminRoute.analyticsReports),
                       onSettingsTap: () =>
                           _navigateTo(AppAdminRoute.systemSettings),
@@ -256,44 +299,101 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
       );
     }
 
-    return Row(
-      children: [
-        Expanded(
-          child: statCard(
-            AppStrings.tr('total_users'),
-            stats['total'].toString(),
-            Icons.people_rounded,
-            Theme.of(context).colorScheme.primary,
-          ).animate().fade().slideY(begin: 0.2),
-        ),
-        const SizedBox(width: 24),
-        Expanded(
-          child: statCard(
-            AppStrings.tr('status_active'),
-            stats['active'].toString(),
-            Icons.check_circle_rounded,
-            AppColors.success,
-          ).animate().fade().slideY(begin: 0.2),
-        ),
-        const SizedBox(width: 24),
-        Expanded(
-          child: statCard(
-            AppStrings.tr('status_inactive'),
-            stats['inactive'].toString(),
-            Icons.pause_circle_rounded,
-            AppColors.secondary,
-          ).animate().fade().slideY(begin: 0.2),
-        ),
-        const SizedBox(width: 24),
-        Expanded(
-          child: statCard(
-            AppStrings.tr('status_suspended'),
-            stats['suspended'].toString(),
-            Icons.block_rounded,
-            AppColors.error,
-          ).animate().fade().slideY(begin: 0.2),
-        ),
-      ],
+    final statCards = [
+      statCard(
+        AppStrings.tr('total_users'),
+        stats['total'].toString(),
+        Icons.people_rounded,
+        Theme.of(context).colorScheme.primary,
+      ).animate().fade().slideY(begin: 0.2),
+      statCard(
+        AppStrings.tr('status_active'),
+        stats['active'].toString(),
+        Icons.check_circle_rounded,
+        AppColors.success,
+      ).animate().fade().slideY(begin: 0.2),
+      statCard(
+        AppStrings.tr('status_inactive'),
+        stats['inactive'].toString(),
+        Icons.pause_circle_rounded,
+        AppColors.secondary,
+      ).animate().fade().slideY(begin: 0.2),
+      statCard(
+        AppStrings.tr('status_suspended'),
+        stats['suspended'].toString(),
+        Icons.block_rounded,
+        AppColors.error,
+      ).animate().fade().slideY(begin: 0.2),
+    ];
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isDesktop = constraints.maxWidth >= 1100;
+        final isTablet = constraints.maxWidth >= 700;
+
+        if (isDesktop) {
+          return Row(
+            children: statCards
+                .map(
+                  (card) => Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: card,
+                    ),
+                  ),
+                )
+                .toList(),
+          );
+        } else if (isTablet) {
+          return Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 12, bottom: 24),
+                      child: statCards[0],
+                    ),
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 12, bottom: 24),
+                      child: statCards[1],
+                    ),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: statCards[2],
+                    ),
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 12),
+                      child: statCards[3],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          );
+        } else {
+          return Column(
+            children: statCards
+                .map(
+                  (card) => Padding(
+                    padding: const EdgeInsets.only(bottom: 24),
+                    child: card,
+                  ),
+                )
+                .toList(),
+          );
+        }
+      },
     );
   }
 
@@ -361,13 +461,15 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                     ),
                   ],
                 ),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    _showCreateUserDialog(context);
-                  },
-                  icon: const Icon(Icons.add_rounded),
-                  label: Text(AppStrings.tr('create_user')),
-                  style: ElevatedButton.styleFrom(
+                MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      _showCreateUserDialog(context);
+                    },
+                    icon: const Icon(Icons.add_rounded),
+                    label: Text(AppStrings.tr('create_user')),
+                    style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Theme.of(context).colorScheme.onPrimary,
                     padding: const EdgeInsets.symmetric(
@@ -378,6 +480,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
+                  ),
                   ),
                 ),
               ],
@@ -471,9 +574,11 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                         ).colorScheme.primary.withOpacity(0.6),
                       ),
                       suffixIcon: _searchController.text.isNotEmpty
-                          ? IconButton(
-                              icon: Icon(
-                                Icons.close_rounded,
+                          ? MouseRegion(
+                              cursor: SystemMouseCursors.click,
+                              child: IconButton(
+                                icon: Icon(
+                                  Icons.close_rounded,
                                 color: Theme.of(
                                   context,
                                 ).colorScheme.onSurface.withOpacity(0.5),
@@ -483,6 +588,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                                 _controller.filterUsers('');
                                 setState(() {});
                               },
+                            ),
                             )
                           : null,
                       border: InputBorder.none,
@@ -726,8 +832,10 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                         ),
                         child: Material(
                           color: Colors.transparent,
-                          child: InkWell(
-                            onTap: () {
+                          child: MouseRegion(
+                            cursor: SystemMouseCursors.click,
+                            child: InkWell(
+                              onTap: () {
                               _searchController.clear();
                               _controller.clearFilters();
                               setState(() {});
@@ -758,6 +866,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                                   ),
                                 ],
                               ),
+                            ),
                             ),
                           ),
                         ),
@@ -1009,8 +1118,10 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                                 children: [
                                   Tooltip(
                                     message: AppStrings.tr('edit'),
-                                    child: IconButton(
-                                      icon: const Icon(
+                                    child: MouseRegion(
+                                      cursor: SystemMouseCursors.click,
+                                      child: IconButton(
+                                        icon: const Icon(
                                         Icons.edit_rounded,
                                         size: 20,
                                       ),
@@ -1030,11 +1141,14 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                                         _showEditDialog(context, user);
                                       },
                                     ),
+                                    ),
                                   ),
                                   const SizedBox(width: 8),
                                   Tooltip(
                                     message: AppStrings.tr('delete'),
-                                    child: IconButton(
+                                    child: MouseRegion(
+                                      cursor: SystemMouseCursors.click,
+                                      child: IconButton(
                                       icon: const Icon(
                                         Icons.delete_rounded,
                                         size: 20,
@@ -1051,6 +1165,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                                       onPressed: () {
                                         _showDeleteConfirm(context, user);
                                       },
+                                    ),
                                     ),
                                   ),
                                 ],
@@ -1071,12 +1186,10 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
   }
 
   void _navigateTo(String routeName) {
-    if (mounted) {
-      Navigator.of(context).pushNamed(routeName);
-      if (_scaffoldKey.currentState?.isDrawerOpen == true) {
-        Navigator.pop(context);
-      }
+    if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
+      Navigator.of(context).pop();
     }
+    if (mounted) Navigator.of(context).pushNamed(routeName);
   }
 
   void _showEditDialog(BuildContext context, UserEmployee user) {
@@ -1441,9 +1554,12 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                           ],
                         ),
                       ),
-                      IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.close_rounded),
+                      MouseRegion(
+                        cursor: SystemMouseCursors.click,
+                        child: IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(Icons.close_rounded),
+                        ),
                       ),
                     ],
                   ),

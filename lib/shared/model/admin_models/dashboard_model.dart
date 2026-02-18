@@ -27,6 +27,10 @@ class AttendanceRowData {
   final String timeStatus;
   final String profileUrl;
   final bool isLate;
+  final String? email;
+  final String? phone;
+  final String? officeId;
+  final String? departmentId;
 
   const AttendanceRowData({
     required this.name,
@@ -37,6 +41,10 @@ class AttendanceRowData {
     required this.timeStatus,
     required this.profileUrl,
     required this.isLate,
+    this.email,
+    this.phone,
+    this.officeId,
+    this.departmentId,
   });
 }
 
@@ -85,7 +93,7 @@ class UserEmployee {
   final String departmentId;
   final String officeId;
   final String profileUrl;
-  final String? status; 
+  final String? status;
   final DateTime? joinDate;
   final String? faceStatus;
 

@@ -12,11 +12,21 @@ import 'package:flutter_worksmart_mobile_app/shared/model/user_model/user_profil
 // ==========================================
 class DashboardController extends ChangeNotifier {
   bool _isSidebarCollapsed = false;
-  bool get isSidebarCollapsed => _isSidebarCollapsed;
+  bool _isLoading = false;
 
-  void toggleSidebar() {
-    _isSidebarCollapsed = !_isSidebarCollapsed;
+  bool get isSidebarCollapsed => _isSidebarCollapsed;
+  bool get isLoading => _isLoading;
+
+  void _setLoading(bool value) {
+    _isLoading = value;
     notifyListeners();
+  }
+
+  Future<void> toggleSidebar() async {
+    _setLoading(true);
+    _isSidebarCollapsed = !_isSidebarCollapsed;
+    await Future.delayed(const Duration(milliseconds: 300));
+    _setLoading(false);
   }
 }
 
@@ -31,7 +41,6 @@ final Map<String, UserProfile> _usersById = {
   for (final user in usersFinalProfiles) user.uid: user,
 };
 
-
 OfficeConfig getOfficeConfig() => _officeConfig;
 
 String getInitials(String name) {
@@ -45,10 +54,8 @@ String getInitials(String name) {
   return '$first$last';
 }
 
-
 DashboardStatsData buildDashboardStats({bool useToday = true}) {
   final totalEmployees = usersFinalProfiles.length;
-
 
   final todayKey = _formatDateKey(DateTime.now());
   final records = useToday
@@ -126,6 +133,10 @@ List<AttendanceRowData> buildAttendanceRows({
         timeStatus: timeStatus,
         profileUrl: user?.profileUrl ?? '',
         isLate: isLate,
+        email: user?.email,
+        phone: user?.phone,
+        officeId: user?.officeId,
+        departmentId: user?.departmentId,
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart'; // <-- ADDED: flutter_animate import
+import 'package:flutter_worksmart_mobile_app/app/routes/app_admin_route.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 import 'package:flutter_worksmart_mobile_app/features/admin/auth/logic/auth_admin_logic.dart';
@@ -50,7 +51,10 @@ class _AuthAdminScreenState extends State<AuthAdminScreen> {
     try {
       final success = await _authLogic.handleLogin();
       if (success && mounted) {
-        _authLogic.navigateToAdminPanel();
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          AppAdminRoute.adminDashboard,
+          (route) => false,
+        );
         _authLogic.clearForm();
       }
     } finally {

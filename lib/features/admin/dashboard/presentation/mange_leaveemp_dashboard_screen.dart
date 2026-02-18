@@ -54,25 +54,68 @@ class _MangeLeaveEmpDashboardScreenState
 
             final mainContent = Column(
               children: [
-                AdminHeaderBar(_scaffoldKey),
+                AdminHeaderBar(_scaffoldKey, isCompact: !isDesktop),
                 Expanded(
-                  child: Container(
-                    color: Theme.of(
-                      context,
-                    ).scaffoldBackgroundColor, // Clean background
-                    child: SingleChildScrollView(
-                      padding: EdgeInsets.all(isCompact ? 16 : 32),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildRequestStats(),
-                          const SizedBox(height: 32),
-                          _buildLeaveRequestsTable(
-                            isCompact,
-                          ).animate().fade().slideY(begin: 0.2),
-                        ],
+                  child: Stack(
+                    children: [
+                      Container(
+                        color: Theme.of(
+                          context,
+                        ).scaffoldBackgroundColor, // Clean background
+                        child: SingleChildScrollView(
+                          padding: EdgeInsets.all(isCompact ? 16 : 32),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildRequestStats(),
+                              const SizedBox(height: 32),
+                              _buildLeaveRequestsTable(
+                                isCompact,
+                              ).animate().fade().slideY(begin: 0.2),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
+                      // Loading Overlay
+                      if (_controller.isLoading)
+                        AnimatedOpacity(
+                          opacity: _controller.isLoading ? 1.0 : 0.0,
+                          duration: const Duration(milliseconds: 300),
+                          child: Container(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surface.withOpacity(0.7),
+                            child: Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SizedBox(
+                                    width: 50,
+                                    height: 50,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 3,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Theme.of(context).colorScheme.primary,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'Loading...',
+                                    style: TextStyle(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ],
@@ -96,7 +139,7 @@ class _MangeLeaveEmpDashboardScreenState
                             _navigateTo(AppAdminRoute.performanceLeaderboard),
                         onLeaveRequestsTap: () =>
                             _navigateTo(AppAdminRoute.leaveRequests),
-                        onReportsTap: () =>
+                        onAnalyticsTap: () =>
                             _navigateTo(AppAdminRoute.analyticsReports),
                         onSettingsTap: () =>
                             _navigateTo(AppAdminRoute.systemSettings),
@@ -119,7 +162,7 @@ class _MangeLeaveEmpDashboardScreenState
                           _navigateTo(AppAdminRoute.performanceLeaderboard),
                       onLeaveRequestsTap: () =>
                           _navigateTo(AppAdminRoute.leaveRequests),
-                      onReportsTap: () =>
+                      onAnalyticsTap: () =>
                           _navigateTo(AppAdminRoute.analyticsReports),
                       onSettingsTap: () =>
                           _navigateTo(AppAdminRoute.systemSettings),
@@ -171,7 +214,7 @@ class _MangeLeaveEmpDashboardScreenState
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: color.withOpacity(0.1),
-                    shape: BoxShape.circle, // Circular icons look more modern
+                    shape: BoxShape.circle,
                   ),
                   child: Icon(icon, color: color, size: 24),
                 ),
@@ -192,35 +235,83 @@ class _MangeLeaveEmpDashboardScreenState
       );
     }
 
-    return Row(
-      children: [
-        Expanded(
-          child: statCard(
-            AppStrings.tr('pending_requests'),
-            stats['pending'].toString(),
-            Icons.schedule_rounded,
-            AppColors.secondary,
-          ).animate().fade().slideY(begin: 0.2),
-        ),
-        const SizedBox(width: 24),
-        Expanded(
-          child: statCard(
-            AppStrings.tr('approved_requests'),
-            stats['approved'].toString(),
-            Icons.check_circle_rounded,
-            AppColors.success,
-          ).animate().fade().slideY(begin: 0.2),
-        ),
-        const SizedBox(width: 24),
-        Expanded(
-          child: statCard(
-            AppStrings.tr('rejected_requests'),
-            stats['rejected'].toString(),
-            Icons.cancel_rounded,
-            AppColors.error,
-          ).animate().fade().slideY(begin: 0.2),
-        ),
-      ],
+    final statCards = [
+      statCard(
+        AppStrings.tr('pending_requests'),
+        stats['pending'].toString(),
+        Icons.schedule_rounded,
+        AppColors.secondary,
+      ).animate().fade().slideY(begin: 0.2),
+      statCard(
+        AppStrings.tr('approved_requests'),
+        stats['approved'].toString(),
+        Icons.check_circle_rounded,
+        AppColors.success,
+      ).animate().fade().slideY(begin: 0.2),
+      statCard(
+        AppStrings.tr('rejected_requests'),
+        stats['rejected'].toString(),
+        Icons.cancel_rounded,
+        AppColors.error,
+      ).animate().fade().slideY(begin: 0.2),
+    ];
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isDesktop = constraints.maxWidth >= 1100;
+        final isTablet = constraints.maxWidth >= 700;
+
+        if (isDesktop) {
+          return Row(
+            children: statCards
+                .map(
+                  (card) => Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: card,
+                    ),
+                  ),
+                )
+                .toList(),
+          );
+        } else if (isTablet) {
+          return Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 12, bottom: 24),
+                      child: statCards[0],
+                    ),
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 12, bottom: 24),
+                      child: statCards[1],
+                    ),
+                  ),
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: statCards[2],
+              ),
+            ],
+          );
+        } else {
+          return Column(
+            children: statCards
+                .map(
+                  (card) => Padding(
+                    padding: const EdgeInsets.only(bottom: 24),
+                    child: card,
+                  ),
+                )
+                .toList(),
+          );
+        }
+      },
     );
   }
 
@@ -304,13 +395,16 @@ class _MangeLeaveEmpDashboardScreenState
                     hintText: AppStrings.tr('search_leave_requests'),
                     prefixIcon: const Icon(Icons.search_rounded),
                     suffixIcon: _searchController.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.close_rounded),
-                            onPressed: () {
-                              _searchController.clear();
-                              _controller.filterRequests('');
-                              setState(() {});
-                            },
+                        ? MouseRegion(
+                            cursor: SystemMouseCursors.click,
+                            child: IconButton(
+                              icon: const Icon(Icons.close_rounded),
+                              onPressed: () {
+                                _searchController.clear();
+                                _controller.filterRequests('');
+                                setState(() {});
+                              },
+                            ),
                           )
                         : null,
                     border: OutlineInputBorder(
@@ -339,106 +433,112 @@ class _MangeLeaveEmpDashboardScreenState
                 Row(
                   children: [
                     Expanded(
-                      child: InkWell(
-                        onTap: () => _selectStartDate(context),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          decoration: BoxDecoration(
-                            border: Border.all(
+                      child: MouseRegion(
+                        cursor: SystemMouseCursors.click,
+                        child: InkWell(
+                          onTap: () => _selectStartDate(context),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: Theme.of(
+                                  context,
+                                ).dividerColor.withOpacity(0.3),
+                                width: 1.5,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
                               color: Theme.of(
                                 context,
-                              ).dividerColor.withOpacity(0.3),
-                              width: 1.5,
+                              ).colorScheme.onSurface.withOpacity(0.02),
                             ),
-                            borderRadius: BorderRadius.circular(12),
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withOpacity(0.02),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.calendar_today_rounded,
-                                size: 18,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  _controller.startDate != null
-                                      ? 'From: ${_controller.startDate.toString().split(' ')[0]}'
-                                      : 'Start Date',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                    color: _controller.startDate != null
-                                        ? Theme.of(
-                                            context,
-                                          ).colorScheme.onSurface
-                                        : Theme.of(context)
-                                              .colorScheme
-                                              .onSurface
-                                              .withOpacity(0.5),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.calendar_today_rounded,
+                                  size: 18,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    _controller.startDate != null
+                                        ? 'From: ${_controller.startDate.toString().split(' ')[0]}'
+                                        : 'Start Date',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                      color: _controller.startDate != null
+                                          ? Theme.of(
+                                              context,
+                                            ).colorScheme.onSurface
+                                          : Theme.of(context)
+                                                .colorScheme
+                                                .onSurface
+                                                .withOpacity(0.5),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: InkWell(
-                        onTap: () => _selectEndDate(context),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          decoration: BoxDecoration(
-                            border: Border.all(
+                      child: MouseRegion(
+                        cursor: SystemMouseCursors.click,
+                        child: InkWell(
+                          onTap: () => _selectEndDate(context),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: Theme.of(
+                                  context,
+                                ).dividerColor.withOpacity(0.3),
+                                width: 1.5,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
                               color: Theme.of(
                                 context,
-                              ).dividerColor.withOpacity(0.3),
-                              width: 1.5,
+                              ).colorScheme.onSurface.withOpacity(0.02),
                             ),
-                            borderRadius: BorderRadius.circular(12),
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withOpacity(0.02),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.calendar_today_rounded,
-                                size: 18,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  _controller.endDate != null
-                                      ? 'To: ${_controller.endDate.toString().split(' ')[0]}'
-                                      : 'End Date',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                    color: _controller.endDate != null
-                                        ? Theme.of(
-                                            context,
-                                          ).colorScheme.onSurface
-                                        : Theme.of(context)
-                                              .colorScheme
-                                              .onSurface
-                                              .withOpacity(0.5),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.calendar_today_rounded,
+                                  size: 18,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    _controller.endDate != null
+                                        ? 'To: ${_controller.endDate.toString().split(' ')[0]}'
+                                        : 'End Date',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                      color: _controller.endDate != null
+                                          ? Theme.of(
+                                              context,
+                                            ).colorScheme.onSurface
+                                          : Theme.of(context)
+                                                .colorScheme
+                                                .onSurface
+                                                .withOpacity(0.5),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -447,20 +547,23 @@ class _MangeLeaveEmpDashboardScreenState
                         _controller.endDate != null)
                       Padding(
                         padding: const EdgeInsets.only(left: 12),
-                        child: IconButton(
-                          icon: const Icon(Icons.close_rounded),
-                          style: IconButton.styleFrom(
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.error.withOpacity(0.1),
-                            foregroundColor: Theme.of(
-                              context,
-                            ).colorScheme.error,
+                        child: MouseRegion(
+                          cursor: SystemMouseCursors.click,
+                          child: IconButton(
+                            icon: const Icon(Icons.close_rounded),
+                            style: IconButton.styleFrom(
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.error.withOpacity(0.1),
+                              foregroundColor: Theme.of(
+                                context,
+                              ).colorScheme.error,
+                            ),
+                            onPressed: () {
+                              _controller.clearDateRange();
+                              setState(() {});
+                            },
                           ),
-                          onPressed: () {
-                            _controller.clearDateRange();
-                            setState(() {});
-                          },
                         ),
                       ),
                   ],
@@ -485,7 +588,7 @@ class _MangeLeaveEmpDashboardScreenState
                 header(AppStrings.tr('dates')),
                 header(AppStrings.tr('reason')),
                 header(AppStrings.tr('status')),
-                const SizedBox(width: 100), // Fixed width for actions column
+                const SizedBox(width: 100),
               ],
             ),
           ),
@@ -555,10 +658,10 @@ class _MangeLeaveEmpDashboardScreenState
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
-                      onTap: () {},
-                      hoverColor: Theme.of(
-                        context,
-                      ).colorScheme.onSurface.withOpacity(0.02),
+                      onTap: () => _showLeaveRequestDetails(request),
+                      hoverColor: ThemeManager().isDarkMode
+                          ? Colors.white.withOpacity(0.05)
+                          : Colors.black.withOpacity(0.05),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
                           vertical: 16.0,
@@ -771,19 +874,395 @@ class _MangeLeaveEmpDashboardScreenState
                 );
               },
             ),
-          const SizedBox(height: 8), // Bottom padding
+          const SizedBox(height: 8),
         ],
       ),
     );
   }
 
   void _navigateTo(String routeName) {
-    if (mounted) {
-      Navigator.of(context).pushNamed(routeName);
-      if (_scaffoldKey.currentState?.isDrawerOpen == true) {
-        Navigator.pop(context);
-      }
+    if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
+      Navigator.of(context).pop();
     }
+    if (mounted) Navigator.of(context).pushNamed(routeName);
+  }
+
+  void _showLeaveRequestDetails(LeaveRequest request) {
+    final statusColor = request.status == 'approved'
+        ? AppColors.success
+        : request.status == 'rejected'
+        ? AppColors.error
+        : AppColors.secondary;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          contentPadding: EdgeInsets.zero,
+          content: SingleChildScrollView(
+            child: SizedBox(
+              width: MediaQuery.of(context).size.width * 0.3,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Header
+                  Container(
+                    padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Theme.of(
+                            context,
+                          ).colorScheme.primary.withOpacity(0.18),
+                          Theme.of(
+                            context,
+                          ).colorScheme.surface.withOpacity(0.9),
+                        ],
+                      ),
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(24),
+                        topRight: Radius.circular(24),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                AppStrings.tr('leave_request_details'),
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
+                                  letterSpacing: -0.4,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Request information',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface.withOpacity(0.6),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: statusColor.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: statusColor,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                request.status.toUpperCase(),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 11,
+                                  color: statusColor,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Content
+                  Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withOpacity(0.03),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: Theme.of(
+                                context,
+                              ).dividerColor.withOpacity(0.2),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.primary.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Icon(
+                                  Icons.person_rounded,
+                                  size: 20,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      request.employeeName,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 15,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onSurface,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      request.employeeId,
+                                      style: TextStyle(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withOpacity(0.5),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        // Leave Details
+                        _buildDetailRow(
+                          Icons.calendar_today_rounded,
+                          'Leave Type',
+                          request.leaveType,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildDetailRow(
+                          Icons.date_range_rounded,
+                          'Start Date',
+                          request.startDate,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildDetailRow(
+                          Icons.event_available_rounded,
+                          'End Date',
+                          request.endDate,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildDetailRow(
+                          Icons.description_outlined,
+                          'Reason',
+                          request.reason,
+                          maxLines: 3,
+                        ),
+                        const SizedBox(height: 16),
+                        // Status Hint
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.info_rounded,
+                              size: 18,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withOpacity(0.6),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Current Status',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withOpacity(0.6),
+                              ),
+                            ),
+                            const Spacer(),
+                            Text(
+                              request.status.toUpperCase(),
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 12,
+                                color: statusColor,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            if (request.status == 'pending')
+              FilledButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _controller.updateRequestStatus(request.id, 'rejected');
+                },
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  backgroundColor: AppColors.error,
+                  foregroundColor: AppColors.lightBg,
+                ),
+                icon: const Icon(Icons.close_rounded, size: 18),
+                label: Text(AppStrings.tr('reject')),
+              ),
+            if (request.status == 'pending')
+              FilledButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _controller.updateRequestStatus(request.id, 'approved');
+                },
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  backgroundColor: AppColors.success,
+                  foregroundColor: AppColors.lightBg,
+                ),
+                icon: const Icon(Icons.check_rounded, size: 18),
+                label: Text(AppStrings.tr('approve')),
+              ),
+            if (request.status == 'approved' || request.status == 'rejected')
+              FilledButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _showEditDialog(context, request);
+                },
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                ),
+                icon: const Icon(Icons.edit_rounded, size: 18),
+                label: const Text('Edit'),
+              ),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+              ),
+              child: Text(
+                AppStrings.tr('close'),
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.6),
+                ),
+              ),
+            ),
+          ],
+          actionsPadding: const EdgeInsets.all(20),
+        );
+      },
+    );
+  }
+
+  Widget _buildDetailRow(
+    IconData icon,
+    String label,
+    String value, {
+    int maxLines = 1,
+  }) {
+    return Row(
+      crossAxisAlignment: maxLines > 1
+          ? CrossAxisAlignment.start
+          : CrossAxisAlignment.center,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            icon,
+            size: 18,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.5),
+                  letterSpacing: 0.3,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                maxLines: maxLines,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
   void _showEditDialog(BuildContext context, LeaveRequest request) {
@@ -811,7 +1290,6 @@ class _MangeLeaveEmpDashboardScreenState
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Header with gradient
                     Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
@@ -854,7 +1332,6 @@ class _MangeLeaveEmpDashboardScreenState
                       ),
                     ),
 
-                    // Body with information and dropdown
                     Padding(
                       padding: const EdgeInsets.all(24),
                       child: Column(
@@ -1023,7 +1500,7 @@ class _MangeLeaveEmpDashboardScreenState
                           ),
                           const SizedBox(height: 12),
 
-                          // Status Dropdown with enhanced styling
+                          // Status Dropdown
                           DropdownButtonFormField<String>(
                             value: selectedStatus,
                             decoration: InputDecoration(
@@ -1144,7 +1621,6 @@ class _MangeLeaveEmpDashboardScreenState
                           ),
                           const SizedBox(height: 16),
 
-                          // Current vs New Status Indicator
                           if (selectedStatus != request.status)
                             Container(
                               padding: const EdgeInsets.all(12),

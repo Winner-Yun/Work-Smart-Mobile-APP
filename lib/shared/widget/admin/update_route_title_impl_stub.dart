@@ -1,0 +1,1 @@
+void updateDocumentTitle(String title) {}

@@ -23,6 +23,7 @@ dependencies:
   sqflite: ^2.4.2
   path: ^1.9.1
   shared_preferences: ^2.5.4
+  flutter_launcher_icons: ^0.14.4
 
 dev_dependencies:
   flutter_test:
@@ -35,3 +36,7 @@ flutter:
     - assets/images/
     - assets/icons/
     # - assets/animations/
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/appIcon_for_display.png"

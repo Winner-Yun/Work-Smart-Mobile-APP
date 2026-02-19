@@ -944,7 +944,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   child: Stack(
                     alignment: Alignment.bottomCenter,
                     children: [
-                      // Track background (Empty Bar)
+                      // Track background 
                       Container(
                         width: 36,
                         decoration: BoxDecoration(

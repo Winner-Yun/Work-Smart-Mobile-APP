@@ -7,6 +7,7 @@ import 'package:flutter_worksmart_mobile_app/config/language_manager.dart';
 import 'package:flutter_worksmart_mobile_app/config/theme_manager.dart';
 import 'package:flutter_worksmart_mobile_app/core/util/database/database_helper.dart';
 import 'package:flutter_worksmart_mobile_app/shared/widget/admin/updateRouteTitle.dart';
+import 'package:flutter_worksmart_mobile_app/shared/widget/splash/splash_screen.dart';
 import 'package:flutter_worksmart_mobile_app/shared/widget/user/restartwidget.dart';
 
 void main() async {
@@ -54,7 +55,7 @@ class MainApp extends StatelessWidget {
           theme: AppThemes.lightTheme,
           darkTheme: AppThemes.darkTheme,
           themeMode: ThemeManager().themeMode,
-          initialRoute: initialRoute,
+          home: SplashScreen(nextRoute: initialRoute),
           routes: AppRoute.routes,
           navigatorObservers: [PageTitleObserver()],
         );

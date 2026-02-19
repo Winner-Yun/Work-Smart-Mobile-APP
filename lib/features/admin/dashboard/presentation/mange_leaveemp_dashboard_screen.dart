@@ -61,7 +61,7 @@ class _MangeLeaveEmpDashboardScreenState
                       Container(
                         color: Theme.of(
                           context,
-                        ).scaffoldBackgroundColor, // Clean background
+                        ).scaffoldBackgroundColor, 
                         child: SingleChildScrollView(
                           padding: EdgeInsets.all(isCompact ? 16 : 32),
                           child: Column(

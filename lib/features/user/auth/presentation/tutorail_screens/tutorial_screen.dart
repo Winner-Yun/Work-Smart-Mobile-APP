@@ -20,24 +20,23 @@ class _TutorialScreenState extends State<TutorialScreen> {
   int _currentPage = 0;
   Timer? _timer;
 
-  // DEV NOTE: Converted Strings to AppStrings keys for dynamic translation
   final List<Map<String, dynamic>> _tutorialData = [
     {
-      'image': AppImg.firstScreen,
-      'title': "tutorial_title_1", // Key
-      'subtitle': "tutorial_subtitle_1", // Key
+      'image': AppImg.robotLove,
+      'title': "tutorial_title_1",
+      'subtitle': "tutorial_subtitle_1",
       'isFirst': true,
     },
     {
       'image': AppImg.secondScreen,
-      'title': "tutorial_title_2", // Key
-      'subtitle': "tutorial_subtitle_2", // Key
+      'title': "tutorial_title_2",
+      'subtitle': "tutorial_subtitle_2",
       'isFirst': false,
     },
     {
       'image': AppImg.thirdScreen,
-      'title': "tutorial_title_3", // Key
-      'subtitle': "tutorial_subtitle_3", // Key
+      'title': "tutorial_title_3",
+      'subtitle': "tutorial_subtitle_3",
       'isFirst': false,
     },
   ];

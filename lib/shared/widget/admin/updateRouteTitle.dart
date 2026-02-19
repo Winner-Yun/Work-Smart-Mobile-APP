@@ -1,20 +1,11 @@
-import 'dart:html' as html;
-
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_admin_route.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
+import 'package:flutter_worksmart_mobile_app/shared/widget/admin/update_route_title_impl_stub.dart'
+    if (dart.library.html) 'package:flutter_worksmart_mobile_app/shared/widget/admin/update_route_title_impl_web.dart';
 
 class UpdateRouteTitle {
-  static void _updateWebTitle(String title) {
-    if (kIsWeb) {
-      try {
-        html.document.title = title;
-      } catch (e) {
-        debugPrint('Failed to update web title: $e');
-      }
-    }
-  }
+  static void _updateWebTitle(String title) => updateDocumentTitle(title);
 
   static void updateRouteTitle(Route<dynamic> route) {
     final settings = route.settings;

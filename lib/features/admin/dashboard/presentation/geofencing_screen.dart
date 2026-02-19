@@ -234,7 +234,7 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
         final isDesktop = constraints.maxWidth >= 1100;
         final isTablet = constraints.maxWidth >= 700;
 
-        // Desktop: 3 columns
+        // Desktop
         if (isDesktop) {
           return Row(
             children: statCards
@@ -249,7 +249,7 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
                 .toList(),
           );
         }
-        // Tablet: 2 cards in first row, 1 in second row
+        // Tablet
         else if (isTablet) {
           return Column(
             children: [
@@ -276,7 +276,7 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
             ],
           );
         }
-        // Mobile: Stack vertically
+        // Mobile
         else {
           return Column(
             children: statCards
@@ -962,7 +962,6 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
     double? initialLng,
     String initialAddress,
   ) async {
-    // We use a separate widget to handle the Search Timer/Debounce properly
     return showDialog<Map<String, dynamic>>(
       context: context,
       barrierDismissible: false,

@@ -20,4 +20,10 @@ class AppColors {
   static const Color error = Color(0xFFEF4444);
   static const Color textLight = Color(0xFFFFFFFF);
   static const Color textGrey = Color(0xFF94A3B8);
+
+  static const Color search = Color(0xFFF9F8F6);
+  static const Color cagories = Color(0xFF456882);
+  static const Color green = Color(0xff005F02);
+  static const Color darkgreen = Color(0xff427A43);
+  static const Color greenSurface  = Color(0xffA5C89E);
 }

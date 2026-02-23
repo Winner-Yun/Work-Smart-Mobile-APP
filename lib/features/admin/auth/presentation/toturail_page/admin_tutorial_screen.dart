@@ -18,6 +18,25 @@ class _AdminTutorialScreenState extends State<AdminTutorialScreen> {
   int _currentPage = 0;
 
   @override
+  void initState() {
+    super.initState();
+    _skipIfAlreadyCompleted();
+  }
+
+  Future<void> _skipIfAlreadyCompleted() async {
+    final dbHelper = DatabaseHelper();
+    final alreadySeen =
+        await dbHelper.getConfig('admin_tutorial_seen') == 'true';
+
+    if (!mounted || !alreadySeen) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, AppAdminRoute.authAdminScreen);
+    });
+  }
+
+  @override
   void dispose() {
     _pageController.dispose();
     super.dispose();

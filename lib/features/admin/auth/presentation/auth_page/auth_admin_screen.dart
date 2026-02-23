@@ -92,16 +92,12 @@ class _AuthAdminScreenState extends State<AuthAdminScreen> {
                     ),
                     child: Row(
                       children: [
-                        // --- LEFT SIDE: THE FORM ---
                         Expanded(flex: 5, child: _buildFormSide(isMobile)),
-
-                        // --- RIGHT SIDE: VISUAL PANEL ---
                         if (!isMobile)
                           Expanded(flex: 5, child: _buildVisualSide()),
                       ],
                     ),
                   )
-                  // ANIMATION: Main Container Entrance (Scale & Fade)
                   .animate()
                   .fade(duration: 600.ms, curve: Curves.easeOut)
                   .scaleXY(

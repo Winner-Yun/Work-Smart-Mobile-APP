@@ -65,7 +65,7 @@ class AuthAdminLogic {
       return false;
     }
 
-    // 3. Success - Cache Session
+    //. Success - Cache Session
     try {
       final dbHelper = DatabaseHelper();
       await dbHelper.saveCachedLogin(username, password, username, 'admin');
@@ -84,7 +84,7 @@ class AuthAdminLogic {
 
   void navigateToAdminPanel() {
     if (!context.mounted) return;
-    Navigator.pushReplacementNamed(context, AppAdminRoute.adminTutorial);
+    Navigator.pushReplacementNamed(context, AppAdminRoute.adminDashboard);
   }
 
   void autoLoginNavigation(String username, String userType) {
@@ -128,10 +128,10 @@ class AuthAdminLogic {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: Text(message, style: const TextStyle(color: Colors.white)),
         backgroundColor: isError
             ? Colors.red.shade600
-            : const Color(0xFF111827),
+            : Theme.of(context).colorScheme.primary,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         margin: const EdgeInsets.all(16),

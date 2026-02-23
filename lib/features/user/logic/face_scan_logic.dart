@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
@@ -12,19 +14,22 @@ abstract class FaceScanLogic extends State<FaceScanScreen>
   bool isCameraInitialized = false;
   bool isRearCameraSelected = false;
   FlashMode flashMode = FlashMode.off;
+  bool isScanning = false;
+  double scanProgress = 0;
+  Timer? _scanTimer;
 
   @override
   void initState() {
     super.initState();
-    // Register this class to observe app lifecycle events
+
     WidgetsBinding.instance.addObserver(this);
-    // Start the camera initialization process immediately
+
     initCamera();
   }
 
   @override
   void dispose() {
-    // Clean up observer and camera controller to prevent memory leaks
+    _scanTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     controller?.dispose();
     super.dispose();
@@ -109,29 +114,105 @@ abstract class FaceScanLogic extends State<FaceScanScreen>
     }
   }
 
-  // Captures the image using the camera controller and shows a success SnackBar
+  // Mock scanning flow for 5 seconds, then show success dialog and return result
   Future<void> takePicture() async {
-    if (controller == null ||
-        !controller!.value.isInitialized ||
-        controller!.value.isTakingPicture) {
+    if (isScanning || controller == null || !controller!.value.isInitialized) {
       return;
     }
-    try {
-      final XFile file = await controller!.takePicture();
-      debugPrint(file.path);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            content: Text(
-              AppStrings.tr('scan_success'),
-              textAlign: TextAlign.center,
-            ),
-          ),
-        );
+
+    const int totalDurationMs = 5000;
+    const int tickMs = 16;
+    int elapsedMs = 0;
+
+    setState(() {
+      isScanning = true;
+      scanProgress = 0;
+    });
+
+    _scanTimer?.cancel();
+    _scanTimer = Timer.periodic(const Duration(milliseconds: tickMs), (
+      timer,
+    ) async {
+      if (!mounted) {
+        timer.cancel();
+        return;
       }
-    } catch (e) {
-      debugPrint("$e");
-    }
+
+      elapsedMs += tickMs;
+      final double progress = (elapsedMs / totalDurationMs).clamp(0.0, 1.0);
+      setState(() {
+        scanProgress = progress;
+      });
+
+      if (elapsedMs >= totalDurationMs) {
+        timer.cancel();
+        setState(() {
+          isScanning = false;
+          scanProgress = 1;
+        });
+
+        await showDialog<void>(
+          context: context,
+          barrierDismissible: false,
+          builder: (dialogContext) {
+            final theme = Theme.of(context);
+
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+
+              icon: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primaryContainer.withOpacity(0.3),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.check_circle_rounded,
+                  color: theme.colorScheme.primary,
+                  size: 48,
+                ),
+              ),
+              title: Text(
+                AppStrings.tr('scan_success'),
+                textAlign: TextAlign.center,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              content: Text(
+                AppStrings.tr('face_scan_success_desc'),
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium,
+              ),
+              actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              actions: [
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    // More visual weight than TextButton
+                    onPressed: () => Navigator.pop(dialogContext),
+                    style: FilledButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      AppStrings.tr('understood'),
+                      style: theme.textTheme.labelLarge,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+
+        if (mounted) {
+          Navigator.pop(context, true);
+        }
+      }
+    });
   }
 }

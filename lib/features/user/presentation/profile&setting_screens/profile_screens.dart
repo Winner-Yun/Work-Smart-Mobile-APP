@@ -504,17 +504,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         const SizedBox(height: 20),
                         Text(
                           AppStrings.tr('confirm_logout_title'),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.textLight,
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
                           ),
                         ),
                         const SizedBox(height: 10),
                         Text(
                           AppStrings.tr('confirm_logout_msg'),
                           textAlign: TextAlign.center,
-                          style: const TextStyle(color: AppColors.textGrey),
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
                         ),
                         const SizedBox(height: 30),
                         Row(

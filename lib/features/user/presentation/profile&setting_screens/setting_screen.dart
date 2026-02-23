@@ -6,7 +6,6 @@ import 'package:flutter_worksmart_mobile_app/config/theme_manager.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/util/mock_data/userFinalData.dart';
 import 'package:flutter_worksmart_mobile_app/shared/model/user_model/user_profile.dart';
-import 'package:flutter_worksmart_mobile_app/shared/widget/user/restartwidget.dart';
 
 class SettingsScreen extends StatefulWidget {
   final Map<String, dynamic>? loginData;
@@ -65,10 +64,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
 
     await LanguageManager().changeLanguage(langCode);
-    await Future.delayed(const Duration(milliseconds: 800));
+    await Future.delayed(const Duration(milliseconds: 250));
 
     if (context.mounted) {
-      RestartWidget.restartApp(context);
+      Navigator.of(context, rootNavigator: true).pop();
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoute.appmain,
+        (route) => false,
+        arguments: widget.loginData,
+      );
     }
   }
 

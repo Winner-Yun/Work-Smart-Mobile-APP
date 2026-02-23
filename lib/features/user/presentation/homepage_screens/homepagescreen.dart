@@ -39,9 +39,11 @@ class _HomePageScreenState extends HomePageLogic {
                       context,
                     ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2),
                     const SizedBox(height: 20),
-                    // Check logic based on currentUser Face Status
+
                     if (currentFaceStatus == 'approved')
-                      _buildLiveMapCard(context)
+                      (hasMockScanSuccess
+                              ? _buildScanSuccessCard(context)
+                              : _buildLiveMapCard(context))
                           .animate()
                           .fadeIn(delay: 400.ms)
                           .scale(begin: const Offset(0.95, 0.95))
@@ -320,12 +322,23 @@ class _HomePageScreenState extends HomePageLogic {
                         : [],
                   ),
                   child: ElevatedButton(
-                    onPressed: isInRange
-                        ? () => {
-                            Navigator.pushNamed(
+                    onPressed:
+                        isInRange &&
+                            !isSelectedScanCompleted &&
+                            !isScanCooldownActive
+                        ? () async {
+                            final result = await Navigator.pushNamed(
                               context,
                               AppRoute.faceScanScreen,
-                            ),
+                              arguments: {
+                                ...?widget.loginData,
+                                'scanType': selectedAttendanceScanType,
+                              },
+                            );
+                            if (result == true) {
+                              applyMockAttendanceScan();
+                              markMockScanSuccess();
+                            }
                           }
                         : null,
                     style: ElevatedButton.styleFrom(
@@ -344,7 +357,7 @@ class _HomePageScreenState extends HomePageLogic {
                         ),
                         const SizedBox(width: 10),
                         Text(
-                          AppStrings.tr('scan_out'),
+                          selectedAttendanceActionText,
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
@@ -353,6 +366,96 @@ class _HomePageScreenState extends HomePageLogic {
                         ),
                       ],
                     ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScanSuccessCard(BuildContext context) {
+    String formatAmPm(DateTime? dateTime) {
+      if (dateTime == null) return AppStrings.tr('time_placeholder');
+      final int hour12 = dateTime.hour % 12 == 0 ? 12 : dateTime.hour % 12;
+      final String minute = dateTime.minute.toString().padLeft(2, '0');
+      final String period = dateTime.hour >= 12 ? 'PM' : 'AM';
+      return '$hour12:$minute $period';
+    }
+
+    final String timeLabel = formatAmPm(lastMockScanAt);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.primary,
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 70,
+            height: 70,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.check_circle,
+              color: Theme.of(context).colorScheme.primary,
+              size: 42,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            AppStrings.tr('scan_success'),
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).textTheme.bodyLarge?.color,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '$lastAttendanceScanLabel ${AppStrings.tr('at')} $timeLabel',
+            style: const TextStyle(color: AppColors.textGrey, fontSize: 13),
+          ),
+          const SizedBox(height: 18),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.lock,
+                  size: 18,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '$lastAttendanceScanLabel ${AppStrings.tr('face_scan_success')}',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
@@ -512,6 +615,8 @@ class _HomePageScreenState extends HomePageLogic {
           currentAttendance['check_in'] ?? "--:--",
           Icons.login,
           false,
+          isSelected: selectedAttendanceScanType == 'check_in',
+          onTap: () => selectAttendanceScanType('check_in'),
         ),
         const SizedBox(width: 10),
         _buildTimeCard(
@@ -520,12 +625,14 @@ class _HomePageScreenState extends HomePageLogic {
           currentAttendance['check_out'] ?? "--:--",
           Icons.logout,
           false,
+          isSelected: selectedAttendanceScanType == 'check_out',
+          onTap: () => selectAttendanceScanType('check_out'),
         ),
         const SizedBox(width: 10),
         _buildTimeCard(
           context,
           AppStrings.tr('work_hours'),
-          "${currentAttendance['total_hours'] ?? 0}h",
+          "${(currentAttendance['total_hours'] is num) ? (currentAttendance['total_hours'] as num).toStringAsFixed(((currentAttendance['total_hours'] as num) % 1 == 0) ? 0 : 1) : currentAttendance['total_hours']}h",
           Icons.access_time,
           true,
         ),
@@ -538,62 +645,70 @@ class _HomePageScreenState extends HomePageLogic {
     String label,
     String time,
     IconData icon,
-    bool isDark,
-  ) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        height: 110,
-        decoration: BoxDecoration(
-          color: isDark
-              ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).cardTheme.color,
-          borderRadius: BorderRadius.circular(15),
-          boxShadow: isDark
-              ? []
-              : [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 5,
-                  ),
-                ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  icon,
-                  size: 18,
-                  color: isDark
-                      ? Colors.white70
-                      : Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: 5),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: isDark ? Colors.white70 : AppColors.textGrey,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-            Text(
-              time,
-              style: TextStyle(
-                color: isDark
-                    ? Colors.white
-                    : Theme.of(context).textTheme.bodyLarge?.color,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
+    bool isDark, {
+    bool isSelected = false,
+    VoidCallback? onTap,
+  }) {
+    final card = Container(
+      padding: const EdgeInsets.all(12),
+      height: 110,
+      decoration: BoxDecoration(
+        color: isDark
+            ? Theme.of(context).colorScheme.primary
+            : Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(15),
+        border: isSelected && !isDark
+            ? Border.all(color: Theme.of(context).colorScheme.primary, width: 2)
+            : null,
+        boxShadow: isDark
+            ? []
+            : [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5)],
       ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Icon(
+                icon,
+                size: 18,
+                color: isDark
+                    ? Colors.white70
+                    : Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 5),
+              Text(
+                label,
+                style: TextStyle(
+                  color: isDark ? Colors.white70 : AppColors.textGrey,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+          Text(
+            time,
+            style: TextStyle(
+              color: isDark
+                  ? Colors.white
+                  : Theme.of(context).textTheme.bodyLarge?.color,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+
+    return Expanded(
+      child: onTap == null
+          ? card
+          : InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(15),
+              child: card,
+            ),
     );
   }
 

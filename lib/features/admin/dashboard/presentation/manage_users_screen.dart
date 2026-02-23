@@ -470,17 +470,17 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                     icon: const Icon(Icons.add_rounded),
                     label: Text(AppStrings.tr('create_user')),
                     style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
                   ),
                 ),
               ],
@@ -579,16 +579,16 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                               child: IconButton(
                                 icon: Icon(
                                   Icons.close_rounded,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurface.withOpacity(0.5),
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface.withOpacity(0.5),
+                                ),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  _controller.filterUsers('');
+                                  setState(() {});
+                                },
                               ),
-                              onPressed: () {
-                                _searchController.clear();
-                                _controller.filterUsers('');
-                                setState(() {});
-                              },
-                            ),
                             )
                           : null,
                       border: InputBorder.none,
@@ -836,37 +836,39 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                             cursor: SystemMouseCursors.click,
                             child: InkWell(
                               onTap: () {
-                              _searchController.clear();
-                              _controller.clearFilters();
-                              setState(() {});
-                            },
-                            borderRadius: BorderRadius.circular(12),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.refresh,
-                                    size: 18,
-                                    color: Theme.of(context).colorScheme.error,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    AppStrings.tr('clear'),
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
+                                _searchController.clear();
+                                _controller.clearFilters();
+                                setState(() {});
+                              },
+                              borderRadius: BorderRadius.circular(12),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.refresh,
+                                      size: 18,
                                       color: Theme.of(
                                         context,
                                       ).colorScheme.error,
                                     ),
-                                  ),
-                                ],
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      AppStrings.tr('clear'),
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.error,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
                             ),
                           ),
                         ),
@@ -1122,25 +1124,27 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                                       cursor: SystemMouseCursors.click,
                                       child: IconButton(
                                         icon: const Icon(
-                                        Icons.edit_rounded,
-                                        size: 20,
-                                      ),
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.primary,
-                                      style: IconButton.styleFrom(
-                                        backgroundColor: Theme.of(
+                                          Icons.edit_rounded,
+                                          size: 20,
+                                        ),
+                                        color: Theme.of(
                                           context,
-                                        ).colorScheme.primary.withOpacity(0.1),
-                                        hoverColor: Theme.of(
-                                          context,
-                                        ).colorScheme.primary.withOpacity(0.2),
-                                        padding: const EdgeInsets.all(8),
+                                        ).colorScheme.primary,
+                                        style: IconButton.styleFrom(
+                                          backgroundColor: Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                              .withOpacity(0.1),
+                                          hoverColor: Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                              .withOpacity(0.2),
+                                          padding: const EdgeInsets.all(8),
+                                        ),
+                                        onPressed: () {
+                                          _showEditDialog(context, user);
+                                        },
                                       ),
-                                      onPressed: () {
-                                        _showEditDialog(context, user);
-                                      },
-                                    ),
                                     ),
                                   ),
                                   const SizedBox(width: 8),
@@ -1149,23 +1153,22 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                                     child: MouseRegion(
                                       cursor: SystemMouseCursors.click,
                                       child: IconButton(
-                                      icon: const Icon(
-                                        Icons.delete_rounded,
-                                        size: 20,
-                                      ),
-                                      color: AppColors.error,
-                                      style: IconButton.styleFrom(
-                                        backgroundColor: AppColors.error
-                                            .withOpacity(0.1),
-                                        hoverColor: AppColors.error.withOpacity(
-                                          0.2,
+                                        icon: const Icon(
+                                          Icons.delete_rounded,
+                                          size: 20,
                                         ),
-                                        padding: const EdgeInsets.all(8),
+                                        color: AppColors.error,
+                                        style: IconButton.styleFrom(
+                                          backgroundColor: AppColors.error
+                                              .withOpacity(0.1),
+                                          hoverColor: AppColors.error
+                                              .withOpacity(0.2),
+                                          padding: const EdgeInsets.all(8),
+                                        ),
+                                        onPressed: () {
+                                          _showDeleteConfirm(context, user);
+                                        },
                                       ),
-                                      onPressed: () {
-                                        _showDeleteConfirm(context, user);
-                                      },
-                                    ),
                                     ),
                                   ),
                                 ],
@@ -1853,6 +1856,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
     String selectedDepartment = _controller.getAllDepartments().isNotEmpty
         ? _controller.getAllDepartments().first
         : 'it';
+    String selectedGender = 'male';
     String selectedOffice = 'hq_phnom_penh_01';
     String selectedStatus = 'active';
 
@@ -1998,6 +2002,19 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                                     ? AppStrings.tr('role_required')
                                     : null,
                               ),
+                              const SizedBox(height: 16),
+
+                              buildDropdown(
+                                context,
+                                label: AppStrings.tr('gender_label'),
+                                value: selectedGender,
+                                items: const ['male', 'female'],
+                                onChanged: (val) =>
+                                    setState(() => selectedGender = val!),
+                                statusLabel: (value) => value == 'male'
+                                    ? AppStrings.tr('gender_male')
+                                    : AppStrings.tr('gender_female'),
+                              ),
                               const SizedBox(height: 24),
 
                               buildSectionLabelCreate(
@@ -2119,6 +2136,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                                   uid: uidController.text,
                                   displayName: nameController.text,
                                   roleTitle: roleController.text,
+                                  gender: selectedGender,
                                   email: emailController.text,
                                   phone: phoneController.text,
                                   departmentId: selectedDepartment,
@@ -2130,7 +2148,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                      'User "${nameController.text}" created successfully',
+                                      'User "${nameController.text}"created successfully',
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         color: Theme.of(

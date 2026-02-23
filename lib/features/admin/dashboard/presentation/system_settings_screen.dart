@@ -4,6 +4,7 @@ import 'package:flutter_worksmart_mobile_app/app/routes/app_admin_route.dart';
 import 'package:flutter_worksmart_mobile_app/config/language_manager.dart';
 import 'package:flutter_worksmart_mobile_app/config/theme_manager.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/database/database_helper.dart';
 import 'package:flutter_worksmart_mobile_app/shared/widget/admin/admin_header_bar.dart';
 import 'package:flutter_worksmart_mobile_app/shared/widget/admin/admin_side_bar.dart';
 
@@ -22,6 +23,42 @@ class _AdminSystemSettingsScreenState extends State<AdminSystemSettingsScreen> {
   bool _emailSummaries = false;
   bool _securityAlerts = true;
   bool _autoApprove = false;
+
+  Future<void> _showLogoutDialog() async {
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(AppStrings.tr('confirm_logout_title')),
+          content: Text(AppStrings.tr('confirm_logout_msg')),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(AppStrings.tr('cancel_button')),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(AppStrings.tr('logout_button')),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldLogout == true) {
+      await _handleLogout();
+    }
+  }
+
+  Future<void> _handleLogout() async {
+    final dbHelper = DatabaseHelper();
+    await dbHelper.clearCachedLogin();
+
+    if (!mounted) return;
+    Navigator.of(
+      context,
+    ).pushNamedAndRemoveUntil(AppAdminRoute.authAdminScreen, (route) => false);
+  }
 
   void _navigateTo(String routeName) {
     if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
@@ -247,6 +284,26 @@ class _AdminSystemSettingsScreenState extends State<AdminSystemSettingsScreen> {
           ],
         ),
       ),
+      _buildSectionCard(
+        title: AppStrings.tr('logout_action'),
+        subtitle: AppStrings.tr('confirm_logout_msg'),
+        icon: Icons.logout_rounded,
+        child: SizedBox(
+          width: MediaQuery.of(context).size.width * 0.2,
+          child: ElevatedButton.icon(
+            onPressed: _showLogoutDialog,
+            icon: const Icon(Icons.logout_rounded, color: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            label: Text(
+              AppStrings.tr('logout_action'),
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
+        ),
+      ),
     ];
 
     if (isCompact) {
@@ -279,6 +336,8 @@ class _AdminSystemSettingsScreenState extends State<AdminSystemSettingsScreen> {
             Expanded(child: cards[3]),
           ],
         ),
+        const SizedBox(height: 20),
+        cards[4],
       ],
     );
   }

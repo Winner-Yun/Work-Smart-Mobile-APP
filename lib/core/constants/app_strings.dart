@@ -28,7 +28,7 @@ class AppStrings {
       'username_or_id': 'Username or ID',
       'enter_username': 'Enter username',
       'admin_id': 'Admin ID',
-      'enter_id_hint': 'Enter ID',
+      'enter_id_hint': 'Enter Username or ID',
       'enter_id_error': 'Please enter Username or ID',
       'password': 'Password',
       'enter_password': 'Enter password',
@@ -152,6 +152,15 @@ class AppStrings {
       'results_found': 'Results found',
       'try_searching_different_name_or_department':
           'Try searching for a different name or department.',
+      'wait': 'Please wait...',
+      'check_out_requires_check_in': 'Check In Required',
+      'check_out_requires_check_in_desc':
+          'You need to scan your Check In before you can proceed with a Check Out.',
+      'understood': 'Understood',
+      'face_scan_success_desc':
+          'You have been successfully registered for attendance.',
+      'face_scan_success': 'Attendance Registered Successfully!',
+      'at': 'at',
 
       // --- Attendance ---
       'my_stats': 'My Statistics',
@@ -224,7 +233,7 @@ class AppStrings {
       // --- Notifications ---
       'notifications_title': 'Notifications',
       'mark_read': 'Mark as read',
-            'mark_all_read': 'Mark all as read',
+      'mark_all_read': 'Mark all as read',
       'delete_notif': 'Delete this notification',
       'read_all': 'Read All',
       'no_notif': 'No notifications yet',
@@ -262,6 +271,7 @@ class AppStrings {
       'badge_speed': 'Fast Learner',
       'badge_collab': 'Good Teamwork',
       'badge_creative': 'Creative Mind',
+      'badge_perfect_month': 'Perfect Month',
 
       // --- Calendar ---
       'no_data': 'No Data',
@@ -298,6 +308,9 @@ class AppStrings {
       'gallery': 'Gallery',
       'camera': 'Camera',
       'phone_label': 'Phone Number',
+      'gender_label': 'Gender',
+      'gender_male': 'Male',
+      'gender_female': 'Female',
       'not_connected': 'Not Connected',
       'connect_now': 'Connect Now',
       'change_password_action': 'Change Password',
@@ -330,6 +343,7 @@ class AppStrings {
       'step_2_desc': 'Send /start message to the bot to register.',
       'step_3_title': 'Receive Notifications',
       'step_3_desc': 'You will receive automatic notifications via Telegram.',
+      'telegram_connected_success': 'Successfully connected to Telegram!',
 
       // --- Date & Time ---
       'month_jan': 'Jan',
@@ -417,6 +431,7 @@ class AppStrings {
       'check_in_time': 'CHECK-IN',
       'selfie': 'SELFIE',
       'top_performers': 'Top Performers',
+      'no_attendance_data_available': 'No attendance data available',
       'view_detailed_leaderboard': 'VIEW DETAILED LEADERBOARD',
       'active': 'ACTIVE',
       'total_employees': 'Total Employees',
@@ -622,7 +637,7 @@ class AppStrings {
       'username_or_id': 'ឈ្មោះគណនី ឬ លេខសម្គាល់',
       'enter_username': 'បញ្ចូលឈ្មោះប្រើប្រាស់',
       'admin_id': 'គណនីអ្នកគ្រប់គ្រង (Admin ID)',
-      'enter_id_hint': 'បញ្ចូលលេខសម្គាល់',
+      'enter_id_hint': 'បញ្ចូលឈ្មោះគណនី ឬ លេខសម្គាល់',
       'enter_id_error': 'សូមបញ្ចូលឈ្មោះគណនី ឬ លេខសម្គាល់',
       'password': 'ពាក្យសម្ងាត់',
       'enter_password': 'បញ្ចូលពាក្យសម្ងាត់',
@@ -697,8 +712,8 @@ class AppStrings {
       // --- Home & Map Status ---
       'greeting': 'អរុណសួស្តី,',
       'safety': 'សុវត្ថិភាព',
-      'check_in': 'ចូល',
-      'check_out': 'ចេញ',
+      'check_in': 'វត្ត.ចូល',
+      'check_out': 'វត្ត.ចេញ',
       'work_hours': 'ម៉ោង',
       'greet_pronoun_man': 'លោក',
       'greet_pronoun_woman': 'លោកស្រី',
@@ -718,7 +733,7 @@ class AppStrings {
       'office_zone': 'ក្នុងតំបន់ការិយាល័យ',
       'outside_zone': 'ក្រៅតំបន់ការិយាល័យ',
       'gps_status': 'ស្ថានភាព GPS',
-      'ready_to_scan': 'អាចស្កេនបាន',
+      'ready_to_scan': 'ស្កេន',
       'too_far': 'នៅឆ្ងាយពេក',
       'distance': 'ចម្ងាយ',
       'get_directions': 'នាំផ្លូវទៅកាន់ការិយាល័យ',
@@ -746,6 +761,14 @@ class AppStrings {
       'results_found': 'លទ្ធផលដែលបានរកឃើញ',
       'try_searching_different_name_or_department':
           'សូមសាកល្បងស្វែងរកដោយឈ្មោះ ឬ ផ្នែកផ្សេងទៀត',
+      'wait': 'សូមរង់ចាំ...',
+      'check_out_requires_check_in': 'ត្រូវធ្វើការចុះវត្ត.ចូលជាមុន',
+      'check_out_requires_check_in_desc':
+          'អ្នកត្រូវស្កេនចុះ វត្ត.ចូល ជាមុនទើបអាចបន្តចុះ​ វត្ត.ចេញ បាន។',
+      'understood': 'យល់ព្រម',
+      'face_scan_success_desc': 'អ្នកត្រូវបានចុះវត្តមានដោយជោគជ័យ។!',
+      'face_scan_success': 'បានចុះវត្តមានជោគជ័យ!',
+      'at': 'នៅ',
 
       // --- Attendance ---
       'my_stats': 'ស្ថិតិរបស់ខ្ញុំ',
@@ -818,7 +841,7 @@ class AppStrings {
       // --- Notifications ---
       'notifications_title': 'ការជូនដំណឹង',
       'mark_read': 'សម្គាល់ថាបានអាន',
-            'mark_all_read': 'សម្គាល់ថាបានអានទាំងអស់',
+      'mark_all_read': 'សម្គាល់ថាបានអានទាំងអស់',
       'delete_notif': 'លុបការជូនដំណឹងនេះ',
       'read_all': 'អានទាំងអស់',
       'no_notif': 'មិនទាន់មានការជូនដំណឹងនៅឡើយទេ',
@@ -855,6 +878,7 @@ class AppStrings {
       'badge_speed': 'លឿនរហ័ស',
       'badge_collab': 'សហការល្អ',
       'badge_creative': 'គំនិតច្នៃប្រឌិត',
+      'badge_perfect_month': 'វត្តមានប្រចាំខែឥតខ្ចោះ',
 
       // --- Calendar ---
       'no_data': 'គ្មានទិន្នន័យ',
@@ -891,6 +915,9 @@ class AppStrings {
       'gallery': 'បណ្ណាល័យ',
       'camera': 'ម៉ាស៊ីនថត',
       'phone_label': 'លេខទូរស័ព្ទ',
+      'gender_label': 'ភេទ',
+      'gender_male': 'ប្រុស',
+      'gender_female': 'ស្រី',
       'not_connected': 'មិនទាន់ភ្ជាប់',
       'connect_now': 'ភ្ជាប់ឥឡូវ',
       'change_password_action': 'ប្តូរលេខសម្ងាត់',
@@ -923,6 +950,7 @@ class AppStrings {
       'step_2_desc': 'ផ្ញើសារ /start ទៅកាន់ប៊ូត ដើម្បីធ្វើការចុះឈ្មោះ។',
       'step_3_title': 'ទទួលបានការជូនដំណឹង',
       'step_3_desc': 'អ្នកនឹងទទួលបានការជូនដំណឹងដោយស្វ័យប្រវត្តិតាម Telegram។',
+      'telegram_connected_success': 'បានភ្ជាប់ទៅ Telegram ជោគជ័យ!',
 
       // --- Date & Time ---
       'month_jan': 'មករា',
@@ -957,6 +985,7 @@ class AppStrings {
       'check_in_time': 'ពេលចូល',
       'selfie': 'រូបថត',
       'top_performers': 'អ្នកអនុវត្តល្អបំផុត',
+      'no_attendance_data_available': 'គ្មានទិន្នន័យវត្តមាន',
       'view_detailed_leaderboard': 'មើលលម្អិតចំណាត់ថ្នាក់',
       'active': 'ដំណើរការ',
       'search_hint': 'ស្វែងរកបុគ្គលិក...',
@@ -1030,7 +1059,7 @@ class AppStrings {
       'sort_by_score': 'តម្រៀបតាមពិន្ទុ',
       'sort_by_attendance': 'តម្រៀបតាមវត្ដមាន',
       'sort_by_medals': 'តម្រៀបតាមមេដាយ',
-      'no_employees_found': 'មិនរកឃើញបុគ្គលិក',
+      'no_employees_found': 'រកមិនឃើញបុគ្គលិក',
       'rank': 'ចំណាត់ថ្នាក់',
       'score': 'ពិន្ទុ',
       'trend': 'និន្នាការ',
@@ -1042,7 +1071,7 @@ class AppStrings {
       'office_locations': 'ទីតាំងការិយាល័យ',
       'manage_office_geofences': 'គ្រប់គ្រង geofences សម្រាប់ការិយាល័យ',
       'search_offices': 'ស្វែងរកការិយាល័យ...',
-      'no_offices_found': 'មិនរកឃើញការិយាល័យ',
+      'no_offices_found': 'រកមិនឃើញការិយាល័យ',
       'geofence_details': 'សម្បត្តិលម្អិត Geofence',
       'coordinates': 'កូអរដោនេ',
       'edit_geofence': 'កែសម្រួល Geofence',

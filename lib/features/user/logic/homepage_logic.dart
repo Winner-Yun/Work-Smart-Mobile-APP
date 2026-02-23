@@ -26,7 +26,6 @@ abstract class HomePageLogic extends State<HomePageScreen> {
   StreamSubscription<Position>? positionStreamSubscription;
 
   // Note: faceStatus is now derived from currentUser.biometrics.faceStatus
-  // We keep a local variable if we need to update it dynamically before a refresh
   late String currentFaceStatus;
 
   // --- Office Configuration (Loaded from officeMasterData) ---
@@ -40,6 +39,23 @@ abstract class HomePageLogic extends State<HomePageScreen> {
   bool isInRange = false;
   String rangeStatusText = AppStrings.tr('finding_location');
   Position? lastKnownPosition;
+  bool hasMockScanSuccess = false;
+  DateTime? lastMockScanAt;
+  String selectedAttendanceScanType = 'check_in';
+  String lastMockScanType = 'check_in';
+  String? overrideCheckInTime;
+  String? overrideCheckOutTime;
+  double? overrideTotalHours;
+  final Map<String, bool> attendanceScanStatus = {
+    'check_in': false,
+    'check_out': false,
+  };
+  final Map<String, DateTime?> attendanceScanSuccessAt = {
+    'check_in': null,
+    'check_out': null,
+  };
+  int checkOutCooldownSeconds = 0;
+  Timer? _checkOutCooldownTimer;
 
   // --- Map Objects ---
   Set<Marker> markers = {};
@@ -60,7 +76,6 @@ abstract class HomePageLogic extends State<HomePageScreen> {
   }
 
   void _loadData() {
-    // 1. Load Current User from login data
     final currentUserData = usersFinalData.firstWhere(
       (user) => user['uid'] == loggedInUserId,
       orElse: () => usersFinalData[0],
@@ -68,19 +83,16 @@ abstract class HomePageLogic extends State<HomePageScreen> {
     currentUser = UserProfile.fromJson(currentUserData);
     currentFaceStatus = currentUser.biometrics.faceStatus;
 
-    // 2. Load All Employees for Leaderboard
     allEmployees = usersFinalData
         .map((json) => UserProfile.fromJson(json))
         .toList();
 
-    // 3. Load Office Config
     final geofence = officeMasterData['geofence'];
     final center = geofence['center'];
     officeLocation = LatLng(center['lat'], center['lng']);
     scanRangeMeters = (geofence['radius_meters'] as num).toDouble();
     officeName = officeMasterData['office_name'];
 
-    // 4. Load Office Policy Times
     final policy = officeMasterData['policy'] ?? {};
     officeCheckInTime = policy['check_in_start'] ?? '08:00 AM';
     officeCheckOutTime = policy['check_out_end'] ?? '05:00 PM';
@@ -169,34 +181,258 @@ abstract class HomePageLogic extends State<HomePageScreen> {
     final todayStr =
         "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
 
-    // Get office policy for default times
     final policy = officeMasterData['policy'] ?? {};
     final defaultCheckIn = policy['check_in_start'] ?? "08:00 AM";
     final defaultCheckOut = policy['check_out_end'] ?? "05:00 PM";
 
-    // Find today's attendance record for current user
     try {
       final todayRecord = attendanceRecords.firstWhere(
         (record) =>
             record['uid'] == currentUser.uid && record['date'] == todayStr,
       );
 
-      return {
+      final Map<String, dynamic> attendance = {
         'date': todayStr,
         'check_in': todayRecord['check_in'] ?? defaultCheckIn,
         'check_out': todayRecord['check_out'] ?? defaultCheckOut,
         'total_hours': todayRecord['total_hours'] ?? 0.0,
         'status': todayRecord['status'] ?? 'absent',
       };
+      if (overrideCheckInTime != null) {
+        attendance['check_in'] = overrideCheckInTime;
+      }
+      if (overrideCheckOutTime != null) {
+        attendance['check_out'] = overrideCheckOutTime;
+      }
+      if (overrideTotalHours != null) {
+        attendance['total_hours'] = overrideTotalHours;
+      }
+      return attendance;
     } catch (e) {
-      // No record for today, return default structure
-      return {
+      final Map<String, dynamic> attendance = {
         'date': todayStr,
         'check_in': '--:--',
         'check_out': '--:--',
         'total_hours': 0.0,
         'status': 'not_checked_in',
       };
+      if (overrideCheckInTime != null) {
+        attendance['check_in'] = overrideCheckInTime;
+      }
+      if (overrideCheckOutTime != null) {
+        attendance['check_out'] = overrideCheckOutTime;
+      }
+      if (overrideTotalHours != null) {
+        attendance['total_hours'] = overrideTotalHours;
+      }
+      return attendance;
+    }
+  }
+
+  void selectAttendanceScanType(String type) {
+    if (type != 'check_in' && type != 'check_out') return;
+
+    if (type == 'check_out' && !(attendanceScanStatus['check_in'] ?? false)) {
+      showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          icon: Icon(
+            Icons.info_outline_rounded,
+            color: Theme.of(context).colorScheme.primary,
+            size: 40,
+          ),
+          title: Text(
+            AppStrings.tr('check_out_requires_check_in'),
+            textAlign: TextAlign.center,
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: Text(
+            AppStrings.tr('check_out_requires_check_in_desc'),
+            textAlign: TextAlign.center,
+          ),
+          actionsAlignment: MainAxisAlignment.center,
+          actions: [
+            SizedBox(
+              width: double.infinity,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(AppStrings.tr('understood')),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    if (mounted) {
+      setState(() {
+        selectedAttendanceScanType = type;
+        final bool alreadyScanned = attendanceScanStatus[type] ?? false;
+        if (alreadyScanned) {
+          hasMockScanSuccess = true;
+          lastMockScanType = type;
+          lastMockScanAt = attendanceScanSuccessAt[type];
+        } else {
+          hasMockScanSuccess = false;
+          lastMockScanAt = null;
+        }
+      });
+    }
+  }
+
+  bool get isSelectedScanCompleted =>
+      attendanceScanStatus[selectedAttendanceScanType] ?? false;
+
+  bool get isScanCooldownActive =>
+      selectedAttendanceScanType == 'check_out' && checkOutCooldownSeconds > 0;
+
+  String get selectedAttendanceScanLabel =>
+      selectedAttendanceScanType == 'check_in'
+      ? AppStrings.tr('check_in')
+      : AppStrings.tr('check_out');
+
+  String get lastAttendanceScanLabel => lastMockScanType == 'check_in'
+      ? AppStrings.tr('check_in')
+      : AppStrings.tr('check_out');
+
+  String get selectedAttendanceActionText => isScanCooldownActive
+      ? '${AppStrings.tr('wait')} ${_formatCooldownDuration(checkOutCooldownSeconds)}'
+      : isSelectedScanCompleted
+      ? '$selectedAttendanceScanLabel Scanned'
+      : selectedAttendanceScanType == 'check_in'
+      ? '${AppStrings.tr('ready_to_scan')} ${AppStrings.tr('check_in')}'
+      : '${AppStrings.tr('ready_to_scan')} ${AppStrings.tr('check_out')}';
+
+  String _formatCooldownDuration(int totalSeconds) {
+    final int hours = totalSeconds ~/ 3600;
+    final int minutes = (totalSeconds % 3600) ~/ 60;
+    final int seconds = totalSeconds % 60;
+
+    final List<String> parts = [];
+    if (hours > 0) parts.add('${hours}h');
+    if (minutes > 0) parts.add('${minutes}m');
+    if (seconds > 0) parts.add('${seconds}s');
+
+    return parts.isNotEmpty ? parts.join(' ') : '0s';
+  }
+
+  void _startCheckOutCooldown() {
+    _checkOutCooldownTimer?.cancel();
+    checkOutCooldownSeconds = 3600; // for set cooldown duration
+
+    _checkOutCooldownTimer = Timer.periodic(const Duration(seconds: 1), (
+      timer,
+    ) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+
+      setState(() {
+        if (checkOutCooldownSeconds > 0) {
+          checkOutCooldownSeconds--;
+        }
+      });
+
+      if (checkOutCooldownSeconds <= 0) {
+        timer.cancel();
+      }
+    });
+  }
+
+  void applyMockAttendanceScan() {
+    final now = DateTime.now();
+    final hour12 = now.hour % 12 == 0 ? 12 : now.hour % 12;
+    final minute = now.minute.toString().padLeft(2, '0');
+    final period = now.hour >= 12 ? 'PM' : 'AM';
+    final formattedTime = "$hour12:$minute $period";
+
+    if (mounted) {
+      setState(() {
+        if (selectedAttendanceScanType == 'check_in') {
+          overrideCheckInTime = formattedTime;
+        } else {
+          overrideCheckOutTime = formattedTime;
+        }
+
+        final String? effectiveCheckIn = _resolveEffectiveTime('check_in');
+        final String? effectiveCheckOut = _resolveEffectiveTime('check_out');
+        overrideTotalHours = _calculateWorkingHours(
+          effectiveCheckIn,
+          effectiveCheckOut,
+        );
+      });
+    }
+  }
+
+  String? _resolveEffectiveTime(String type) {
+    if (type == 'check_in') {
+      if (overrideCheckInTime != null) return overrideCheckInTime;
+      final dynamic checkIn = currentAttendance['check_in'];
+      if (checkIn is String && _parse12hTime(checkIn) != null) return checkIn;
+      return null;
+    }
+
+    if (type == 'check_out') {
+      if (overrideCheckOutTime != null) return overrideCheckOutTime;
+      final dynamic checkOut = currentAttendance['check_out'];
+      if (checkOut is String && _parse12hTime(checkOut) != null) {
+        return checkOut;
+      }
+      return null;
+    }
+
+    return null;
+  }
+
+  double? _calculateWorkingHours(String? checkIn, String? checkOut) {
+    if (checkIn == null || checkOut == null) return null;
+
+    final DateTime? inTime = _parse12hTime(checkIn);
+    final DateTime? outTime = _parse12hTime(checkOut);
+    if (inTime == null || outTime == null) return null;
+
+    Duration diff = outTime.difference(inTime);
+    if (diff.isNegative) {
+      diff = const Duration();
+    }
+
+    return double.parse((diff.inMinutes / 60).toStringAsFixed(1));
+  }
+
+  DateTime? _parse12hTime(String value) {
+    try {
+      final parts = value.trim().split(' ');
+      if (parts.length != 2) return null;
+
+      final hm = parts[0].split(':');
+      if (hm.length != 2) return null;
+
+      int hour = int.parse(hm[0]);
+      final int minute = int.parse(hm[1]);
+      final String period = parts[1].toUpperCase();
+
+      if (period == 'PM' && hour < 12) hour += 12;
+      if (period == 'AM' && hour == 12) hour = 0;
+
+      final now = DateTime.now();
+      return DateTime(now.year, now.month, now.day, hour, minute);
+    } catch (_) {
+      return null;
     }
   }
 
@@ -208,6 +444,7 @@ abstract class HomePageLogic extends State<HomePageScreen> {
 
   @override
   void dispose() {
+    _checkOutCooldownTimer?.cancel();
     positionStreamSubscription?.cancel();
     mapController?.dispose();
     super.dispose();
@@ -490,5 +727,36 @@ abstract class HomePageLogic extends State<HomePageScreen> {
         updateFaceStatus('approved');
       }
     });
+  }
+
+  void markMockScanSuccess() {
+    if (mounted) {
+      setState(() {
+        final String scannedType = selectedAttendanceScanType;
+        final now = DateTime.now();
+        lastMockScanAt = now;
+        lastMockScanType = scannedType;
+        attendanceScanStatus[scannedType] = true;
+        attendanceScanSuccessAt[scannedType] = now;
+
+        if (scannedType == 'check_in' &&
+            !(attendanceScanStatus['check_out'] ?? false)) {
+          selectedAttendanceScanType = 'check_out';
+          hasMockScanSuccess = false;
+          lastMockScanAt = null;
+          _startCheckOutCooldown();
+        } else {
+          hasMockScanSuccess = true;
+        }
+      });
+    }
+  }
+
+  void resetMockScanSuccess() {
+    if (mounted) {
+      setState(() {
+        hasMockScanSuccess = false;
+      });
+    }
   }
 }

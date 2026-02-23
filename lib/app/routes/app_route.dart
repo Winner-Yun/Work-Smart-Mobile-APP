@@ -22,7 +22,7 @@ import 'package:flutter_worksmart_mobile_app/features/user/presentation/profile&
 import 'app_admin_route.dart';
 
 /// AppRoute: Central routing configuration
-/// 
+///
 class AppRoute {
   static const String adminTutorial = AppAdminRoute.adminTutorial;
 
@@ -59,7 +59,8 @@ class AppRoute {
       final args =
           ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
       if (args != null) {
-        return MainScreen(loginData: args);
+        final initialIndex = args['initialIndex'] as int? ?? 0;
+        return MainScreen(loginData: args, initialIndex: initialIndex);
       }
       return const _CachedLoginGate();
     },
@@ -112,8 +113,6 @@ class AppRoute {
 
     // Admin Routes
     ...AppAdminRoute.routes,
-
-    
   };
 
   static WidgetBuilder _buildRoute(

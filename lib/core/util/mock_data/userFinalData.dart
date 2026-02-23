@@ -40,12 +40,12 @@ final List<Map<String, dynamic>> usersFinalData = [
       },
     ],
     "telegram": {
-      "is_connected": true,
+      "is_connected": false,
       "telegram_id": "77889900",
       "telegram_username": "@winner_dev",
     },
     "achievements": {
-      "total_medals": 12,
+      "total_medals": 1,
       "performance_score": 98,
       "rank_trend": 2,
       "goal": {

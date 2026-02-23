@@ -88,6 +88,7 @@ class UserEmployee {
   final String uid;
   final String displayName;
   final String roleTitle;
+  final String gender;
   final String email;
   final String phone;
   final String departmentId;
@@ -101,6 +102,7 @@ class UserEmployee {
     required this.uid,
     required this.displayName,
     required this.roleTitle,
+    this.gender = 'male',
     required this.email,
     required this.phone,
     required this.departmentId,
@@ -116,6 +118,7 @@ class UserEmployee {
       uid: map['uid'] ?? '',
       displayName: map['display_name'] ?? 'Unknown',
       roleTitle: map['role_title'] ?? 'Staff',
+      gender: map['gender'] ?? 'male',
       email: map['email'] ?? '',
       phone: map['phone'] ?? '',
       departmentId: map['department_id'] ?? '',

@@ -8,15 +8,22 @@ import 'package:flutter_worksmart_mobile_app/features/user/presentation/profile&
 
 class MainScreen extends StatefulWidget {
   final Map<String, dynamic>? loginData;
+  final int initialIndex;
 
-  const MainScreen({super.key, this.loginData});
+  const MainScreen({super.key, this.loginData, this.initialIndex = 0});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _currentIndex = 0;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+  }
 
   // ──────────────── EMPLOYEE APP NAVIGATION ────────────────
   // Renders main tabs: Home, Attendance, Leave Requests, Profile

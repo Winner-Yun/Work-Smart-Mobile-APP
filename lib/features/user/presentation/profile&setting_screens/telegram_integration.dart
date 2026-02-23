@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/database/database_helper.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/mock_data/userFinalData.dart';
 
 class TelegramIntegration extends StatefulWidget {
   final Map<String, dynamic>? loginData;
@@ -13,6 +16,53 @@ class TelegramIntegration extends StatefulWidget {
 }
 
 class _TelegramIntegrationState extends State<TelegramIntegration> {
+  bool _isConnecting = false;
+
+  Future<void> _handleConnect() async {
+    setState(() => _isConnecting = true);
+
+    // Get current user ID
+    final userId = widget.loginData?['uid'] ?? 'user_winner_777';
+
+    // Find and update
+    final userIndex = usersFinalData.indexWhere(
+      (user) => user['uid'] == userId,
+    );
+    if (userIndex != -1) {
+      usersFinalData[userIndex]['telegram']['is_connected'] = true;
+    }
+
+    await DatabaseHelper().saveConfig('telegram_connected_$userId', 'true');
+
+    await Future.delayed(const Duration(milliseconds: 800));
+
+    if (mounted) {
+      setState(() => _isConnecting = false);
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppStrings.tr('telegram_connected_success'),
+            style: const TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (mounted) {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoute.appmain,
+          (route) => false,
+          arguments: {...?widget.loginData, 'initialIndex': 3},
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -123,24 +173,36 @@ class _TelegramIntegrationState extends State<TelegramIntegration> {
       width: double.infinity,
       height: 55,
       child: ElevatedButton(
-        onPressed: () {},
+        onPressed: _isConnecting ? null : _handleConnect,
         style: ElevatedButton.styleFrom(
           backgroundColor: Theme.of(context).colorScheme.primary,
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
           ),
+          disabledBackgroundColor: Theme.of(
+            context,
+          ).colorScheme.primary.withOpacity(0.6),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              AppStrings.tr('connect_now_button'),
-              style: const TextStyle(fontSize: 18, color: Colors.white),
-            ),
-            const Icon(Icons.arrow_forward, color: Colors.white),
-          ],
-        ),
+        child: _isConnecting
+            ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    AppStrings.tr('connect_now_button'),
+                    style: const TextStyle(fontSize: 18, color: Colors.white),
+                  ),
+                  const Icon(Icons.arrow_forward, color: Colors.white),
+                ],
+              ),
       ),
     ).animate().scale(delay: 200.ms);
   }
@@ -171,9 +233,7 @@ class _TelegramIntegrationState extends State<TelegramIntegration> {
                 height: 260,
                 width: 260,
                 decoration: BoxDecoration(
-                  color: const Color(
-                    0xFFF5F5F5,
-                  ), // QR Code background stays light for scanning contrast
+                  color: const Color(0xFFF5F5F5),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Icon(
@@ -226,7 +286,7 @@ class _TelegramIntegrationState extends State<TelegramIntegration> {
         ...[
           _buildStepItem(
             context,
-            '១', // Keep number as is or move to AppStrings if needed
+            '១', 
             AppStrings.tr('step_1_title'),
             AppStrings.tr('step_1_desc'),
           ),

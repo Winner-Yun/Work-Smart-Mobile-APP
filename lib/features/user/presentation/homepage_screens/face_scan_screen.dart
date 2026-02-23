@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
@@ -30,6 +32,7 @@ class _FaceScanScreenState extends FaceScanLogic {
             bottom: 0,
             child: CustomPaint(painter: FaceOverlayPainter()),
           ),
+          if (isScanning) _buildScanningAnimation(),
           _buildForegroundUI(),
         ],
       ),
@@ -59,7 +62,7 @@ class _FaceScanScreenState extends FaceScanLogic {
             color: (flashMode == FlashMode.torch && isRearCameraSelected)
                 ? Colors.yellow
                 : Colors.white,
-            onTap: isRearCameraSelected ? toggleFlash : () {},
+            onTap: (isRearCameraSelected && !isScanning) ? toggleFlash : () {},
           ),
         ),
       ],
@@ -96,7 +99,9 @@ class _FaceScanScreenState extends FaceScanLogic {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 30),
             child: Text(
-              AppStrings.tr('face_scan_step'),
+              isScanning
+                  ? AppStrings.tr('processing')
+                  : AppStrings.tr('face_scan_step'),
               textAlign: TextAlign.center,
               style: const TextStyle(color: Colors.white70, fontSize: 16),
             ),
@@ -145,22 +150,45 @@ class _FaceScanScreenState extends FaceScanLogic {
       child: Column(
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // 1. Invisible Expanded spacer to balance the left side
-              const Expanded(child: SizedBox()),
-
-              // 2. The Shutter button stays exactly in the center
-              _buildShutterButton(),
-
-              // 3. Expanded spacer for the right side, containing the aligned switch button
+              Expanded(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: isScanning
+                            ? Theme.of(context).colorScheme.primary
+                            : Colors.grey,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      isScanning
+                          ? AppStrings.tr('processing')
+                          : AppStrings.tr('live_status'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              _buildScanButton(),
               Expanded(
                 child: Align(
                   alignment: Alignment.centerRight,
                   child: _buildActionColumn(
                     icon: Icons.flip_camera_ios,
                     label: AppStrings.tr('switch_camera'),
-                    onTap: switchCamera,
+                    onTap: isScanning ? () {} : switchCamera,
                   ),
                 ),
               ),
@@ -173,25 +201,80 @@ class _FaceScanScreenState extends FaceScanLogic {
     );
   }
 
-  Widget _buildShutterButton() {
-    return GestureDetector(
-      onTap: takePicture,
-      child: Container(
-        width: 80,
-        height: 80,
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: Theme.of(context).colorScheme.primary,
-            width: 4,
-          ),
-        ),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primary,
-            shape: BoxShape.circle,
-          ),
+  Widget _buildScanButton() {
+    return IconButton.filled(
+      onPressed: isScanning ? null : takePicture,
+      icon: const Icon(Icons.face_retouching_natural, size: 28),
+      style: IconButton.styleFrom(
+        minimumSize: const Size(66, 66),
+        shape: const CircleBorder(),
+      ),
+    );
+  }
+
+  Widget _buildScanningAnimation() {
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final overlayTop = 70.0;
+            final overlayHeight = constraints.maxHeight - overlayTop;
+            final faceCenterY = overlayTop + (overlayHeight * 0.4);
+            final faceHeight = overlayHeight * 0.4;
+            final scanStartY = faceCenterY - (faceHeight * 0.45);
+            final scanEndY = faceCenterY + (faceHeight * 0.45);
+            final t = scanProgress.clamp(0.0, 1.0);
+            final pingPongProgress = 0.5 - (0.5 * math.cos(2 * math.pi * t));
+            final scanY =
+                scanStartY + ((scanEndY - scanStartY) * pingPongProgress);
+
+            return Stack(
+              children: [
+                Positioned(
+                  top: scanY - 12,
+                  left: constraints.maxWidth * 0.18,
+                  right: constraints.maxWidth * 0.18,
+                  child: Container(
+                    height: 24,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Theme.of(context).colorScheme.primary.withOpacity(0),
+                          Theme.of(
+                            context,
+                          ).colorScheme.primary.withOpacity(0.45),
+                          Theme.of(context).colorScheme.primary.withOpacity(0),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: scanY,
+                  left: constraints.maxWidth * 0.18,
+                  right: constraints.maxWidth * 0.18,
+                  child: Container(
+                    height: 3,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary,
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withOpacity(0.7),
+                          blurRadius: 14,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -301,7 +384,14 @@ class FaceOverlayPainter extends CustomPainter {
     canvas.drawRRect(
       cutout,
       Paint()
-        ..color = Colors.white30
+        ..color = Colors.white24
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 6,
+    );
+    canvas.drawRRect(
+      cutout,
+      Paint()
+        ..color = Colors.white70
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2,
     );

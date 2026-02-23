@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 
 Widget infoChip(BuildContext context, String label, IconData icon) {
   return Container(
@@ -260,6 +261,10 @@ Widget buildDropdown(
                 ? getStatusColor(value) == Colors.green
                       ? Icons.check_circle
                       : Icons.circle_outlined
+                : label == AppStrings.tr('gender_label')
+                ? value == 'male'
+                      ? Icons.male_rounded
+                      : Icons.female_rounded
                 : Icons.business_sharp,
             size: 20,
             color: isStatus && value.isNotEmpty

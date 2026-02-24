@@ -24,7 +24,7 @@ class _AuthscreenState extends State<Authscreen> {
   late AuthLogic authLogic;
 
   // ─────────── SCREEN INITIALIZATION ───────────
-  
+
   @override
   void initState() {
     super.initState();
@@ -57,7 +57,6 @@ class _AuthscreenState extends State<Authscreen> {
     final isValid = await authLogic.handleLogin();
 
     if (isValid && mounted) {
- 
       await Future.delayed(const Duration(milliseconds: 500));
 
       if (mounted) {
@@ -71,7 +70,6 @@ class _AuthscreenState extends State<Authscreen> {
   // ─────────── MAIN WIDGET BUILD ───────────
   @override
   Widget build(BuildContext context) {
-    bool isDark = Theme.of(context).brightness == Brightness.dark;
     return ListenableBuilder(
       listenable: LanguageManager(),
       builder: (context, child) {
@@ -80,9 +78,7 @@ class _AuthscreenState extends State<Authscreen> {
         return AnnotatedRegion<SystemUiOverlayStyle>(
           value: SystemUiOverlayStyle(
             statusBarColor: Colors.transparent,
-            statusBarIconBrightness: isDark
-                ? Brightness.light
-                : Brightness.dark,
+            statusBarIconBrightness: Brightness.light,
           ),
           child: Scaffold(
             backgroundColor: theme.cardTheme.color,

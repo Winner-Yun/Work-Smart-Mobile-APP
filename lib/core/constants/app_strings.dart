@@ -726,7 +726,7 @@ class AppStrings {
       'check_out': 'វត្ត.ចេញ',
       'work_hours': 'ម៉ោង',
       'greet_pronoun_man': 'លោក',
-      'greet_pronoun_woman': 'លោកស្រី',
+      'greet_pronoun_woman': 'អ្នកស្រី',
       'current_loc': 'ទីតាំងបច្ចុប្បន្ន',
       'office_name': 'ការិយាល័យភ្នំពេញ',
       'leave_question': 'ដល់ពេលចេញពីធ្វើការ?',

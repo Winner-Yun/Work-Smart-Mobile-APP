@@ -13,11 +13,9 @@
         android:label="WorkSmart"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
-
-        <!-- ✅ Google Maps API Key -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyCNQUlB_2xhxk43dpi7OB-JA27oMIAdWKc"/>
+            android:value="AIzaSyDhhC-dK8QBrVVAjTtTNjBfN76xa1RidNs"/>
 
         <activity
             android:name=".MainActivity"

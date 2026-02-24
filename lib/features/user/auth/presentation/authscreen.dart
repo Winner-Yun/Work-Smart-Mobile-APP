@@ -8,8 +8,7 @@ import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/auth/logic/auth_logic.dart';
 
-/// Authscreen: Employee login UI (Mobile)
-/// Displays login form, handles cached login, manages language switching
+// Authscreen: Employee login UI (Mobile)
 class Authscreen extends StatefulWidget {
   const Authscreen({super.key});
 
@@ -25,7 +24,7 @@ class _AuthscreenState extends State<Authscreen> {
   late AuthLogic authLogic;
 
   // ─────────── SCREEN INITIALIZATION ───────────
-  // Sets up auth logic, checks cached credentials, manages lifecycle
+  
   @override
   void initState() {
     super.initState();
@@ -39,7 +38,6 @@ class _AuthscreenState extends State<Authscreen> {
     _checkCachedLogin();
   }
 
-  // Check for cached login and auto-login if credentials exist
   void _checkCachedLogin() {
     authLogic.checkCachedLogin((username, userId, userType) {
       authLogic.autoLoginNavigation(username, userId, userType);
@@ -54,12 +52,12 @@ class _AuthscreenState extends State<Authscreen> {
   }
 
   // ─────────── LOGIN PROCESSING ───────────
-  // Validates credentials, navigates to main app on success
+
   void _handleLogin() async {
     final isValid = await authLogic.handleLogin();
 
     if (isValid && mounted) {
-      // Small delay for UX feedback
+ 
       await Future.delayed(const Duration(milliseconds: 500));
 
       if (mounted) {
@@ -71,18 +69,20 @@ class _AuthscreenState extends State<Authscreen> {
   }
 
   // ─────────── MAIN WIDGET BUILD ───────────
-  // Renders login form with animated background and language switcher
   @override
   Widget build(BuildContext context) {
+    bool isDark = Theme.of(context).brightness == Brightness.dark;
     return ListenableBuilder(
       listenable: LanguageManager(),
       builder: (context, child) {
         final theme = Theme.of(context);
 
         return AnnotatedRegion<SystemUiOverlayStyle>(
-          value: const SystemUiOverlayStyle(
+          value: SystemUiOverlayStyle(
             statusBarColor: Colors.transparent,
-            statusBarIconBrightness: Brightness.light,
+            statusBarIconBrightness: isDark
+                ? Brightness.light
+                : Brightness.dark,
           ),
           child: Scaffold(
             backgroundColor: theme.cardTheme.color,

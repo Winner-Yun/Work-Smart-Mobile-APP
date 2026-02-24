@@ -21,9 +21,12 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
   late int _annualLeaveRemaining;
   late UserProfile _currentUser;
   late String? loggedInUserId;
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final TextEditingController _reasonController = TextEditingController();
 
   DateTime? _startDate;
   DateTime? _endDate;
+  bool _showValidationErrors = false;
   final DateFormat _dateFormatter = DateFormat('dd MMM yyyy');
 
   @override
@@ -55,6 +58,34 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
     _annualLeaveRemaining = _annualLeaveTotal - _annualLeaveUsed;
   }
 
+  void _submitRequest() {
+    setState(() {
+      _showValidationErrors = true;
+    });
+
+    final isReasonValid = _formKey.currentState?.validate() ?? false;
+    final hasValidDateRange = _startDate != null && _endDate != null;
+
+    if (!isReasonValid || !hasValidDateRange) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(AppStrings.tr('annual_request_submitted')),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+      ),
+    );
+
+    Navigator.pop(context, widget.loginData);
+  }
+
+  @override
+  void dispose() {
+    _reasonController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -62,22 +93,28 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
       appBar: _buildAppBar(context),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildBalanceCard(context),
-            const SizedBox(height: 25),
-            _buildSectionTitle(AppStrings.tr('select_date'), context),
-            const SizedBox(height: 15),
-            _buildDateRangePicker(context),
-            const SizedBox(height: 25),
-            _buildSectionTitle(AppStrings.tr('reason_for_request'), context),
-            const SizedBox(height: 15),
-            _buildTextArea(context),
-            const SizedBox(height: 40),
-            _buildSubmitButton(),
-          ],
-        ).animate().fadeIn(duration: 500.ms),
+        child: Form(
+          key: _formKey,
+          autovalidateMode: _showValidationErrors
+              ? AutovalidateMode.always
+              : AutovalidateMode.disabled,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildBalanceCard(context),
+              const SizedBox(height: 25),
+              _buildSectionTitle(AppStrings.tr('select_date'), context),
+              const SizedBox(height: 15),
+              _buildDateRangePicker(context),
+              const SizedBox(height: 25),
+              _buildSectionTitle(AppStrings.tr('reason_for_request'), context),
+              const SizedBox(height: 15),
+              _buildTextArea(context),
+              const SizedBox(height: 40),
+              _buildSubmitButton(),
+            ],
+          ).animate().fadeIn(duration: 500.ms),
+        ),
       ),
     );
   }
@@ -183,36 +220,57 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
   }
 
   Widget _buildDateRangePicker(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          _dateColumn(
-            context,
-            AppStrings.tr('start_date'),
-            _startDate == null
-                ? AppStrings.tr('select_date')
-                : _dateFormatter.format(_startDate!),
-            onTap: () => _pickStartDate(context),
+    final hasError =
+        _showValidationErrors && (_startDate == null || _endDate == null);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardTheme.color,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: hasError
+                  ? Colors.red
+                  : Theme.of(context).dividerColor.withOpacity(0.2),
+            ),
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 10),
-            child: Icon(Icons.arrow_forward, color: Colors.grey, size: 16),
+          child: Row(
+            children: [
+              _dateColumn(
+                context,
+                AppStrings.tr('start_date'),
+                _startDate == null
+                    ? AppStrings.tr('select_date')
+                    : _dateFormatter.format(_startDate!),
+                onTap: () => _pickStartDate(context),
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 10),
+                child: Icon(Icons.arrow_forward, color: Colors.grey, size: 16),
+              ),
+              _dateColumn(
+                context,
+                AppStrings.tr('end_date'),
+                _endDate == null
+                    ? AppStrings.tr('select_date')
+                    : _dateFormatter.format(_endDate!),
+                onTap: _startDate == null ? null : () => _pickEndDate(context),
+              ),
+            ],
           ),
-          _dateColumn(
-            context,
-            AppStrings.tr('end_date'),
-            _endDate == null
-                ? AppStrings.tr('select_date')
-                : _dateFormatter.format(_endDate!),
-            onTap: _startDate == null ? null : () => _pickEndDate(context),
+        ),
+        if (hasError)
+          Padding(
+            padding: const EdgeInsets.only(top: 8, left: 12),
+            child: Text(
+              AppStrings.tr('validation_select_start_end_date'),
+              style: TextStyle(color: Colors.red.shade700, fontSize: 12),
+            ),
           ),
-        ],
-      ),
+      ],
     );
   }
 
@@ -299,8 +357,18 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
   }
 
   Widget _buildTextArea(BuildContext context) {
-    return TextField(
+    return TextFormField(
+      controller: _reasonController,
       maxLines: 5,
+      validator: (value) {
+        if (value == null || value.trim().isEmpty) {
+          return AppStrings.tr('validation_reason_required_request');
+        }
+        if (value.trim().length < 5) {
+          return AppStrings.tr('validation_reason_min_chars');
+        }
+        return null;
+      },
       decoration: InputDecoration(
         hintText: AppStrings.tr('enter_reason_hint'),
         filled: true,
@@ -352,7 +420,7 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
       width: double.infinity,
       height: 55,
       child: ElevatedButton(
-        onPressed: () {},
+        onPressed: _submitRequest,
         style: ElevatedButton.styleFrom(
           backgroundColor: Theme.of(context).colorScheme.primary,
           shape: RoundedRectangleBorder(

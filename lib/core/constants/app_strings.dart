@@ -229,6 +229,16 @@ class AppStrings {
       'upload_medical_cert': 'Click here to upload medical certificate',
       'tap_to_change_file': 'Tap again to change file',
       'submit_official_request': 'Submit Official Request',
+      'validation_reason_required_sickness': 'Please enter reason for sickness',
+      'validation_reason_required_request': 'Please enter reason for request',
+      'validation_reason_min_chars': 'Reason must be at least 5 characters',
+      'validation_select_leave_date': 'Please select leave date',
+      'validation_upload_medical_document': 'Please upload a medical document',
+      'validation_select_start_end_date': 'Please select start and end date',
+      'annual_request_submitted': 'Annual leave request submitted successfully',
+      'sick_request_submitted': 'Sick leave request submitted successfully',
+      'select_leave_date': 'Select Leave Date',
+      'tap_to_select_date': 'Tap to select date',
 
       // --- Notifications ---
       'notifications_title': 'Notifications',
@@ -837,6 +847,17 @@ class AppStrings {
       'upload_medical_cert': 'ចុចទីនេះដើម្បីភ្ជាប់លិខិតបញ្ជាក់ពីពេទ្យ',
       'tap_to_change_file': 'ចុចម្ដងទៀតដើម្បីប្ដូរឯកសារ',
       'submit_official_request': 'បញ្ជូនសំណើផ្លូវការ',
+      'validation_reason_required_sickness': 'សូមបញ្ចូលមូលហេតុនៃជំងឺ',
+      'validation_reason_required_request': 'សូមបញ្ចូលមូលហេតុនៃការស្នើសុំ',
+      'validation_reason_min_chars': 'មូលហេតុត្រូវមានយ៉ាងតិច ៥ តួអក្សរ',
+      'validation_select_leave_date': 'សូមជ្រើសរើសកាលបរិច្ឆេទឈប់សម្រាក',
+      'validation_upload_medical_document': 'សូមភ្ជាប់ឯកសារវេជ្ជសាស្ត្រ',
+      'validation_select_start_end_date':
+          'សូមជ្រើសរើសថ្ងៃចាប់ផ្តើម និងថ្ងៃបញ្ចប់',
+      'annual_request_submitted': 'សំណើច្បាប់ប្រចាំឆ្នាំត្រូវបានផ្ញើដោយជោគជ័យ',
+      'sick_request_submitted': 'សំណើច្បាប់ឈឺត្រូវបានផ្ញើដោយជោគជ័យ',
+      'select_leave_date': 'ជ្រើសរើសកាលបរិច្ឆេទ',
+      'tap_to_select_date': 'ចុចដើម្បីជ្រើសរើសកាលបរិច្ឆេទ',
 
       // --- Notifications ---
       'notifications_title': 'ការជូនដំណឹង',

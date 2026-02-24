@@ -21,9 +21,12 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
   late int _sickLeaveRemaining;
   late UserProfile _currentUser;
   late String? loggedInUserId;
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final TextEditingController _reasonController = TextEditingController();
 
   PlatformFile? _pickedFile;
   DateTime? _selectedDate;
+  bool _showValidationErrors = false;
   final DateFormat _dateFormatter = DateFormat('dd MMM yyyy');
 
   @override
@@ -84,47 +87,89 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
     }
   }
 
+  void _submitRequest() {
+    setState(() {
+      _showValidationErrors = true;
+    });
+
+    final isReasonValid = _formKey.currentState?.validate() ?? false;
+    final isDateValid = _selectedDate != null;
+    final isFileValid = _pickedFile != null;
+
+    if (!isReasonValid || !isDateValid || !isFileValid) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(AppStrings.tr('sick_request_submitted')),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+      ),
+    );
+
+    Navigator.pop(context, widget.loginData);
+  }
+
+  @override
+  void dispose() {
+    _reasonController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _buildAppBar(context),
       body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildTopInfoCard(context),
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildSectionTitle(AppStrings.tr('request_details'), context),
-                  const SizedBox(height: 15),
-                  _buildInputCard(context, [
-                    _buildLabel(AppStrings.tr('reason_for_sickness'), context),
-                    _buildTextField(
-                      context: context,
-                      hint: AppStrings.tr('sickness_reason_hint'),
-                      icon: Icons.edit_note,
+        child: Form(
+          key: _formKey,
+          autovalidateMode: _showValidationErrors
+              ? AutovalidateMode.always
+              : AutovalidateMode.disabled,
+          child: Column(
+            children: [
+              _buildTopInfoCard(context),
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSectionTitle(
+                      AppStrings.tr('request_details'),
+                      context,
                     ),
+                    const SizedBox(height: 15),
+                    _buildInputCard(context, [
+                      _buildLabel(
+                        AppStrings.tr('reason_for_sickness'),
+                        context,
+                      ),
+                      _buildTextField(
+                        context: context,
+                        hint: AppStrings.tr('sickness_reason_hint'),
+                        icon: Icons.edit_note,
+                        controller: _reasonController,
+                      ),
+                      const SizedBox(height: 20),
+                      _buildLabel(AppStrings.tr('leave_date'), context),
+                      _buildDatePickerField(context),
+                    ]),
+                    const SizedBox(height: 25),
+                    _buildSectionTitle(
+                      AppStrings.tr('medical_documents'),
+                      context,
+                    ),
+                    const SizedBox(height: 15),
+                    _buildUploadArea(context),
+                    const SizedBox(height: 40),
+                    _buildSubmitButton(),
                     const SizedBox(height: 20),
-                    _buildLabel(AppStrings.tr('leave_date'), context),
-                    _buildDatePickerField(context),
-                  ]),
-                  const SizedBox(height: 25),
-                  _buildSectionTitle(
-                    AppStrings.tr('medical_documents'),
-                    context,
-                  ),
-                  const SizedBox(height: 15),
-                  _buildUploadArea(context),
-                  const SizedBox(height: 40),
-                  _buildSubmitButton(),
-                  const SizedBox(height: 20),
-                ],
-              ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.1, end: 0),
-            ),
-          ],
+                  ],
+                ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.1, end: 0),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -136,7 +181,7 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
       elevation: 0.5,
       scrolledUnderElevation: 0,
       leading: IconButton(
-        icon: Icon(Icons.close, color: Theme.of(context).iconTheme.color),
+        icon: Icon(Icons.arrow_back, color: Theme.of(context).iconTheme.color),
         onPressed: () => Navigator.pop(context),
       ),
       title: Text(
@@ -269,66 +314,85 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
 
   Widget _buildDatePickerField(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: Theme.of(context).dividerColor.withOpacity(0.3),
-        ),
-        borderRadius: BorderRadius.circular(12),
-        color:
-            Theme.of(context).inputDecorationTheme.fillColor ??
-            (isDark ? Colors.grey.shade800 : Colors.grey.shade50),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _pickDate(context),
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    final hasError = _showValidationErrors && _selectedDate == null;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: hasError
+                  ? Colors.red
+                  : Theme.of(context).dividerColor.withOpacity(0.3),
+            ),
+            borderRadius: BorderRadius.circular(12),
+            color:
+                Theme.of(context).inputDecorationTheme.fillColor ??
+                (isDark ? Colors.grey.shade800 : Colors.grey.shade50),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => _pickDate(context),
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Select Leave Date',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Theme.of(
-                          context,
-                        ).textTheme.bodySmall?.color?.withOpacity(0.6),
-                        fontWeight: FontWeight.w500,
-                      ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          AppStrings.tr('select_leave_date'),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Theme.of(
+                              context,
+                            ).textTheme.bodySmall?.color?.withOpacity(0.6),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _selectedDate != null
+                              ? _dateFormatter.format(_selectedDate!)
+                              : AppStrings.tr('tap_to_select_date'),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: _selectedDate != null
+                                ? Theme.of(context).textTheme.bodyLarge?.color
+                                : Theme.of(context).textTheme.bodySmall?.color
+                                      ?.withOpacity(0.4),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _selectedDate != null
-                          ? _dateFormatter.format(_selectedDate!)
-                          : 'Tap to select date',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: _selectedDate != null
-                            ? Theme.of(context).textTheme.bodyLarge?.color
-                            : Theme.of(
-                                context,
-                              ).textTheme.bodySmall?.color?.withOpacity(0.4),
-                      ),
+                    Icon(
+                      Icons.calendar_today,
+                      color: Theme.of(context).colorScheme.primary,
+                      size: 24,
                     ),
                   ],
                 ),
-                Icon(
-                  Icons.calendar_today,
-                  color: Theme.of(context).colorScheme.primary,
-                  size: 24,
-                ),
-              ],
+              ),
             ),
           ),
         ),
-      ),
+        if (hasError)
+          Padding(
+            padding: const EdgeInsets.only(top: 8, left: 12),
+            child: Text(
+              AppStrings.tr('validation_select_leave_date'),
+              style: TextStyle(color: Colors.red.shade700, fontSize: 12),
+            ),
+          ),
+      ],
     );
   }
 
@@ -350,60 +414,77 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
   }
 
   Widget _buildUploadArea(BuildContext context) {
-    return InkWell(
-      onTap: _pickFile,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardTheme.color,
+    final hasError = _showValidationErrors && _pickedFile == null;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        InkWell(
+          onTap: _pickFile,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: _pickedFile != null
-                ? Colors.green
-                : Theme.of(context).colorScheme.primary.withOpacity(0.2),
-            width: 2,
-            style: BorderStyle.solid,
-          ),
-        ),
-        child: Column(
-          children: [
-            Icon(
-              _pickedFile != null
-                  ? Icons.check_circle_outline
-                  : Icons.add_photo_alternate_outlined,
-              size: 40,
-              color: _pickedFile != null
-                  ? Colors.green
-                  : Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(height: 10),
-            Text(
-              _pickedFile != null
-                  ? '${AppStrings.tr('attached_file')}${_pickedFile!.name}'
-                  : AppStrings.tr('upload_medical_cert'),
-              textAlign: TextAlign.center,
-              style: TextStyle(
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardTheme.color,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
                 color: _pickedFile != null
                     ? Colors.green
-                    : Theme.of(context).colorScheme.primary,
-                fontSize: 13,
-                fontWeight: _pickedFile != null
-                    ? FontWeight.bold
-                    : FontWeight.normal,
+                    : hasError
+                    ? Colors.red
+                    : Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                width: 2,
+                style: BorderStyle.solid,
               ),
             ),
-            if (_pickedFile != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                AppStrings.tr('tap_to_change_file'),
-                style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
-              ),
-            ],
-          ],
+            child: Column(
+              children: [
+                Icon(
+                  _pickedFile != null
+                      ? Icons.check_circle_outline
+                      : Icons.add_photo_alternate_outlined,
+                  size: 40,
+                  color: _pickedFile != null
+                      ? Colors.green
+                      : Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  _pickedFile != null
+                      ? '${AppStrings.tr('attached_file')}${_pickedFile!.name}'
+                      : AppStrings.tr('upload_medical_cert'),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: _pickedFile != null
+                        ? Colors.green
+                        : Theme.of(context).colorScheme.primary,
+                    fontSize: 13,
+                    fontWeight: _pickedFile != null
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                  ),
+                ),
+                if (_pickedFile != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    AppStrings.tr('tap_to_change_file'),
+                    style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ),
-      ),
+        if (hasError)
+          Padding(
+            padding: const EdgeInsets.only(top: 8, left: 12),
+            child: Text(
+              AppStrings.tr('validation_upload_medical_document'),
+              style: TextStyle(color: Colors.red.shade700, fontSize: 12),
+            ),
+          ),
+      ],
     ).animate().scale(delay: 400.ms);
   }
 
@@ -422,7 +503,7 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
         ],
       ),
       child: ElevatedButton(
-        onPressed: () {},
+        onPressed: _submitRequest,
         style: ElevatedButton.styleFrom(
           backgroundColor: Theme.of(context).colorScheme.primary,
           shape: RoundedRectangleBorder(
@@ -466,6 +547,7 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
   Widget _buildTextField({
     required BuildContext context,
     required String hint,
+    required TextEditingController controller,
     IconData? icon,
   }) {
     return Theme(
@@ -478,7 +560,17 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
           ).colorScheme.primary).withValues(alpha: 0.2),
         ),
       ),
-      child: TextField(
+      child: TextFormField(
+        controller: controller,
+        validator: (value) {
+          if (value == null || value.trim().isEmpty) {
+            return AppStrings.tr('validation_reason_required_sickness');
+          }
+          if (value.trim().length < 5) {
+            return AppStrings.tr('validation_reason_min_chars');
+          }
+          return null;
+        },
         decoration: InputDecoration(
           hintText: hint,
           prefixIcon: Icon(icon, size: 20, color: Colors.grey),

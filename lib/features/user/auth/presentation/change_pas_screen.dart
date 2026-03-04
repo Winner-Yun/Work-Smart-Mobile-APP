@@ -5,24 +5,31 @@ import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_img.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 
-class ResetPasswordScreen extends StatefulWidget {
+class ChangePasswordScreen extends StatefulWidget {
   final bool isFromProfile;
 
-  const ResetPasswordScreen({super.key, this.isFromProfile = false});
+  const ChangePasswordScreen({super.key, this.isFromProfile = false});
 
   @override
-  State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
+  State<ChangePasswordScreen> createState() => _ChangePasswordScreenState();
 }
 
-class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
+class ResetPasswordScreen extends ChangePasswordScreen {
+  const ResetPasswordScreen({super.key, super.isFromProfile});
+}
+
+class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _oldPassController = TextEditingController();
   final _passController = TextEditingController();
   final _confirmPassController = TextEditingController();
+  bool _obscureOld = true;
   bool _obscurePass = true;
   bool _obscureConfirm = true;
 
   @override
   void dispose() {
+    _oldPassController.dispose();
     _passController.dispose();
     _confirmPassController.dispose();
     super.dispose();
@@ -156,7 +163,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                AppStrings.tr('reset_password_title'),
+                widget.isFromProfile
+                    ? AppStrings.tr('change_password_action')
+                    : AppStrings.tr('reset_password_title'),
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 32,
@@ -196,10 +205,22 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           key: _formKey,
           child: Column(
             children: [
+              if (widget.isFromProfile) ...[
+                _buildThemedPasswordField(
+                  _oldPassController,
+                  AppStrings.tr('old_password_label'),
+                  AppStrings.tr('old_password_hint'),
+                  Icons.lock_outline_rounded,
+                  _obscureOld,
+                  () => setState(() => _obscureOld = !_obscureOld),
+                ),
+                const SizedBox(height: 25),
+              ],
               _buildThemedPasswordField(
                 _passController,
                 AppStrings.tr('new_password_label'),
                 AppStrings.tr('new_password_hint'),
+                Icons.lock_reset_rounded,
                 _obscurePass,
                 () => setState(() => _obscurePass = !_obscurePass),
               ),
@@ -208,28 +229,21 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 _confirmPassController,
                 AppStrings.tr('confirm_password_label'),
                 AppStrings.tr('confirm_password_hint'),
+                Icons.verified_user_outlined,
                 _obscureConfirm,
                 () => setState(() => _obscureConfirm = !_obscureConfirm),
                 isConfirm: true,
               ),
-              if (widget.isFromProfile) ...[
+              if (widget.isFromProfile)
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () {
                       Navigator.pushNamed(context, AppRoute.forgotpassScreen);
                     },
-                    child: Text(
-                      AppStrings.tr('forgot_password'),
-                      style: TextStyle(
-                        color: theme.colorScheme.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    child: Text(AppStrings.tr('forgot_password')),
                   ),
                 ),
-              ] else
-                const SizedBox(height: 20),
               const SizedBox(height: 20),
               _buildSubmitButton(),
             ],
@@ -243,6 +257,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     TextEditingController ctrl,
     String label,
     String hint,
+    IconData prefixIcon,
     bool obscure,
     VoidCallback toggle, {
     bool isConfirm = false,
@@ -280,10 +295,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             },
             decoration: InputDecoration(
               hintText: hint,
-              prefixIcon: Icon(
-                Icons.lock_reset_rounded,
-                color: theme.colorScheme.primary,
-              ),
+              prefixIcon: Icon(prefixIcon, color: theme.colorScheme.primary),
               suffixIcon: IconButton(
                 icon: Icon(
                   obscure

@@ -225,7 +225,7 @@ class _MapPickerDialogState extends State<MapPickerDialog> {
                                           ),
                                           const SizedBox(height: 8),
                                           Text(
-                                            AppStrings.tr('no_results_found'),
+                                            AppStrings.tr('no_search_results'),
                                             style: TextStyle(
                                               color: theme.hintColor,
                                             ),

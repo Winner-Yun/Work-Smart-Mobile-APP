@@ -19,6 +19,7 @@ List<LeaveRequest> _getLeaveRequestsFromMockData() {
             startDate: record['start_date'] as String,
             endDate: record['end_date'] as String,
             reason: record['reason'] as String,
+            attachmentUrl: record['attachment_url'] as String?,
             status: record['status'] as String,
           ),
         );
@@ -44,6 +45,8 @@ class LeaveRequestsController extends ChangeNotifier {
   late final List<LeaveRequest> _allRequests;
   late List<LeaveRequest> _filteredRequests;
   String _searchQuery = '';
+  String _leaveTypeFilter = 'all';
+  String _statusFilter = 'all';
   DateTime? _startDate;
   DateTime? _endDate;
   bool _isLoading = false;
@@ -55,6 +58,8 @@ class LeaveRequestsController extends ChangeNotifier {
 
   List<LeaveRequest> get filteredRequests => _filteredRequests;
   String get searchQuery => _searchQuery;
+  String get leaveTypeFilter => _leaveTypeFilter;
+  String get statusFilter => _statusFilter;
   DateTime? get startDate => _startDate;
   DateTime? get endDate => _endDate;
   bool get isLoading => _isLoading;
@@ -66,6 +71,18 @@ class LeaveRequestsController extends ChangeNotifier {
 
   void filterRequests(String query) {
     _searchQuery = query.toLowerCase();
+    _applyFilters();
+    notifyListeners();
+  }
+
+  void setLeaveTypeFilter(String value) {
+    _leaveTypeFilter = value;
+    _applyFilters();
+    notifyListeners();
+  }
+
+  void setStatusFilter(String value) {
+    _statusFilter = value;
     _applyFilters();
     notifyListeners();
   }
@@ -94,11 +111,25 @@ class LeaveRequestsController extends ChangeNotifier {
       bool textMatch =
           _searchQuery.isEmpty ||
           request.employeeName.toLowerCase().contains(_searchQuery) ||
-          request.employeeId.toLowerCase().contains(_searchQuery) ||
-          request.leaveType.toLowerCase().contains(_searchQuery) ||
-          request.reason.toLowerCase().contains(_searchQuery);
+          request.employeeId.toLowerCase().contains(_searchQuery);
 
       if (!textMatch) return false;
+
+      final normalizedLeaveType = request.leaveType.toLowerCase();
+      final leaveTypeMatches =
+          _leaveTypeFilter == 'all' ||
+          (_leaveTypeFilter == 'sick' &&
+              normalizedLeaveType.contains('sick')) ||
+          (_leaveTypeFilter == 'annual' &&
+              normalizedLeaveType.contains('annual'));
+
+      if (!leaveTypeMatches) return false;
+
+      final statusMatches =
+          _statusFilter == 'all' ||
+          request.status.toLowerCase() == _statusFilter;
+
+      if (!statusMatches) return false;
 
       // Date range filter
       if (_startDate != null || _endDate != null) {
@@ -138,14 +169,10 @@ class LeaveRequestsController extends ChangeNotifier {
         startDate: oldRequest.startDate,
         endDate: oldRequest.endDate,
         reason: oldRequest.reason,
+        attachmentUrl: oldRequest.attachmentUrl,
         status: newStatus,
       );
-      // Reapply filter if search is active
-      if (_searchQuery.isNotEmpty) {
-        filterRequests(_searchQuery);
-      } else {
-        _filteredRequests = List.from(_allRequests);
-      }
+      _applyFilters();
       notifyListeners();
     }
   }

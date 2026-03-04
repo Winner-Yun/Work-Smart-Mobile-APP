@@ -99,11 +99,6 @@ List<AttendanceRowData> buildAttendanceRows({
       ? _attendanceRecords.where((r) => r.date == todayKey).toList()
       : _attendanceRecords;
 
-  final checkInStart = _officeConfig.policy.checkInStart.isNotEmpty
-      ? _officeConfig.policy.checkInStart
-      : '08:00 AM';
-  final bufferMinutes = _officeConfig.policy.lateBufferMinutes;
-
   final rows = <AttendanceRowData>[];
   for (final record in records) {
     if (rows.length >= limit) break;
@@ -111,17 +106,7 @@ List<AttendanceRowData> buildAttendanceRows({
     final user = _usersById[record.uid];
     final isLate = record.status == 'late';
 
-    String timeStatus = 'ON TIME';
-    if (isLate) {
-      final lateMinutes = _calculateLateMinutes(
-        checkInStart,
-        record.checkIn,
-        bufferMinutes,
-      );
-      timeStatus = (lateMinutes != null && lateMinutes > 0)
-          ? 'LATE (${lateMinutes}M)'
-          : 'LATE';
-    }
+    final String timeStatus = isLate ? 'LATE' : 'ON TIME';
 
     rows.add(
       AttendanceRowData(
@@ -169,27 +154,4 @@ String _formatDateKey(DateTime date) {
   final m = date.month.toString().padLeft(2, '0');
   final d = date.day.toString().padLeft(2, '0');
   return '$y-$m-$d';
-}
-
-int? _calculateLateMinutes(String start, String checkIn, int buffer) {
-  final s = _minutesFromTime(start);
-  final c = _minutesFromTime(checkIn);
-  if (s == null || c == null) return null;
-  final diff = c - (s + buffer);
-  return diff > 0 ? diff : 0;
-}
-
-int? _minutesFromTime(String time) {
-  final parts = time.trim().split(' ');
-  if (parts.length < 2) return null;
-  final hm = parts[0].split(':');
-  if (hm.length != 2) return null;
-
-  int h = int.tryParse(hm[0]) ?? 0;
-  final m = int.tryParse(hm[1]) ?? 0;
-
-  if (parts[1].toUpperCase() == 'PM' && h != 12) h += 12;
-  if (parts[1].toUpperCase() == 'AM' && h == 12) h = 0;
-
-  return (h * 60) + m;
 }

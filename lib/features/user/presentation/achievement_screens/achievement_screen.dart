@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/logic/achievement_logic.dart';
+import 'package:flutter_worksmart_mobile_app/shared/widget/common/app_profile_avatar.dart';
 
 class AchievementScreen extends StatefulWidget {
   final Map<String, dynamic>? loginData;
@@ -73,9 +74,12 @@ class _AchievementScreenState extends AchievementLogic {
                   colors: [AppColors.secondary, Colors.orange],
                 ),
               ),
-              child: CircleAvatar(
+              child: AppProfileAvatar(
+                displayName: (profileData['name'] ?? '').toString(),
+                imageUrl: (profileData['profileUrl'] ?? '').toString(),
                 radius: 50,
-                backgroundImage: NetworkImage(profileData['profileUrl']),
+                backgroundColor: Theme.of(context).cardTheme.color,
+                textColor: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             CircleAvatar(

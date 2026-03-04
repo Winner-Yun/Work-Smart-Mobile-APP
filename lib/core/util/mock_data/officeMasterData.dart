@@ -4,8 +4,8 @@ final Map<String, dynamic> officeMasterData = {
   "group_name": "Mobile Development Unit",
 
   "geofence": {
-    "center": {"lat": 11.555954256232559, "lng": 104.91640727951253},
-    "radius_meters": 500,
+    "center": {"lat": 11.572414392120761, "lng": 104.89332697012317},
+    "radius_meters": 50,
     "address_label": "Phnom Penh, Cambodia",
   },
 

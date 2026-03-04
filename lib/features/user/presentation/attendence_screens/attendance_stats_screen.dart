@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
+import 'package:flutter_worksmart_mobile_app/core/constants/app_img.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/logic/attendance_stats_logic.dart';
+import 'package:flutter_worksmart_mobile_app/shared/widget/user/data_empty_state.dart';
 
 class AttendanceStatsScreen extends StatefulWidget {
   final Map<String, dynamic>? loginData;
@@ -280,15 +282,9 @@ class _AttendanceStatsScreenState extends AttendanceStatsLogic {
               color: Theme.of(context).cardTheme.color,
               borderRadius: BorderRadius.circular(20),
             ),
-            child: Row(
-              children: [
-                const Icon(Icons.info_outline, color: AppColors.textGrey),
-                const SizedBox(width: 10),
-                Text(
-                  AppStrings.tr('no_records'),
-                  style: const TextStyle(color: AppColors.textGrey),
-                ),
-              ],
+            child: DataEmptyState(
+              imageAsset: AppImg.emptyState,
+              message: AppStrings.tr('no_records'),
             ),
           )
         : SizedBox(

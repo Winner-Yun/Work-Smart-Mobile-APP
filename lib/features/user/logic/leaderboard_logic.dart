@@ -6,12 +6,14 @@ import 'package:flutter_worksmart_mobile_app/shared/model/user_model/user_profil
 abstract class LeaderboardLogic extends State<LeaderboardScreen> {
   late List<UserProfile> allEmployees;
   late String? loggedInUserId;
+  late String? loggedInUsername;
   bool isMonthly = true;
 
   @override
   void initState() {
     super.initState();
     loggedInUserId = widget.loginData?['uid'];
+    loggedInUsername = widget.loginData?['username']?.toString();
     _loadData();
   }
 
@@ -35,6 +37,12 @@ abstract class LeaderboardLogic extends State<LeaderboardScreen> {
     return List.generate(sortedEmployees.length, (index) {
       final user = sortedEmployees[index];
       final rank = index + 1;
+      final normalizedLoginName = loggedInUsername?.trim().toLowerCase();
+      final normalizedDisplayName = user.displayName.trim().toLowerCase();
+      final isCurrentUser =
+          (loggedInUserId?.isNotEmpty == true && user.uid == loggedInUserId) ||
+          (normalizedLoginName?.isNotEmpty == true &&
+              normalizedDisplayName == normalizedLoginName);
 
       // Determine trend (optional - can be extended with historical data if available)
       int trend = user.achievements.rankTrend;
@@ -43,9 +51,11 @@ abstract class LeaderboardLogic extends State<LeaderboardScreen> {
         "rank": rank,
         "name": user.displayName,
         "dept": user.departmentId,
+        "role_title": user.roleTitle,
         "score": user.achievements.performanceScore,
         "trend": trend,
         "img": user.profileUrl,
+        "isCurrentUser": isCurrentUser,
       };
     });
   }

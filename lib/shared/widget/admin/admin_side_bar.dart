@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_worksmart_mobile_app/app/routes/app_admin_route.dart';
 import 'package:flutter_worksmart_mobile_app/config/theme_manager.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_img.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
@@ -11,6 +12,7 @@ class AdminSideBar extends StatelessWidget {
       leaderboardSelected,
       leaverequestsSelected,
       analyticsSelected,
+      faceReviewSelected,
       settingsSelected;
   final VoidCallback? onDashboardTap,
       onStaffTap,
@@ -18,6 +20,7 @@ class AdminSideBar extends StatelessWidget {
       onLeaderboardTap,
       onLeaveRequestsTap,
       onAnalyticsTap,
+      onFaceReviewTap,
       onSettingsTap;
 
   const AdminSideBar({
@@ -29,6 +32,7 @@ class AdminSideBar extends StatelessWidget {
     this.leaderboardSelected = false,
     this.leaverequestsSelected = false,
     this.analyticsSelected = false,
+    this.faceReviewSelected = false,
     this.settingsSelected = false,
     this.onDashboardTap,
     this.onStaffTap,
@@ -36,6 +40,7 @@ class AdminSideBar extends StatelessWidget {
     this.onLeaderboardTap,
     this.onLeaveRequestsTap,
     this.onAnalyticsTap,
+    this.onFaceReviewTap,
     this.onSettingsTap,
   });
 
@@ -82,7 +87,7 @@ class AdminSideBar extends StatelessWidget {
           _buildNavItem(
             context,
             Icons.dashboard_rounded,
-            AppStrings.tr('dashboard'),
+            AppStrings.tr('admin_homepage'),
             dashboardSelected,
             onDashboardTap,
           ),
@@ -92,6 +97,14 @@ class AdminSideBar extends StatelessWidget {
             AppStrings.tr('staff_management'),
             staffSelected,
             onStaffTap,
+          ),
+          _buildNavItem(
+            context,
+            Icons.verified_user_rounded,
+            AppStrings.tr('face_review_menu'),
+            faceReviewSelected,
+            onFaceReviewTap,
+            fallbackRouteName: AppAdminRoute.manualFaceReview,
           ),
           _buildNavItem(
             context,
@@ -138,13 +151,19 @@ class AdminSideBar extends StatelessWidget {
     IconData icon,
     String label,
     bool isActive,
-    VoidCallback? onTap,
-  ) {
+    VoidCallback? onTap, {
+    String? fallbackRouteName,
+  }) {
     final theme = Theme.of(context);
     final color = isActive ? theme.colorScheme.primary : Colors.transparent;
     final textColor = isActive
         ? theme.colorScheme.onPrimary
         : theme.colorScheme.onSurface.withOpacity(0.6);
+    final resolvedOnTap =
+        onTap ??
+        (fallbackRouteName == null
+            ? null
+            : () => Navigator.of(context).pushNamed(fallbackRouteName));
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -155,7 +174,7 @@ class AdminSideBar extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: onTap,
+          onTap: resolvedOnTap,
           borderRadius: BorderRadius.circular(12),
           hoverColor: isActive
               ? theme.colorScheme.primary.withOpacity(0.8)

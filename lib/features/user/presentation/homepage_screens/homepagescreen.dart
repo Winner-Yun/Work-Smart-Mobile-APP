@@ -5,6 +5,7 @@ import 'package:flutter_worksmart_mobile_app/core/constants/app_img.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/logic/homepage_logic.dart';
+import 'package:flutter_worksmart_mobile_app/shared/widget/common/app_profile_avatar.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class HomePageScreen extends StatefulWidget {
@@ -481,11 +482,12 @@ class _HomePageScreenState extends HomePageLogic {
             onTap: widget.onProfileTap,
             child: Stack(
               children: [
-                CircleAvatar(
+                AppProfileAvatar(
+                  displayName: currentUserDisplayName,
+                  imageUrl: currentUser.profileUrl,
                   radius: 20,
-                  backgroundColor: Colors.grey,
-                  // Use dynamic profile URL
-                  backgroundImage: NetworkImage(currentUser.profileUrl),
+                  backgroundColor: Colors.grey.shade300,
+                  textColor: Theme.of(context).colorScheme.onSurface,
                 ),
                 Positioned(
                   right: 0,
@@ -514,7 +516,7 @@ class _HomePageScreenState extends HomePageLogic {
                 ),
                 // Dynamic User Name
                 Text(
-                  "${AppStrings.tr(currentUser.gender == 'male' ? 'greet_pronoun_man' : 'greet_pronoun_woman')} ${currentUser.displayName}",
+                  "${AppStrings.tr(currentUser.gender == 'male' ? 'greet_pronoun_man' : 'greet_pronoun_woman')} $currentUserDisplayName",
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.primary,
                     fontSize: 18,
@@ -572,7 +574,6 @@ class _HomePageScreenState extends HomePageLogic {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // Using real date from attendance record or defaulting to today
         Text(
           currentAttendance['date'] ?? AppStrings.tr('mock_date'),
           style: const TextStyle(color: AppColors.textGrey, fontSize: 14),
@@ -844,8 +845,11 @@ class _HomePageScreenState extends HomePageLogic {
           ),
         ),
         TextButton(
-          onPressed: () =>
-              Navigator.pushNamed(context, AppRoute.leaderboardScreen),
+          onPressed: () => Navigator.pushNamed(
+            context,
+            AppRoute.leaderboardScreen,
+            arguments: widget.loginData,
+          ),
           child: Text(
             AppStrings.tr('view_all'),
             style: TextStyle(color: Theme.of(context).colorScheme.primary),
@@ -856,9 +860,10 @@ class _HomePageScreenState extends HomePageLogic {
   }
 
   Widget _buildEmployeeList(BuildContext context) {
-    // Access data via Getter from Logic
     return Column(
-      children: employeeListDisplayData.asMap().entries.map((entry) {
+      children: employeeListDisplayData.take(5).toList().asMap().entries.map((
+        entry,
+      ) {
         return GestureDetector(
           onTap: () => Navigator.pushNamed(
             context,
@@ -869,9 +874,7 @@ class _HomePageScreenState extends HomePageLogic {
               _buildEmployeeRow(
                     context,
                     entry.value['name'],
-                    AppStrings.tr(
-                      entry.value['role'],
-                    ), // Assuming roles are keys
+                    AppStrings.tr(entry.value['role']),
                     entry.value['score'],
                     entry.value['imgUrl'],
                     entry.value['isTop'],
@@ -943,7 +946,6 @@ class _HomePageScreenState extends HomePageLogic {
                     AppRoute.registerFace,
                   );
                   if (result != null) {
-                    // Call handler to update face status: pending -> approved after 5 seconds
                     handleFaceRegistrationComplete();
                   }
                 },
@@ -1031,9 +1033,12 @@ class _HomePageScreenState extends HomePageLogic {
                       ? Border.all(color: AppColors.secondary, width: 2)
                       : null,
                 ),
-                child: CircleAvatar(
+                child: AppProfileAvatar(
+                  displayName: name,
+                  imageUrl: imgUrl,
                   radius: 24,
-                  backgroundImage: NetworkImage(imgUrl),
+                  backgroundColor: Theme.of(context).cardTheme.color,
+                  textColor: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               if (isTop)

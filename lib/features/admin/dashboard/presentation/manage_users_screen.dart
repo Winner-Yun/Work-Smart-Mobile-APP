@@ -98,7 +98,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                                   ),
                                   const SizedBox(height: 16),
                                   Text(
-                                    'Loading...',
+                                    AppStrings.tr('loading'),
                                     style: TextStyle(
                                       color: Theme.of(
                                         context,
@@ -1718,8 +1718,8 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(28),
               ),
-              title: const Text(
-                'Confirm Deletion',
+              title: Text(
+                AppStrings.tr('confirm_deletion_title'),
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
@@ -1727,7 +1727,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'Are you sure you want to remove this user? This profile and all associated data will be lost.',
+                    AppStrings.tr('delete_user_confirm_message'),
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,
@@ -1777,7 +1777,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                                 ),
                               ),
                               Text(
-                                'ID: ${user.uid}',
+                                '${AppStrings.tr('user_id_label')}: ${user.uid}',
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: Colors.grey[500],
@@ -1805,7 +1805,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                           ),
                         ),
                         child: Text(
-                          'Keep User',
+                          AppStrings.tr('keep_user'),
                           style: TextStyle(color: Colors.grey[600]),
                         ),
                       ),
@@ -1826,8 +1826,8 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: const Text(
-                          'Delete',
+                        child: Text(
+                          AppStrings.tr('delete'),
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ),
@@ -2148,7 +2148,12 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                      'User "${nameController.text}"created successfully',
+                                      AppStrings.tr(
+                                        'user_created_success',
+                                      ).replaceAll(
+                                        '{name}',
+                                        nameController.text,
+                                      ),
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         color: Theme.of(

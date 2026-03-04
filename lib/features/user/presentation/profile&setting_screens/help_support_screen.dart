@@ -184,7 +184,9 @@ class HelpSupportScreen extends StatelessWidget {
       child: Column(
         children: [
           Image.asset(
-            AppImg.appIcon,
+            Theme.of(context).brightness == Brightness.dark
+                ? AppImg.appIconDark
+                : AppImg.appIcon,
             height: 40,
             errorBuilder: (c, e, s) => Icon(
               Icons.business_center,

@@ -70,6 +70,7 @@ class LeaveRequest {
   final String startDate;
   final String endDate;
   final String reason;
+  final String? attachmentUrl;
   final String status; // pending, approved, rejected
 
   LeaveRequest({
@@ -80,6 +81,7 @@ class LeaveRequest {
     required this.startDate,
     required this.endDate,
     required this.reason,
+    this.attachmentUrl,
     required this.status,
   });
 }
@@ -94,6 +96,9 @@ class UserEmployee {
   final String departmentId;
   final String officeId;
   final String profileUrl;
+  final String faceImageUrl;
+  final List<String> faceImageUrls;
+  final int faceCount;
   final String? status;
   final DateTime? joinDate;
   final String? faceStatus;
@@ -108,12 +113,32 @@ class UserEmployee {
     required this.departmentId,
     required this.officeId,
     required this.profileUrl,
+    this.faceImageUrl = '',
+    this.faceImageUrls = const [],
+    this.faceCount = 0,
     this.status = 'active',
     this.joinDate,
     this.faceStatus,
   });
 
   factory UserEmployee.fromMap(Map<String, dynamic> map) {
+    final biometrics = (map['biometrics'] as Map<String, dynamic>?) ?? {};
+
+    final dynamic imageListRaw =
+        biometrics['face_image_urls'] ?? biometrics['face_images'];
+    final parsedList = imageListRaw is List
+        ? imageListRaw
+              .whereType<String>()
+              .map((e) => e.trim())
+              .where((e) => e.isNotEmpty)
+              .toList()
+        : <String>[];
+    final singleImage = (biometrics['face_image_url'] as String?)?.trim() ?? '';
+    final mergedFaceImages = {
+      if (singleImage.isNotEmpty) singleImage,
+      ...parsedList,
+    }.toList();
+
     return UserEmployee(
       uid: map['uid'] ?? '',
       displayName: map['display_name'] ?? 'Unknown',
@@ -124,11 +149,14 @@ class UserEmployee {
       departmentId: map['department_id'] ?? '',
       officeId: map['office_id'] ?? '',
       profileUrl: map['profile_url'] ?? '',
+      faceImageUrl: singleImage,
+      faceImageUrls: mergedFaceImages,
+      faceCount: biometrics['face_count'] ?? mergedFaceImages.length,
       status: map['status'] ?? 'active',
       joinDate: map['join_date'] != null
           ? DateTime.parse(map['join_date'])
           : null,
-      faceStatus: map['biometrics']?['face_status'] ?? 'pending',
+      faceStatus: biometrics['face_status'] ?? 'pending',
     );
   }
 }

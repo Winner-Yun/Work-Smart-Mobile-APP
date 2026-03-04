@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
+import 'package:flutter_worksmart_mobile_app/shared/widget/user/data_empty_state.dart';
 
 class NotificationScreen extends StatefulWidget {
   final Map<String, dynamic>? loginData;
@@ -299,22 +300,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.notifications_off_outlined,
-            size: 80,
-            color: Colors.grey[300],
-          ),
-          const SizedBox(height: 15),
-          Text(
-            AppStrings.tr('no_notif'),
-            style: const TextStyle(color: AppColors.textGrey),
-          ),
-        ],
-      ),
+    return DataEmptyState(
+      icon: Icons.notifications_off_outlined,
+      iconColor: Colors.grey[300],
+      spacing: 15,
+      message: AppStrings.tr('no_notif'),
+      textStyle: const TextStyle(color: AppColors.textGrey),
     );
   }
 }

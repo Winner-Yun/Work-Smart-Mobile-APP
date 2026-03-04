@@ -5,6 +5,8 @@ import 'package:flutter_worksmart_mobile_app/core/constants/app_img.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/logic/leaderboard_logic.dart';
+import 'package:flutter_worksmart_mobile_app/shared/widget/common/app_profile_avatar.dart';
+import 'package:flutter_worksmart_mobile_app/shared/widget/user/data_empty_state.dart';
 
 class LeaderboardScreen extends StatefulWidget {
   final Map<String, dynamic>? loginData;
@@ -62,8 +64,11 @@ class _LeaderboardScreenState extends LeaderboardLogic {
             color: AppColors.secondary,
             size: 28,
           ),
-          onPressed: () =>
-              Navigator.pushNamed(context, AppRoute.achievementScreen),
+          onPressed: () => Navigator.pushNamed(
+            context,
+            AppRoute.achievementScreen,
+            arguments: widget.loginData,
+          ),
         ),
         const SizedBox(width: 8),
       ],
@@ -112,14 +117,21 @@ class _LeaderboardScreenState extends LeaderboardLogic {
                 child: _buildListHeader(),
               ),
               Expanded(
-                child: ListView.builder(
-                  controller: scrollController,
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                  itemCount: nextRankings.length,
-                  itemBuilder: (context, index) {
-                    return _buildRankItem(nextRankings[index], index);
-                  },
-                ),
+                child: nextRankings.isEmpty
+                    ? DataEmptyState(
+                        icon: Icons.leaderboard_outlined,
+                        message: AppStrings.tr('no_records'),
+                        iconColor: Theme.of(context).dividerColor,
+                        spacing: 14,
+                      )
+                    : ListView.builder(
+                        controller: scrollController,
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                        itemCount: nextRankings.length,
+                        itemBuilder: (context, index) {
+                          return _buildRankItem(nextRankings[index], index);
+                        },
+                      ),
               ),
             ],
           ),
@@ -225,6 +237,7 @@ class _LeaderboardScreenState extends LeaderboardLogic {
     required Duration delay,
   }) {
     int rank = emp['rank'];
+    final bool isCurrentUser = emp['isCurrentUser'] == true;
     return Column(
       children: [
         if (hasCrown)
@@ -241,10 +254,12 @@ class _LeaderboardScreenState extends LeaderboardLogic {
                 shape: BoxShape.circle,
                 border: Border.all(color: color, width: 3),
               ),
-              child: CircleAvatar(
+              child: AppProfileAvatar(
+                displayName: (emp['name'] ?? '').toString(),
+                imageUrl: (emp['img'] ?? '').toString(),
                 radius: rank == 1 ? 40 : 32,
                 backgroundColor: Theme.of(context).cardTheme.color,
-                backgroundImage: NetworkImage(emp['img']),
+                textColor: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             Container(
@@ -269,8 +284,26 @@ class _LeaderboardScreenState extends LeaderboardLogic {
           emp['name'],
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
         ),
+        if (isCurrentUser) ...[
+          const SizedBox(height: 4),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              AppStrings.tr('you_label'),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.primary,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
         Text(
-          "${emp['score']}%",
+          "${emp['score']} ${AppStrings.tr('points_label')}",
           style: TextStyle(
             color: Theme.of(context).colorScheme.primary,
             fontWeight: FontWeight.bold,
@@ -322,9 +355,7 @@ class _LeaderboardScreenState extends LeaderboardLogic {
 
   Widget _buildRankItem(Map<String, dynamic> emp, int index) {
     int trend = emp['trend'];
-    String deptKey = emp['dept'] == 'km_it'
-        ? 'it_department'
-        : (emp['dept'] == 'km_acc' ? 'acc_department' : 'admin_department');
+    final bool isCurrentUser = emp['isCurrentUser'] == true;
 
     return Container(
           margin: const EdgeInsets.only(bottom: 12),
@@ -332,6 +363,12 @@ class _LeaderboardScreenState extends LeaderboardLogic {
           decoration: BoxDecoration(
             color: Theme.of(context).scaffoldBackgroundColor,
             borderRadius: BorderRadius.circular(20),
+            border: isCurrentUser
+                ? Border.all(
+                    color: Theme.of(context).colorScheme.primary,
+                    width: 1.5,
+                  )
+                : null,
           ),
           child: Row(
             children: [
@@ -345,9 +382,12 @@ class _LeaderboardScreenState extends LeaderboardLogic {
                   ),
                 ),
               ),
-              CircleAvatar(
+              AppProfileAvatar(
+                displayName: (emp['name'] ?? '').toString(),
+                imageUrl: (emp['img'] ?? '').toString(),
                 radius: 20,
-                backgroundImage: NetworkImage(emp['img']),
+                backgroundColor: Theme.of(context).cardTheme.color,
+                textColor: Theme.of(context).colorScheme.onSurface,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -355,18 +395,47 @@ class _LeaderboardScreenState extends LeaderboardLogic {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      emp['name'],
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            emp['name'],
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                        if (isCurrentUser) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.primary.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              AppStrings.tr('you_label'),
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      AppStrings.tr(deptKey),
+                      (emp['role_title'] ?? '').toString(),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -383,11 +452,11 @@ class _LeaderboardScreenState extends LeaderboardLogic {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    "${emp['score']}%",
+                    "${emp['score']} ${AppStrings.tr('points_label')}",
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).colorScheme.primary,
-                      fontSize: 14,
+                      fontSize: 12,
                     ),
                   ),
                   if (trend > 0)

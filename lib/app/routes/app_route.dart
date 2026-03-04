@@ -24,8 +24,6 @@ import 'app_admin_route.dart';
 /// AppRoute: Central routing configuration
 ///
 class AppRoute {
-  static const String adminTutorial = AppAdminRoute.adminTutorial;
-
   static const String tutorial = '/tutorial';
   static const String authScreen = '/auth';
   static const String appmain = '/appmain';

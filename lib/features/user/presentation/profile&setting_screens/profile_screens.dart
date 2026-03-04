@@ -10,6 +10,7 @@ import 'package:flutter_worksmart_mobile_app/core/util/mock_data/userFinalData.d
 import 'package:flutter_worksmart_mobile_app/features/user/auth/presentation/change_pas_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/presentation/profile&setting_screens/setting_screen.dart';
 import 'package:flutter_worksmart_mobile_app/shared/model/user_model/user_profile.dart';
+import 'package:flutter_worksmart_mobile_app/shared/widget/common/app_profile_avatar.dart';
 import 'package:image_picker/image_picker.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -241,20 +242,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ],
               color: AppColors.textGrey.withValues(alpha: 0.3),
             ),
-            child: ClipOval(
-              child: _image != null
-                  ? Image.file(_image!, fit: BoxFit.cover)
-                  : (_currentUser.profileUrl.isNotEmpty
-                        ? Image.network(
-                            _currentUser.profileUrl,
-                            fit: BoxFit.cover,
-                          )
-                        : const Icon(
-                            Icons.person,
-                            size: 80,
-                            color: Colors.white,
-                          )),
-            ),
+            child: _image != null
+                ? ClipOval(child: Image.file(_image!, fit: BoxFit.cover))
+                : AppProfileAvatar(
+                    displayName: _currentUser.displayName,
+                    imageUrl: _currentUser.profileUrl,
+                    radius: 60,
+                    backgroundColor: Theme.of(context).colorScheme.surface,
+                    textColor: Theme.of(context).colorScheme.primary,
+                    fontSize: 28,
+                  ),
           ),
           GestureDetector(
             onTap: () => _showPickerOptions(context),

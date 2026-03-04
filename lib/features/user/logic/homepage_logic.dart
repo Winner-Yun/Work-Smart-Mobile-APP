@@ -65,11 +65,9 @@ abstract class HomePageLogic extends State<HomePageScreen> {
   @override
   void initState() {
     super.initState();
-    // Get logged-in user ID from login data
     loggedInUserId = widget.loginData?['uid'];
     _loadData();
 
-    // Initialize services
     initLocationTracking();
     setupOfficeMapObjects();
     generateProfileMarker();
@@ -96,9 +94,57 @@ abstract class HomePageLogic extends State<HomePageScreen> {
     final policy = officeMasterData['policy'] ?? {};
     officeCheckInTime = policy['check_in_start'] ?? '08:00 AM';
     officeCheckOutTime = policy['check_out_end'] ?? '05:00 PM';
+
+    _syncScanStateFromAttendanceData();
+  }
+
+  void _syncScanStateFromAttendanceData() {
+    final bool checkInDone = _isTypeCompleted('check_in');
+    final bool checkOutDone = _isTypeCompleted('check_out');
+
+    if (checkInDone && !checkOutDone) {
+      selectedAttendanceScanType = 'check_out';
+      hasMockScanSuccess = false;
+      lastMockScanAt = null;
+      return;
+    }
+
+    if (checkOutDone) {
+      selectedAttendanceScanType = 'check_out';
+      hasMockScanSuccess = true;
+      lastMockScanType = 'check_out';
+      lastMockScanAt = _parse12hTime(currentAttendance['check_out'] as String);
+      return;
+    }
+
+    if (checkInDone) {
+      selectedAttendanceScanType = 'check_in';
+      hasMockScanSuccess = true;
+      lastMockScanType = 'check_in';
+      lastMockScanAt = _parse12hTime(currentAttendance['check_in'] as String);
+      return;
+    }
+
+    selectedAttendanceScanType = 'check_in';
+    hasMockScanSuccess = false;
+    lastMockScanAt = null;
   }
 
   // --- Getters for UI Consumption ---
+
+  String _getDisplayLastName(String? fullName) {
+    if (fullName == null) return '';
+    final parts = fullName
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((part) => part.isNotEmpty)
+        .toList();
+    if (parts.isEmpty) return '';
+    return parts.last;
+  }
+
+  String get currentUserDisplayName =>
+      _getDisplayLastName(currentUser.displayName);
 
   List<Map<String, dynamic>> get employeeListDisplayData {
     final sortedEmployees = List<UserProfile>.from(allEmployees)
@@ -113,7 +159,7 @@ abstract class HomePageLogic extends State<HomePageScreen> {
       final rank = index + 1;
 
       return {
-        "name": user.displayName,
+        "name": _getDisplayLastName(user.displayName),
         "role": user.roleTitle,
         "score":
             "${user.achievements.performanceScore} ${AppStrings.tr('points_label')}",
@@ -124,18 +170,14 @@ abstract class HomePageLogic extends State<HomePageScreen> {
   }
 
   // Map Policy limits to UI cards with progress bar for used leaves
-  // inside homepage_logic.dart
 
   List<Map<String, dynamic>> get leaveStatisticsData {
     final policy = officeMasterData['policy'] ?? {};
 
-    // 1. Get Limits from Policy
     final int annualLimit =
         (policy['annual_leave_limit'] as num?)?.toInt() ?? 0;
     final int sickLimit = (policy['sick_leave_limit'] as num?)?.toInt() ?? 0;
 
-    // 2. Calculate "Taken" days from the User's actual records
-    // Filter by type AND status must be 'approved'
     int calculateTaken(String type) {
       return currentUser.leaveRecords
           .where((record) => record.type == type && record.status == 'approved')
@@ -145,7 +187,6 @@ abstract class HomePageLogic extends State<HomePageScreen> {
     final int annualTaken = calculateTaken('annual_leave');
     final int sickTaken = calculateTaken('sick_leave');
 
-    // 3. Calculate Progress (Used / Limit)
     final annualProgress = annualLimit > 0
         ? (annualTaken / annualLimit).clamp(0.0, 1.0)
         : 0.0;
@@ -181,10 +222,6 @@ abstract class HomePageLogic extends State<HomePageScreen> {
     final todayStr =
         "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
 
-    final policy = officeMasterData['policy'] ?? {};
-    final defaultCheckIn = policy['check_in_start'] ?? "08:00 AM";
-    final defaultCheckOut = policy['check_out_end'] ?? "05:00 PM";
-
     try {
       final todayRecord = attendanceRecords.firstWhere(
         (record) =>
@@ -193,8 +230,8 @@ abstract class HomePageLogic extends State<HomePageScreen> {
 
       final Map<String, dynamic> attendance = {
         'date': todayStr,
-        'check_in': todayRecord['check_in'] ?? defaultCheckIn,
-        'check_out': todayRecord['check_out'] ?? defaultCheckOut,
+        'check_in': todayRecord['check_in'] ?? '--:--',
+        'check_out': todayRecord['check_out'] ?? '--:--',
         'total_hours': todayRecord['total_hours'] ?? 0.0,
         'status': todayRecord['status'] ?? 'absent',
       };
@@ -232,7 +269,7 @@ abstract class HomePageLogic extends State<HomePageScreen> {
   void selectAttendanceScanType(String type) {
     if (type != 'check_in' && type != 'check_out') return;
 
-    if (type == 'check_out' && !(attendanceScanStatus['check_in'] ?? false)) {
+    if (type == 'check_out' && !_isTypeCompleted('check_in')) {
       showDialog<void>(
         context: context,
         builder: (dialogContext) => AlertDialog(
@@ -281,7 +318,7 @@ abstract class HomePageLogic extends State<HomePageScreen> {
     if (mounted) {
       setState(() {
         selectedAttendanceScanType = type;
-        final bool alreadyScanned = attendanceScanStatus[type] ?? false;
+        final bool alreadyScanned = _isTypeCompleted(type);
         if (alreadyScanned) {
           hasMockScanSuccess = true;
           lastMockScanType = type;
@@ -295,7 +332,7 @@ abstract class HomePageLogic extends State<HomePageScreen> {
   }
 
   bool get isSelectedScanCompleted =>
-      attendanceScanStatus[selectedAttendanceScanType] ?? false;
+      _isTypeCompleted(selectedAttendanceScanType);
 
   bool get isScanCooldownActive =>
       selectedAttendanceScanType == 'check_out' && checkOutCooldownSeconds > 0;
@@ -312,10 +349,23 @@ abstract class HomePageLogic extends State<HomePageScreen> {
   String get selectedAttendanceActionText => isScanCooldownActive
       ? '${AppStrings.tr('wait')} ${_formatCooldownDuration(checkOutCooldownSeconds)}'
       : isSelectedScanCompleted
-      ? '$selectedAttendanceScanLabel Scanned'
+      ? '$selectedAttendanceScanLabel ${AppStrings.tr('scan_success')}'
       : selectedAttendanceScanType == 'check_in'
       ? '${AppStrings.tr('ready_to_scan')} ${AppStrings.tr('check_in')}'
       : '${AppStrings.tr('ready_to_scan')} ${AppStrings.tr('check_out')}';
+
+  bool _isTypeCompleted(String type) {
+    final attendance = currentAttendance;
+    final value = type == 'check_in'
+        ? attendance['check_in']
+        : attendance['check_out'];
+
+    if (value == null) return false;
+    if (value is! String) return false;
+
+    final normalized = value.trim();
+    return normalized.isNotEmpty && normalized != '--:--';
+  }
 
   String _formatCooldownDuration(int totalSeconds) {
     final int hours = totalSeconds ~/ 3600;

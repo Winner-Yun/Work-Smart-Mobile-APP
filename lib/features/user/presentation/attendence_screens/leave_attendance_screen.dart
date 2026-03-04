@@ -3,19 +3,11 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/util/mock_data/userFinalData.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/logic/leave_request_logic.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/presentation/attendence_screens/leave_detail_view_screen.dart';
 import 'package:flutter_worksmart_mobile_app/shared/model/activity_models/leave_record.dart';
 import 'package:flutter_worksmart_mobile_app/shared/model/user_model/user_profile.dart';
 import 'package:intl/intl.dart';
-
-void main() {
-  runApp(
-    const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: LeaveAttendanceScreen(),
-    ),
-  );
-}
 
 class LeaveAttendanceScreen extends StatefulWidget {
   final Map<String, dynamic>? loginData;
@@ -38,6 +30,8 @@ class _LeaveAttendanceScreenState extends State<LeaveAttendanceScreen> {
   late int _annualRemaining;
   late int _sickRemaining;
   late Map<String, dynamic>? loginData;
+  String? _selectedForRemoveRequestId;
+  bool _isRemoveMode = false;
 
   final DateFormat _dateFormatter = DateFormat('dd MMM yyyy');
 
@@ -76,17 +70,80 @@ class _LeaveAttendanceScreenState extends State<LeaveAttendanceScreen> {
     );
   }
 
+  void _handleLongPress(LeaveRecord record) {
+    if (!LeaveRequestLogic.canRemoveStatus(record.status)) return;
+    setState(() {
+      final bool isSelectedForRemove =
+          _selectedForRemoveRequestId == record.requestId;
+
+      if (isSelectedForRemove) {
+        _selectedForRemoveRequestId = null;
+        _isRemoveMode = false;
+      } else {
+        _selectedForRemoveRequestId = record.requestId;
+        _isRemoveMode = true;
+      }
+    });
+  }
+
+  Future<void> _handleTap(LeaveRecord record) async {
+    final bool isSelectedForRemove =
+        _selectedForRemoveRequestId == record.requestId;
+
+    if (_isRemoveMode) {
+      if (!LeaveRequestLogic.canRemoveStatus(record.status)) {
+        await LeaveRequestLogic.showRemoveNotAllowedDialog(context);
+        return;
+      }
+      setState(() {
+        if (isSelectedForRemove) {
+          _selectedForRemoveRequestId = null;
+          _isRemoveMode = false;
+        } else {
+          _selectedForRemoveRequestId = record.requestId;
+        }
+      });
+      return;
+    }
+
+    final bool? wasDeleted = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            LeaveDetailViewScreen(leave: record, userId: _currentUser.uid),
+      ),
+    );
+
+    if (wasDeleted == true && mounted) {
+      setState(() {
+        _selectedForRemoveRequestId = null;
+        _isRemoveMode = false;
+        _loadData();
+      });
+    }
+  }
+
+  Future<void> _confirmAndDelete(LeaveRecord record) async {
+    final bool removed = await LeaveRequestLogic.confirmAndDeleteLeave(
+      context,
+      record: record,
+      userId: _currentUser.uid,
+    );
+    if (!removed) return;
+
+    setState(() {
+      _selectedForRemoveRequestId = null;
+      _isRemoveMode = false;
+      _loadData();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _buildAppBar(context),
-      bottomNavigationBar: _buildBottomAction(context).animate().slideY(
-        begin: 1,
-        end: 0,
-        duration: 400.ms,
-        curve: Curves.easeOutQuad,
-      ),
+      bottomNavigationBar: _buildBottomAction(context),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -96,15 +153,12 @@ class _LeaveAttendanceScreenState extends State<LeaveAttendanceScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildSummarySection(context)
-                    .animate()
-                    .fadeIn(duration: 500.ms)
-                    .slideX(begin: -0.1, end: 0),
+                _buildSummarySection(context),
                 const SizedBox(height: 30),
                 _buildListHeader(context),
               ],
             ),
-          ),
+          ).animate().fadeIn(duration: 260.ms).slideY(begin: -0.04, end: 0),
 
           // SCROLLABLE LIST SECTION
           Expanded(
@@ -115,25 +169,25 @@ class _LeaveAttendanceScreenState extends State<LeaveAttendanceScreen> {
               itemBuilder: (context, index) {
                 final record = _history[index];
                 return _buildRequestListItem(
+                      record: record,
                       context: context,
-                      title: _getLeaveTitle(record.type),
+                      title: LeaveRequestLogic.getLeaveTitle(record.type),
                       subtitle: _formatDateRange(record),
-                      status: _getStatusText(record.status),
-                      statusColor: _getStatusColor(record.status),
-                      icon: _getLeaveIcon(record.type),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                LeaveDetailViewScreen(leave: record),
-                          ),
-                        );
+                      status: LeaveRequestLogic.getStatusText(record.status),
+                      statusColor: LeaveRequestLogic.getStatusColor(
+                        record.status,
+                      ),
+                      icon: LeaveRequestLogic.getLeaveIcon(record.type),
+                      onLongPress: () {
+                        _handleLongPress(record);
+                      },
+                      onTap: () async {
+                        await _handleTap(record);
                       },
                     )
                     .animate()
-                    .fadeIn(delay: (100 * index).ms)
-                    .slideY(begin: 0.2, end: 0, curve: Curves.easeOut);
+                    .fadeIn(delay: (index * 45).ms, duration: 220.ms)
+                    .slideX(begin: 0.06, end: 0);
               },
             ),
           ),
@@ -193,7 +247,7 @@ class _LeaveAttendanceScreenState extends State<LeaveAttendanceScreen> {
                 ),
               ],
             ),
-          ).animate().shake(delay: 1.seconds, duration: 500.ms),
+          ),
         ),
       ],
     );
@@ -249,85 +303,90 @@ class _LeaveAttendanceScreenState extends State<LeaveAttendanceScreen> {
           ),
         ),
       ],
-    ).animate().fadeIn(delay: 200.ms);
+    );
   }
 
   // --- 4. Fixed Bottom Action ---
   Widget _buildBottomAction(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 15, 20, 35),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -5),
+          padding: const EdgeInsets.fromLTRB(20, 15, 20, 35),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardTheme.color,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, -5),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: OutlinedButton(
-              onPressed: () {
-                Navigator.pushNamed(
-                  context,
-                  AppRoute.sickleaveScreen,
-                  arguments: loginData,
-                );
-              },
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size(0, 55),
-                side: BorderSide(color: Theme.of(context).colorScheme.primary),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () {
+                    Navigator.pushNamed(
+                      context,
+                      AppRoute.sickleaveScreen,
+                      arguments: loginData,
+                    );
+                  },
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(0, 55),
+                    side: BorderSide(
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                  ),
+                  child: Text(
+                    AppStrings.tr('request_sick_leave'),
+                    maxLines: 1, // Fix: Prevent text wrapping
+                    overflow: TextOverflow.ellipsis, // Fix: Handle overflow
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
-              child: Text(
-                AppStrings.tr('request_sick_leave'),
-                maxLines: 1, // Fix: Prevent text wrapping
-                overflow: TextOverflow.ellipsis, // Fix: Handle overflow
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.bold,
+              const SizedBox(width: 15),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushNamed(
+                      context,
+                      AppRoute.annualleaveScreen,
+                      arguments: loginData,
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    minimumSize: const Size(0, 55),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                  ),
+                  child: Text(
+                    AppStrings.tr('request_annual_leave'),
+                    maxLines: 1, // Fix: Prevent text wrapping
+                    overflow: TextOverflow.ellipsis, // Fix: Handle overflow
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
-          const SizedBox(width: 15),
-          Expanded(
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.pushNamed(
-                  context,
-                  AppRoute.annualleaveScreen,
-                  arguments: loginData,
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                minimumSize: const Size(0, 55),
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-              ),
-              child: Text(
-                AppStrings.tr('request_annual_leave'),
-                maxLines: 1, // Fix: Prevent text wrapping
-                overflow: TextOverflow.ellipsis, // Fix: Handle overflow
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+        )
+        .animate()
+        .fadeIn(delay: 180.ms, duration: 240.ms)
+        .slideY(begin: 0.1, end: 0);
   }
 
   // --- Private Helper Components ---
@@ -398,52 +457,6 @@ class _LeaveAttendanceScreenState extends State<LeaveAttendanceScreen> {
     );
   }
 
-  String _getLeaveTitle(String type) {
-    switch (type) {
-      case 'annual_leave':
-        return AppStrings.tr('annual_leave');
-      case 'sick_leave':
-        return AppStrings.tr('sick_leave');
-      default:
-        return type.replaceAll('_', ' ');
-    }
-  }
-
-  IconData _getLeaveIcon(String type) {
-    switch (type) {
-      case 'annual_leave':
-        return Icons.beach_access_outlined;
-      case 'sick_leave':
-        return Icons.medical_services_outlined;
-      default:
-        return Icons.calendar_today_outlined;
-    }
-  }
-
-  String _getStatusText(String status) {
-    switch (status) {
-      case 'approved':
-        return AppStrings.tr('status_approved');
-      case 'rejected':
-        return AppStrings.tr('status_rejected');
-      case 'pending':
-      default:
-        return AppStrings.tr('status_pending');
-    }
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'approved':
-        return Colors.green;
-      case 'rejected':
-        return Colors.red;
-      case 'pending':
-      default:
-        return Colors.orange;
-    }
-  }
-
   String _formatDateRange(LeaveRecord record) {
     final DateTime startDate = record.startDate;
     final DateTime endDate = record.endDate;
@@ -465,18 +478,25 @@ class _LeaveAttendanceScreenState extends State<LeaveAttendanceScreen> {
   }
 
   Widget _buildRequestListItem({
+    required LeaveRecord record,
     required BuildContext context,
     required String title,
     required String subtitle,
     required String status,
     required Color statusColor,
     required IconData icon,
+    VoidCallback? onLongPress,
     VoidCallback? onTap,
   }) {
+    final bool isRemovable = LeaveRequestLogic.canRemoveStatus(record.status);
+    final bool isSelectedForRemove =
+        isRemovable && _selectedForRemoveRequestId == record.requestId;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
+        onLongPress: onLongPress,
         focusColor: Colors.transparent,
         highlightColor: Colors.transparent,
         splashColor: Colors.transparent,
@@ -487,6 +507,12 @@ class _LeaveAttendanceScreenState extends State<LeaveAttendanceScreen> {
           decoration: BoxDecoration(
             color: Theme.of(context).cardTheme.color,
             borderRadius: BorderRadius.circular(15),
+            border: isSelectedForRemove
+                ? Border.all(
+                    color: Colors.red.withValues(alpha: 0.35),
+                    width: 1,
+                  )
+                : null,
           ),
           child: Row(
             children: [
@@ -521,24 +547,42 @@ class _LeaveAttendanceScreenState extends State<LeaveAttendanceScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  status,
-                  style: TextStyle(
-                    color: statusColor,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+              isSelectedForRemove
+                  ? TextButton.icon(
+                      onPressed: () => _confirmAndDelete(record),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.red,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        minimumSize: const Size(0, 30),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      icon: const Icon(Icons.delete_outline, size: 16),
+                      label: Text(
+                        AppStrings.tr('remove_button'),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    )
+                  : Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: statusColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        status,
+                        style: TextStyle(
+                          color: statusColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
             ],
           ),
         ),

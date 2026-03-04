@@ -9,6 +9,7 @@ import 'package:flutter_worksmart_mobile_app/features/admin/dashboard/logic/mang
 import 'package:flutter_worksmart_mobile_app/shared/model/admin_models/dashboard_model.dart';
 import 'package:flutter_worksmart_mobile_app/shared/widget/admin/admin_header_bar.dart';
 import 'package:flutter_worksmart_mobile_app/shared/widget/admin/admin_side_bar.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class MangeLeaveEmpDashboardScreen extends StatefulWidget {
   const MangeLeaveEmpDashboardScreen({super.key});
@@ -38,6 +39,66 @@ class _MangeLeaveEmpDashboardScreenState
     super.dispose();
   }
 
+  bool _hasAttachment(LeaveRequest request) {
+    final value = request.attachmentUrl?.trim();
+    return value != null && value.isNotEmpty;
+  }
+
+  bool _isSickLeave(LeaveRequest request) {
+    return request.leaveType.toLowerCase().contains('sick');
+  }
+
+  Color _statusFilterColor(String status) {
+    switch (status) {
+      case 'pending':
+        return AppColors.secondary;
+      case 'approved':
+        return AppColors.success;
+      case 'rejected':
+        return AppColors.error;
+      default:
+        return Theme.of(context).colorScheme.outline;
+    }
+  }
+
+  Future<void> _viewAttachment(LeaveRequest request) async {
+    final raw = request.attachmentUrl?.trim();
+    if (raw == null || raw.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('No attachment provided.')));
+      return;
+    }
+
+    final uri = Uri.tryParse(raw);
+    final canOpenExternal =
+        uri != null && (uri.scheme == 'http' || uri.scheme == 'https');
+
+    if (canOpenExternal) {
+      final didLaunch = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+      if (didLaunch || !mounted) return;
+    }
+
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Attachment'),
+        content: SelectableText(raw),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(AppStrings.tr('close')),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -59,9 +120,7 @@ class _MangeLeaveEmpDashboardScreenState
                   child: Stack(
                     children: [
                       Container(
-                        color: Theme.of(
-                          context,
-                        ).scaffoldBackgroundColor, 
+                        color: Theme.of(context).scaffoldBackgroundColor,
                         child: SingleChildScrollView(
                           padding: EdgeInsets.all(isCompact ? 16 : 32),
                           child: Column(
@@ -384,48 +443,243 @@ class _MangeLeaveEmpDashboardScreenState
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             child: Column(
               children: [
-                // Text Search
-                TextField(
-                  controller: _searchController,
-                  onChanged: (value) {
-                    _controller.filterRequests(value);
-                    setState(() {});
-                  },
-                  decoration: InputDecoration(
-                    hintText: AppStrings.tr('search_leave_requests'),
-                    prefixIcon: const Icon(Icons.search_rounded),
-                    suffixIcon: _searchController.text.isNotEmpty
-                        ? MouseRegion(
-                            cursor: SystemMouseCursors.click,
-                            child: IconButton(
-                              icon: const Icon(Icons.close_rounded),
-                              onPressed: () {
-                                _searchController.clear();
-                                _controller.filterRequests('');
-                                setState(() {});
-                              },
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isWide = constraints.maxWidth >= 1000;
+
+                    final searchField = TextField(
+                      controller: _searchController,
+                      onChanged: (value) {
+                        _controller.filterRequests(value);
+                        setState(() {});
+                      },
+                      decoration: InputDecoration(
+                        hintText: AppStrings.tr('search_leave_requests'),
+                        prefixIcon: const Icon(Icons.search_rounded),
+                        suffixIcon: _searchController.text.isNotEmpty
+                            ? MouseRegion(
+                                cursor: SystemMouseCursors.click,
+                                child: IconButton(
+                                  icon: const Icon(Icons.close_rounded),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    _controller.filterRequests('');
+                                    setState(() {});
+                                  },
+                                ),
+                              )
+                            : null,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: Theme.of(
+                              context,
+                            ).dividerColor.withOpacity(0.3),
+                            width: 1.5,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: Theme.of(
+                              context,
+                            ).dividerColor.withOpacity(0.3),
+                            width: 1.5,
+                          ),
+                        ),
+                        filled: true,
+                        fillColor: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withOpacity(0.02),
+                      ),
+                    );
+
+                    final filterControls = Row(
+                      children: [
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            value: _controller.leaveTypeFilter,
+                            decoration: InputDecoration(
+                              labelText: AppStrings.tr('filter_leave_type'),
+                              prefixIcon: Icon(
+                                Icons.filter_alt_rounded,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: Theme.of(
+                                    context,
+                                  ).dividerColor.withOpacity(0.3),
+                                  width: 1.5,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: Theme.of(
+                                    context,
+                                  ).dividerColor.withOpacity(0.3),
+                                  width: 1.5,
+                                ),
+                              ),
+                              filled: true,
+                              fillColor: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withOpacity(0.02),
                             ),
-                          )
-                        : null,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: Theme.of(context).dividerColor.withOpacity(0.3),
-                        width: 1.5,
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: Theme.of(context).dividerColor.withOpacity(0.3),
-                        width: 1.5,
-                      ),
-                    ),
-                    filled: true,
-                    fillColor: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withOpacity(0.02),
-                  ),
+                            items: [
+                              DropdownMenuItem(
+                                value: 'all',
+                                child: Text(AppStrings.tr('all')),
+                              ),
+                              DropdownMenuItem(
+                                value: 'sick',
+                                child: Text(AppStrings.tr('sick_leave')),
+                              ),
+                              DropdownMenuItem(
+                                value: 'annual',
+                                child: Text(AppStrings.tr('annual_leave')),
+                              ),
+                            ],
+                            onChanged: (value) {
+                              if (value == null) return;
+                              _controller.setLeaveTypeFilter(value);
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            value: _controller.statusFilter,
+                            decoration: InputDecoration(
+                              labelText: AppStrings.tr('filter_status'),
+                              prefixIcon: Icon(
+                                Icons.pending_actions_rounded,
+                                color: _statusFilterColor(
+                                  _controller.statusFilter,
+                                ),
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: Theme.of(
+                                    context,
+                                  ).dividerColor.withOpacity(0.3),
+                                  width: 1.5,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: Theme.of(
+                                    context,
+                                  ).dividerColor.withOpacity(0.3),
+                                  width: 1.5,
+                                ),
+                              ),
+                              filled: true,
+                              fillColor: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withOpacity(0.02),
+                            ),
+                            items: [
+                              DropdownMenuItem(
+                                value: 'all',
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 10,
+                                      height: 10,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: _statusFilterColor('all'),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(AppStrings.tr('all')),
+                                  ],
+                                ),
+                              ),
+                              DropdownMenuItem(
+                                value: 'pending',
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 10,
+                                      height: 10,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: _statusFilterColor('pending'),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(AppStrings.tr('status_pending')),
+                                  ],
+                                ),
+                              ),
+                              DropdownMenuItem(
+                                value: 'approved',
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 10,
+                                      height: 10,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: _statusFilterColor('approved'),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(AppStrings.tr('status_approved')),
+                                  ],
+                                ),
+                              ),
+                              DropdownMenuItem(
+                                value: 'rejected',
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 10,
+                                      height: 10,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: _statusFilterColor('rejected'),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(AppStrings.tr('status_rejected')),
+                                  ],
+                                ),
+                              ),
+                            ],
+                            onChanged: (value) {
+                              if (value == null) return;
+                              _controller.setStatusFilter(value);
+                            },
+                          ),
+                        ),
+                      ],
+                    );
+
+                    if (isWide) {
+                      return Row(
+                        children: [
+                          Expanded(flex: 6, child: searchField),
+                          const SizedBox(width: 12),
+                          Expanded(flex: 4, child: filterControls),
+                        ],
+                      );
+                    }
+
+                    return Column(
+                      children: [
+                        searchField,
+                        const SizedBox(height: 12),
+                        filterControls,
+                      ],
+                    );
+                  },
                 ),
                 const SizedBox(height: 16),
 
@@ -783,10 +1037,39 @@ class _MangeLeaveEmpDashboardScreenState
                             ),
                             // Actions
                             SizedBox(
-                              width: 140,
+                              width: 188,
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
+                                  if (_isSickLeave(request) &&
+                                      _hasAttachment(request)) ...[
+                                    Tooltip(
+                                      message: 'View Attachment',
+                                      child: IconButton(
+                                        icon: const Icon(
+                                          Icons.attach_file_rounded,
+                                          size: 20,
+                                        ),
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
+                                        style: IconButton.styleFrom(
+                                          backgroundColor: Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                              .withOpacity(0.1),
+                                          hoverColor: Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                              .withOpacity(0.2),
+                                          padding: const EdgeInsets.all(8),
+                                        ),
+                                        onPressed: () =>
+                                            _viewAttachment(request),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                  ],
                                   if (request.status == 'pending') ...[
                                     Tooltip(
                                       message: AppStrings.tr('approve'),
@@ -1091,6 +1374,26 @@ class _MangeLeaveEmpDashboardScreenState
                           request.reason,
                           maxLines: 3,
                         ),
+                        if (_isSickLeave(request) && _hasAttachment(request))
+                          const SizedBox(height: 16),
+                        if (_isSickLeave(request) && _hasAttachment(request))
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildDetailRow(
+                                  Icons.attach_file_rounded,
+                                  'Attachment',
+                                  request.attachmentUrl!,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              FilledButton.icon(
+                                onPressed: () => _viewAttachment(request),
+                                icon: const Icon(Icons.open_in_new_rounded),
+                                label: const Text('View'),
+                              ),
+                            ],
+                          ),
                         const SizedBox(height: 16),
                         // Status Hint
                         Row(
@@ -1181,6 +1484,18 @@ class _MangeLeaveEmpDashboardScreenState
                 ),
                 icon: const Icon(Icons.edit_rounded, size: 18),
                 label: const Text('Edit'),
+              ),
+            if (_isSickLeave(request) && _hasAttachment(request))
+              FilledButton.icon(
+                onPressed: () => _viewAttachment(request),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                ),
+                icon: const Icon(Icons.attach_file_rounded, size: 18),
+                label: const Text('View Attachment'),
               ),
             TextButton(
               onPressed: () => Navigator.pop(context),

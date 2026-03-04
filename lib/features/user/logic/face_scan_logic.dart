@@ -200,7 +200,10 @@ abstract class FaceScanLogic extends State<FaceScanScreen>
                     ),
                     child: Text(
                       AppStrings.tr('understood'),
-                      style: theme.textTheme.labelLarge,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),

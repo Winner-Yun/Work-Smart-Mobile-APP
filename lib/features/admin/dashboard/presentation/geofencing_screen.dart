@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_admin_route.dart';
 import 'package:flutter_worksmart_mobile_app/config/language_manager.dart';
 import 'package:flutter_worksmart_mobile_app/config/theme_manager.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/features/admin/dashboard/logic/geofencing_logic.dart';
+import 'package:flutter_worksmart_mobile_app/shared/model/office_model/office_config.dart';
 import 'package:flutter_worksmart_mobile_app/shared/widget/admin/admin_header_bar.dart';
 import 'package:flutter_worksmart_mobile_app/shared/widget/admin/admin_side_bar.dart';
 import 'package:flutter_worksmart_mobile_app/shared/widget/admin/map_picker_dailog.dart';
@@ -22,7 +24,6 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final TextEditingController _searchController = TextEditingController();
 
-  // Map state for the detail panel
   GoogleMapController? _mainMapController;
   double? _lastLat;
   double? _lastLng;
@@ -90,7 +91,6 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
                                   ],
                                 ),
                               ),
-                              // Loading Overlay
                               if (_controller.isLoading)
                                 AnimatedOpacity(
                                   opacity: _controller.isLoading ? 1.0 : 0.0,
@@ -119,7 +119,7 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
                                           ),
                                           const SizedBox(height: 16),
                                           Text(
-                                            'Loading...',
+                                            AppStrings.tr('loading'),
                                             style: TextStyle(
                                               color: Theme.of(
                                                 context,
@@ -207,7 +207,6 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
 
   Widget _buildStatsRow() {
     final stats = _controller.getGeofenceStats();
-
     final statCards = [
       _buildStatCard(
         AppStrings.tr('total_locations'),
@@ -231,11 +230,7 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isDesktop = constraints.maxWidth >= 1100;
-        final isTablet = constraints.maxWidth >= 700;
-
-        // Desktop
-        if (isDesktop) {
+        if (constraints.maxWidth >= 1100) {
           return Row(
             children: statCards
                 .map(
@@ -248,9 +243,7 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
                 )
                 .toList(),
           );
-        }
-        // Tablet
-        else if (isTablet) {
+        } else if (constraints.maxWidth >= 700) {
           return Column(
             children: [
               Row(
@@ -275,9 +268,7 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
               ),
             ],
           );
-        }
-        // Mobile
-        else {
+        } else {
           return Column(
             children: statCards
                 .map(
@@ -385,13 +376,29 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
             decoration: InputDecoration(
               hintText: AppStrings.tr('search_offices'),
               prefixIcon: const Icon(Icons.search, size: 20),
+              prefixIconColor: Theme.of(context).colorScheme.primary,
               filled: true,
               fillColor: Theme.of(
                 context,
-              ).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+              ).colorScheme.surfaceContainerHighest.withOpacity(0.45),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(
+                  color: Theme.of(context).dividerColor.withOpacity(0.6),
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(
+                  color: Theme.of(context).dividerColor.withOpacity(0.6),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.primary,
+                  width: 1.5,
+                ),
               ),
               contentPadding: const EdgeInsets.symmetric(
                 vertical: 0,
@@ -426,18 +433,6 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
                             ).colorScheme.onSurface.withOpacity(0.7),
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          _searchController.text.isEmpty
-                              ? 'No offices available'
-                              : 'No offices match your search',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withOpacity(0.5),
-                          ),
-                        ),
                       ],
                     ),
                   ).animate().fadeIn().slideY(begin: 0.2),
@@ -451,7 +446,6 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
                     final office = offices[index];
                     final isSelected =
                         office.officeId == _controller.selectedOfficeId;
-
                     return ListTile(
                       selected: isSelected,
                       selectedTileColor: Theme.of(
@@ -513,47 +507,73 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    office.officeName,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      office.officeName,
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.location_on,
-                        size: 14,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        geofence.addressLabel,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
-                ],
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.location_on,
+                          size: 14,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            geofence.addressLabel.isNotEmpty
+                                ? geofence.addressLabel
+                                : '${AppStrings.tr('latitude')}: ${geofence.lat.toStringAsFixed(4)}, ${AppStrings.tr('longitude')}: ${geofence.lng.toStringAsFixed(4)}',
+                            style: Theme.of(context).textTheme.bodySmall,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
               if (!isEditing)
-                OutlinedButton.icon(
-                  onPressed: _controller.startEditing,
-                  icon: const Icon(Icons.edit_outlined, size: 18),
-                  label: Text(AppStrings.tr('adjust_geofence')),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit_note),
+                      tooltip: AppStrings.tr('edit_office'),
+                      onPressed: () => _showEditOfficeDialog(context, office),
+                    ),
+                    const SizedBox(width: 8),
+                    OutlinedButton.icon(
+                      onPressed: _controller.startEditing,
+                      icon: const Icon(Icons.map_outlined, size: 18),
+                      label: Text(AppStrings.tr('adjust_geofence')),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: Icon(
+                        Icons.delete_outline,
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                      tooltip: AppStrings.tr('delete'),
+                      onPressed: () => _showDeleteConfirmation(context, office),
+                    ),
+                  ],
                 )
               else
                 Row(
                   children: [
-                    MouseRegion(
-                      cursor: SystemMouseCursors.click,
-                      child: TextButton(
-                        onPressed: _controller.cancelEdit,
-                        child: Text(AppStrings.tr('cancel')),
-                      ),
+                    TextButton(
+                      onPressed: _controller.cancelEdit,
+                      child: Text(AppStrings.tr('cancel')),
                     ),
                     const SizedBox(width: 8),
                     FilledButton.icon(
@@ -561,8 +581,12 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
                         _controller.saveChanges();
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.primary,
                             content: Text(
                               AppStrings.tr('geofence_updated_success'),
+                              style: TextStyle(color: Colors.white),
                             ),
                           ),
                         );
@@ -575,7 +599,7 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
             ],
           ),
         ),
-
+        _buildOfficeMetaInfo(office),
         Expanded(
           child: Stack(
             children: [
@@ -584,11 +608,9 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
                 lng: geofence.lng,
                 radius: geofence.radiusMeters,
                 isEditing: isEditing,
-                onPositionChanged: (lat, lng) {
-                  _controller.updateTempGeofence(lat: lat, lng: lng);
-                },
+                onPositionChanged: (lat, lng) =>
+                    _controller.updateTempGeofence(lat: lat, lng: lng),
               ),
-
               if (isEditing)
                 Positioned(
                   bottom: 24,
@@ -630,11 +652,9 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
                             divisions: 39,
                             label:
                                 "${geofence.radiusMeters}${AppStrings.tr('meter_unit')}",
-                            onChanged: (val) {
-                              _controller.updateTempGeofence(
-                                radius: val.toInt(),
-                              );
-                            },
+                            onChanged: (val) => _controller.updateTempGeofence(
+                              radius: val.toInt(),
+                            ),
                           ),
                         ],
                       ),
@@ -659,14 +679,13 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
       _lastLat = lat;
       _lastLng = lng;
       if (_mainMapController != null) {
-        Future.microtask(() {
-          _mainMapController?.animateCamera(
+        Future.microtask(
+          () => _mainMapController?.animateCamera(
             CameraUpdate.newLatLng(LatLng(lat, lng)),
-          );
-        });
+          ),
+        );
       }
     }
-
     final center = LatLng(lat, lng);
 
     return GoogleMap(
@@ -700,9 +719,55 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
   }
 
   void _showAddOfficeDialog(BuildContext context) {
+    _showOfficeFormDialog(context: context);
+  }
+
+  void _showEditOfficeDialog(BuildContext context, OfficeConfig office) {
+    _showOfficeFormDialog(
+      context: context,
+      isEdit: true,
+      officeId: office.officeId,
+      initialName: office.officeName,
+      initialGroup: office.groupName,
+      initialCheckIn: office.policy.checkInStart,
+      initialCheckOut: office.policy.checkOutEnd,
+      initialAnnualLeave: office.policy.annualLeaveLimit,
+      initialSickLeave: office.policy.sickLeaveLimit,
+      initialBotUsername: office.telegramConfig.botUsername,
+      initialBotLink: office.telegramConfig.botLink,
+    );
+  }
+
+  void _showOfficeFormDialog({
+    required BuildContext context,
+    bool isEdit = false,
+    String? officeId,
+    String? initialName,
+    String? initialGroup,
+    String? initialCheckIn,
+    String? initialCheckOut,
+    int? initialAnnualLeave,
+    int? initialSickLeave,
+    String? initialBotUsername,
+    String? initialBotLink,
+  }) {
     final formKey = GlobalKey<FormState>();
-    final nameCtrl = TextEditingController();
-    final groupCtrl = TextEditingController();
+    final nameCtrl = TextEditingController(text: initialName);
+    final groupCtrl = TextEditingController(text: initialGroup);
+    final checkInCtrl = TextEditingController(
+      text: initialCheckIn ?? '09:00 AM',
+    );
+    final checkOutCtrl = TextEditingController(
+      text: initialCheckOut ?? '06:00 PM',
+    );
+    final annualLeaveCtrl = TextEditingController(
+      text: (initialAnnualLeave ?? 20).toString(),
+    );
+    final sickLeaveCtrl = TextEditingController(
+      text: (initialSickLeave ?? 10).toString(),
+    );
+    final botUsernameCtrl = TextEditingController(text: initialBotUsername);
+    final botLinkCtrl = TextEditingController(text: initialBotLink);
     double? selectedLat;
     double? selectedLng;
     String selectedAddress = "";
@@ -711,8 +776,34 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDialogState) {
-          final hasLocation = selectedLat != null && selectedLng != null;
+          final hasLocation =
+              isEdit || (selectedLat != null && selectedLng != null);
+          final hasAllRequiredData =
+              nameCtrl.text.trim().isNotEmpty &&
+              groupCtrl.text.trim().isNotEmpty &&
+              checkInCtrl.text.trim().isNotEmpty &&
+              checkOutCtrl.text.trim().isNotEmpty &&
+              botUsernameCtrl.text.trim().isNotEmpty &&
+              botLinkCtrl.text.trim().isNotEmpty &&
+              (int.tryParse(annualLeaveCtrl.text.trim()) ?? -1) >= 0 &&
+              (int.tryParse(sickLeaveCtrl.text.trim()) ?? -1) >= 0;
           final colorScheme = Theme.of(context).colorScheme;
+          final modernFillColor = colorScheme.surfaceContainerHighest
+              .withOpacity(0.45);
+          final defaultOutlineBorder = OutlineInputBorder(
+            borderRadius: BorderRadius.circular(18),
+            borderSide: BorderSide(
+              color: Theme.of(context).dividerColor.withOpacity(0.6),
+            ),
+          );
+          final focusedOutlineBorder = OutlineInputBorder(
+            borderRadius: BorderRadius.circular(18),
+            borderSide: BorderSide(color: colorScheme.primary, width: 2),
+          );
+          final errorOutlineBorder = OutlineInputBorder(
+            borderRadius: BorderRadius.circular(18),
+            borderSide: BorderSide(color: colorScheme.error),
+          );
 
           return AlertDialog(
             shape: RoundedRectangleBorder(
@@ -726,7 +817,9 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  AppStrings.tr('create_new_office'),
+                  isEdit
+                      ? AppStrings.tr('edit_office')
+                      : AppStrings.tr('create_new_office'),
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 22,
@@ -734,7 +827,9 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  AppStrings.tr('define_geofenced_area'),
+                  isEdit
+                      ? AppStrings.tr('update_office_details')
+                      : AppStrings.tr('define_geofenced_area'),
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
@@ -743,215 +838,599 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
             ),
             content: SizedBox(
               width: 450,
-              child: Form(
-                key: formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextFormField(
-                      controller: nameCtrl,
-                      decoration: InputDecoration(
-                        labelText: AppStrings.tr('office_label'),
-                        hintText: AppStrings.tr('headquarters_example'),
-                        prefixIcon: const Icon(Icons.business_outlined),
-                        filled: true,
-                        fillColor: colorScheme.surfaceContainerHighest
-                            .withOpacity(0.3),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
+              child: SingleChildScrollView(
+                child: Form(
+                  key: formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextFormField(
+                        controller: nameCtrl,
+                        onChanged: (_) => setDialogState(() {}),
+                        decoration: InputDecoration(
+                          labelText: AppStrings.tr('office_label'),
+                          hintText: AppStrings.tr('headquarters_example'),
+                          prefixIcon: const Icon(Icons.business_outlined),
+                          prefixIconColor: colorScheme.primary,
+                          filled: true,
+                          fillColor: modernFillColor,
+                          border: defaultOutlineBorder,
+                          enabledBorder: defaultOutlineBorder,
+                          focusedBorder: focusedOutlineBorder,
+                          errorBorder: errorOutlineBorder,
+                          focusedErrorBorder: errorOutlineBorder,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 18,
+                          ),
                         ),
+                        validator: (v) => v == null || v.isEmpty
+                            ? AppStrings.tr('office_name_required')
+                            : null,
                       ),
-                      validator: (v) => v == null || v.isEmpty
-                          ? AppStrings.tr('office_name_required')
-                          : null,
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: groupCtrl,
-                      decoration: InputDecoration(
-                        labelText: AppStrings.tr('group_department'),
-                        hintText: AppStrings.tr('engineering_example'),
-                        prefixIcon: const Icon(Icons.group_outlined),
-                        filled: true,
-                        fillColor: colorScheme.surfaceContainerHighest
-                            .withOpacity(0.3),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: groupCtrl,
+                        onChanged: (_) => setDialogState(() {}),
+                        decoration: InputDecoration(
+                          labelText: AppStrings.tr('group_department'),
+                          hintText: AppStrings.tr('engineering_example'),
+                          prefixIcon: const Icon(Icons.group_outlined),
+                          prefixIconColor: colorScheme.primary,
+                          filled: true,
+                          fillColor: modernFillColor,
+                          border: defaultOutlineBorder,
+                          enabledBorder: defaultOutlineBorder,
+                          focusedBorder: focusedOutlineBorder,
+                          errorBorder: errorOutlineBorder,
+                          focusedErrorBorder: errorOutlineBorder,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 18,
+                          ),
                         ),
+                        validator: (v) => v == null || v.isEmpty
+                            ? AppStrings.tr('group_name_required')
+                            : null,
                       ),
-                      validator: (v) => v == null || v.isEmpty
-                          ? AppStrings.tr('group_name_required')
-                          : null,
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Improved Location Picker Card
-                    MouseRegion(
-                      cursor: SystemMouseCursors.click,
-                      child: InkWell(
-                        onTap: () async {
-                          final result = await _showMapPicker(
-                            context,
-                            selectedLat,
-                            selectedLng,
-                            selectedAddress,
-                          );
-                          if (result != null) {
-                            setDialogState(() {
-                              selectedLat = result['lat'];
-                              selectedLng = result['lng'];
-                              selectedAddress = result['address'] ?? '';
-                            });
-                          }
-                        },
-                        borderRadius: BorderRadius.circular(16),
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: hasLocation
-                                ? colorScheme.primaryContainer.withOpacity(0.4)
-                                : colorScheme.surfaceContainerHighest
-                                      .withOpacity(0.3),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: hasLocation
-                                  ? colorScheme.primary.withOpacity(0.5)
-                                  : Theme.of(
-                                      context,
-                                    ).dividerColor.withOpacity(0.5),
-                              width: 1.5,
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: checkInCtrl,
+                        readOnly: true,
+                        onTap: () => _pickTimeForController(
+                          context: context,
+                          controller: checkInCtrl,
+                          setDialogState: setDialogState,
+                        ),
+                        decoration: InputDecoration(
+                          labelText: AppStrings.tr('policy_check_in_time'),
+                          hintText: '09:00 AM',
+                          prefixIcon: const Icon(Icons.login),
+                          prefixIconColor: colorScheme.primary,
+                          suffixIcon: const Icon(Icons.access_time),
+                          filled: true,
+                          fillColor: modernFillColor,
+                          border: defaultOutlineBorder,
+                          enabledBorder: defaultOutlineBorder,
+                          focusedBorder: focusedOutlineBorder,
+                          errorBorder: errorOutlineBorder,
+                          focusedErrorBorder: errorOutlineBorder,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 18,
+                          ),
+                        ),
+                        validator: (v) => v == null || v.trim().isEmpty
+                            ? AppStrings.tr('check_in_time_required')
+                            : _parseTimeOfDay(v) == null
+                            ? AppStrings.tr('invalid_time_format')
+                            : null,
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: checkOutCtrl,
+                        readOnly: true,
+                        onTap: () => _pickTimeForController(
+                          context: context,
+                          controller: checkOutCtrl,
+                          setDialogState: setDialogState,
+                        ),
+                        decoration: InputDecoration(
+                          labelText: AppStrings.tr('policy_check_out_time'),
+                          hintText: '06:00 PM',
+                          prefixIcon: const Icon(Icons.logout),
+                          prefixIconColor: colorScheme.primary,
+                          suffixIcon: const Icon(Icons.access_time),
+                          filled: true,
+                          fillColor: modernFillColor,
+                          border: defaultOutlineBorder,
+                          enabledBorder: defaultOutlineBorder,
+                          focusedBorder: focusedOutlineBorder,
+                          errorBorder: errorOutlineBorder,
+                          focusedErrorBorder: errorOutlineBorder,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 18,
+                          ),
+                        ),
+                        validator: (v) => v == null || v.trim().isEmpty
+                            ? AppStrings.tr('check_out_time_required')
+                            : _parseTimeOfDay(v) == null
+                            ? AppStrings.tr('invalid_time_format')
+                            : null,
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: annualLeaveCtrl,
+                              onChanged: (_) => setDialogState(() {}),
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                              ],
+                              decoration: InputDecoration(
+                                labelText: AppStrings.tr('annual_leave_limit'),
+                                prefixIcon: const Icon(
+                                  Icons.beach_access_outlined,
+                                ),
+                                prefixIconColor: colorScheme.primary,
+                                suffixIcon: SizedBox(
+                                  width: 84,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        tooltip: AppStrings.tr('decrease'),
+                                        icon: const Icon(Icons.remove),
+                                        onPressed: () {
+                                          final current =
+                                              int.tryParse(
+                                                annualLeaveCtrl.text,
+                                              ) ??
+                                              0;
+                                          final next = current > 0
+                                              ? current - 1
+                                              : 0;
+                                          setDialogState(() {
+                                            annualLeaveCtrl.text = next
+                                                .toString();
+                                          });
+                                        },
+                                      ),
+                                      IconButton(
+                                        tooltip: AppStrings.tr('increase'),
+                                        icon: const Icon(Icons.add),
+                                        onPressed: () {
+                                          final current =
+                                              int.tryParse(
+                                                annualLeaveCtrl.text,
+                                              ) ??
+                                              0;
+                                          setDialogState(() {
+                                            annualLeaveCtrl.text = (current + 1)
+                                                .toString();
+                                          });
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                filled: true,
+                                fillColor: modernFillColor,
+                                border: defaultOutlineBorder,
+                                enabledBorder: defaultOutlineBorder,
+                                focusedBorder: focusedOutlineBorder,
+                                errorBorder: errorOutlineBorder,
+                                focusedErrorBorder: errorOutlineBorder,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 18,
+                                ),
+                              ),
+                              validator: (v) {
+                                final raw = v?.trim() ?? '';
+                                if (raw.isEmpty) {
+                                  return AppStrings.tr('annual_leave_required');
+                                }
+                                final value = int.tryParse(raw);
+                                if (value == null || value < 0) {
+                                  return AppStrings.tr(
+                                    'annual_leave_must_number',
+                                  );
+                                }
+                                return null;
+                              },
                             ),
                           ),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: hasLocation
-                                      ? colorScheme.primary
-                                      : colorScheme.surfaceContainerHighest,
-                                  shape: BoxShape.circle,
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextFormField(
+                              controller: sickLeaveCtrl,
+                              onChanged: (_) => setDialogState(() {}),
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                              ],
+                              decoration: InputDecoration(
+                                labelText: AppStrings.tr('sick_leave_limit'),
+                                prefixIcon: const Icon(
+                                  Icons.local_hospital_outlined,
                                 ),
-                                child: Icon(
-                                  hasLocation
-                                      ? Icons.location_on
-                                      : Icons.map_outlined,
-                                  color: hasLocation
-                                      ? colorScheme.onPrimary
-                                      : colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      hasLocation
-                                          ? AppStrings.tr('location_selected')
-                                          : AppStrings.tr(
-                                              'set_office_location',
-                                            ),
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14,
+                                prefixIconColor: colorScheme.primary,
+                                suffixIcon: SizedBox(
+                                  width: 84,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        tooltip: AppStrings.tr('decrease'),
+                                        icon: const Icon(Icons.remove),
+                                        onPressed: () {
+                                          final current =
+                                              int.tryParse(
+                                                sickLeaveCtrl.text,
+                                              ) ??
+                                              0;
+                                          final next = current > 0
+                                              ? current - 1
+                                              : 0;
+                                          setDialogState(() {
+                                            sickLeaveCtrl.text = next
+                                                .toString();
+                                          });
+                                        },
                                       ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      hasLocation
-                                          ? (selectedAddress.isEmpty
-                                                ? '${AppStrings.tr('latitude')}: ${selectedLat!.toStringAsFixed(4)}, ${AppStrings.tr('longitude')}: ${selectedLng!.toStringAsFixed(4)}'
-                                                : selectedAddress)
-                                          : AppStrings.tr('tap_open_map'),
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall
-                                          ?.copyWith(
-                                            color: colorScheme.onSurfaceVariant,
-                                          ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ],
+                                      IconButton(
+                                        tooltip: AppStrings.tr('increase'),
+                                        icon: const Icon(Icons.add),
+                                        onPressed: () {
+                                          final current =
+                                              int.tryParse(
+                                                sickLeaveCtrl.text,
+                                              ) ??
+                                              0;
+                                          setDialogState(() {
+                                            sickLeaveCtrl.text = (current + 1)
+                                                .toString();
+                                          });
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                filled: true,
+                                fillColor: modernFillColor,
+                                border: defaultOutlineBorder,
+                                enabledBorder: defaultOutlineBorder,
+                                focusedBorder: focusedOutlineBorder,
+                                errorBorder: errorOutlineBorder,
+                                focusedErrorBorder: errorOutlineBorder,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 18,
                                 ),
                               ),
-                              Icon(
-                                hasLocation
-                                    ? Icons.edit_location_alt_outlined
-                                    : Icons.chevron_right_rounded,
-                                color: hasLocation
-                                    ? colorScheme.primary
-                                    : colorScheme.onSurfaceVariant,
-                              ),
-                            ],
+                              validator: (v) {
+                                final raw = v?.trim() ?? '';
+                                if (raw.isEmpty) {
+                                  return AppStrings.tr('sick_leave_required');
+                                }
+                                final value = int.tryParse(raw);
+                                if (value == null || value < 0) {
+                                  return AppStrings.tr(
+                                    'sick_leave_must_number',
+                                  );
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: botUsernameCtrl,
+                        onChanged: (_) => setDialogState(() {}),
+                        decoration: InputDecoration(
+                          labelText: AppStrings.tr('telegram_bot_username'),
+                          hintText: '@your_bot',
+                          prefixIcon: const Icon(Icons.smart_toy_outlined),
+                          prefixIconColor: colorScheme.primary,
+                          filled: true,
+                          fillColor: modernFillColor,
+                          border: defaultOutlineBorder,
+                          enabledBorder: defaultOutlineBorder,
+                          focusedBorder: focusedOutlineBorder,
+                          errorBorder: errorOutlineBorder,
+                          focusedErrorBorder: errorOutlineBorder,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 18,
                           ),
                         ),
+                        validator: (v) => v == null || v.trim().isEmpty
+                            ? AppStrings.tr('telegram_bot_username_required')
+                            : null,
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: botLinkCtrl,
+                        onChanged: (_) => setDialogState(() {}),
+                        decoration: InputDecoration(
+                          labelText: AppStrings.tr('telegram_bot_link'),
+                          hintText: 'https://t.me/your_bot',
+                          prefixIcon: const Icon(Icons.link_outlined),
+                          prefixIconColor: colorScheme.primary,
+                          filled: true,
+                          fillColor: modernFillColor,
+                          border: defaultOutlineBorder,
+                          enabledBorder: defaultOutlineBorder,
+                          focusedBorder: focusedOutlineBorder,
+                          errorBorder: errorOutlineBorder,
+                          focusedErrorBorder: errorOutlineBorder,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 18,
+                          ),
+                        ),
+                        validator: (v) => v == null || v.trim().isEmpty
+                            ? AppStrings.tr('telegram_bot_link_required')
+                            : null,
+                      ),
+                      if (!isEdit) ...[
+                        const SizedBox(height: 24),
+                        InkWell(
+                          onTap: hasAllRequiredData
+                              ? () async {
+                                  final result = await _showMapPicker(
+                                    context,
+                                    selectedLat,
+                                    selectedLng,
+                                    selectedAddress,
+                                  );
+                                  if (result != null) {
+                                    setDialogState(() {
+                                      selectedLat = result['lat'];
+                                      selectedLng = result['lng'];
+                                      selectedAddress = result['address'] ?? '';
+                                    });
+                                  }
+                                }
+                              : null,
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: hasLocation
+                                  ? colorScheme.primaryContainer.withOpacity(
+                                      0.4,
+                                    )
+                                  : hasAllRequiredData
+                                  ? colorScheme.surfaceContainerHighest
+                                        .withOpacity(0.3)
+                                  : colorScheme.errorContainer.withOpacity(
+                                      0.35,
+                                    ),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: hasLocation
+                                    ? colorScheme.primary.withOpacity(0.5)
+                                    : hasAllRequiredData
+                                    ? Theme.of(
+                                        context,
+                                      ).dividerColor.withOpacity(0.5)
+                                    : colorScheme.error.withOpacity(0.8),
+                                width: 1.5,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: hasLocation
+                                        ? colorScheme.primary
+                                        : hasAllRequiredData
+                                        ? colorScheme.surfaceContainerHighest
+                                        : colorScheme.error.withOpacity(0.15),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    hasLocation
+                                        ? Icons.location_on
+                                        : Icons.map_outlined,
+                                    color: hasLocation
+                                        ? colorScheme.onPrimary
+                                        : hasAllRequiredData
+                                        ? colorScheme.onSurfaceVariant
+                                        : colorScheme.error,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        hasLocation
+                                            ? AppStrings.tr('location_selected')
+                                            : AppStrings.tr(
+                                                'set_office_location',
+                                              ),
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                          color:
+                                              !hasAllRequiredData &&
+                                                  !hasLocation
+                                              ? colorScheme.error
+                                              : null,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        hasLocation
+                                            ? (selectedAddress.isEmpty
+                                                  ? '${AppStrings.tr('latitude')}: ${selectedLat!.toStringAsFixed(4)}, ${AppStrings.tr('longitude')}: ${selectedLng!.toStringAsFixed(4)}'
+                                                  : selectedAddress)
+                                            : hasAllRequiredData
+                                            ? AppStrings.tr('tap_open_map')
+                                            : AppStrings.tr(
+                                                'complete_required_fields_first',
+                                              ),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.copyWith(
+                                              color:
+                                                  !hasAllRequiredData &&
+                                                      !hasLocation
+                                                  ? colorScheme.error
+                                                  : colorScheme
+                                                        .onSurfaceVariant,
+                                            ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Icon(
+                                  hasLocation
+                                      ? Icons.edit_location_alt_outlined
+                                      : Icons.chevron_right_rounded,
+                                  color: hasLocation
+                                      ? colorScheme.primary
+                                      : hasAllRequiredData
+                                      ? colorScheme.onSurfaceVariant
+                                      : colorScheme.error,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ),
             ),
             actions: [
-              MouseRegion(
-                cursor: SystemMouseCursors.click,
-                child: TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text(AppStrings.tr('cancel')),
-                ),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(AppStrings.tr('cancel')),
               ),
-              MouseRegion(
-                cursor: SystemMouseCursors.click,
-                child: FilledButton(
-                  onPressed:
-                      hasLocation && formKey.currentState?.validate() == true
-                      ? () {
-                          _controller.addNewOffice(
+              FilledButton(
+                onPressed:
+                    hasLocation && formKey.currentState?.validate() == true
+                    ? () async {
+                        if (isEdit) {
+                          await _controller.updateOfficeDetails(
+                            officeId: officeId!,
+                            newName: nameCtrl.text,
+                            newGroup: groupCtrl.text,
+                            checkInStart: checkInCtrl.text.trim(),
+                            checkOutEnd: checkOutCtrl.text.trim(),
+                            annualLeaveLimit: int.parse(
+                              annualLeaveCtrl.text.trim(),
+                            ),
+                            sickLeaveLimit: int.parse(
+                              sickLeaveCtrl.text.trim(),
+                            ),
+                            botUsername: botUsernameCtrl.text.trim(),
+                            botLink: botLinkCtrl.text.trim(),
+                          );
+                        } else {
+                          final fallbackAddress =
+                              '${AppStrings.tr('latitude')}: ${selectedLat!.toStringAsFixed(4)}, ${AppStrings.tr('longitude')}: ${selectedLng!.toStringAsFixed(4)}';
+                          await _controller.addNewOffice(
                             officeName: nameCtrl.text,
                             groupName: groupCtrl.text,
                             lat: selectedLat!,
                             lng: selectedLng!,
                             radiusMeters: 200,
-                            addressLabel: selectedAddress,
-                          );
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              behavior: SnackBarBehavior.floating,
-                              content: Text(
-                                AppStrings.tr('office_created_success'),
-                              ),
+                            addressLabel: selectedAddress.isNotEmpty
+                                ? selectedAddress
+                                : fallbackAddress,
+                            checkInStart: checkInCtrl.text.trim(),
+                            checkOutEnd: checkOutCtrl.text.trim(),
+                            annualLeaveLimit: int.parse(
+                              annualLeaveCtrl.text.trim(),
                             ),
+                            sickLeaveLimit: int.parse(
+                              sickLeaveCtrl.text.trim(),
+                            ),
+                            botUsername: botUsernameCtrl.text.trim(),
+                            botLink: botLinkCtrl.text.trim(),
                           );
                         }
-                      : null,
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text(AppStrings.tr('create_office')),
+                        if (!context.mounted) return;
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.primary,
+                            content: Text(
+                              isEdit
+                                  ? AppStrings.tr('office_updated_success')
+                                  : AppStrings.tr('office_created_success'),
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        );
+                      }
+                    : null,
+                child: Text(
+                  isEdit
+                      ? AppStrings.tr('save_changes')
+                      : AppStrings.tr('create_office'),
                 ),
               ),
             ],
           );
         },
+      ),
+    );
+  }
+
+  void _showDeleteConfirmation(BuildContext context, dynamic office) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(AppStrings.tr('delete_office')),
+        content: Text(
+          '${AppStrings.tr('confirm_delete_msg')} ${office.officeName}?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(AppStrings.tr('cancel')),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            onPressed: () async {
+              await _controller.deleteOffice(office.officeId);
+              if (!context.mounted) return;
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  backgroundColor: Theme.of(context).colorScheme.error,
+                  content: Text(
+                    AppStrings.tr('office_deleted_success'),
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+              );
+            },
+            child: Text(AppStrings.tr('delete')),
+          ),
+        ],
       ),
     );
   }
@@ -969,6 +1448,218 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
         initialLat: initialLat ?? 11.5564,
         initialLng: initialLng ?? 104.9282,
         initialAddress: initialAddress,
+      ),
+    );
+  }
+
+  Future<void> _pickTimeForController({
+    required BuildContext context,
+    required TextEditingController controller,
+    required void Function(void Function()) setDialogState,
+  }) async {
+    final initial =
+        _parseTimeOfDay(controller.text) ?? const TimeOfDay(hour: 9, minute: 0);
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: initial,
+      initialEntryMode: TimePickerEntryMode.input,
+      builder: (context, child) {
+        final theme = Theme.of(context);
+        final colorScheme = theme.colorScheme;
+
+        return Theme(
+          data: theme.copyWith(
+            timePickerTheme: theme.timePickerTheme.copyWith(
+              hourMinuteColor: WidgetStateColor.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) {
+                  return colorScheme.primary;
+                }
+                return colorScheme.surfaceContainerHighest;
+              }),
+              hourMinuteTextColor: WidgetStateColor.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) {
+                  return colorScheme.onPrimary;
+                }
+                return colorScheme.onSurface;
+              }),
+              dayPeriodColor: WidgetStateColor.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) {
+                  return colorScheme.primary;
+                }
+                return colorScheme.surfaceContainerHighest;
+              }),
+              dayPeriodTextColor: WidgetStateColor.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) {
+                  return colorScheme.onPrimary;
+                }
+                return colorScheme.onSurface;
+              }),
+              dialHandColor: colorScheme.primary,
+              dialBackgroundColor: colorScheme.surfaceContainerHighest,
+              entryModeIconColor: colorScheme.primary,
+            ),
+          ),
+          child: MediaQuery(
+            data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
+            child: child ?? const SizedBox.shrink(),
+          ),
+        );
+      },
+    );
+
+    if (picked == null) return;
+    setDialogState(() {
+      controller.text = _formatTimeOfDay12Hour(picked);
+    });
+  }
+
+  String _formatTimeOfDay12Hour(TimeOfDay time) {
+    final hour = time.hourOfPeriod == 0 ? 12 : time.hourOfPeriod;
+    final minute = time.minute.toString().padLeft(2, '0');
+    final period = time.period == DayPeriod.am ? 'AM' : 'PM';
+    return '${hour.toString().padLeft(2, '0')}:$minute $period';
+  }
+
+  TimeOfDay? _parseTimeOfDay(String? value) {
+    if (value == null) return null;
+    final text = value.trim();
+    if (text.isEmpty) return null;
+
+    final twelveHour = RegExp(
+      r'^(0?[1-9]|1[0-2]):([0-5][0-9])\s*([AaPp][Mm])$',
+    );
+    final twelveMatch = twelveHour.firstMatch(text);
+    if (twelveMatch != null) {
+      final hour = int.parse(twelveMatch.group(1)!);
+      final minute = int.parse(twelveMatch.group(2)!);
+      final period = twelveMatch.group(3)!.toUpperCase();
+      final normalizedHour = period == 'PM'
+          ? (hour == 12 ? 12 : hour + 12)
+          : (hour == 12 ? 0 : hour);
+      return TimeOfDay(hour: normalizedHour, minute: minute);
+    }
+
+    final twentyFourHour = RegExp(r'^([01]?[0-9]|2[0-3]):([0-5][0-9])$');
+    final twentyFourMatch = twentyFourHour.firstMatch(text);
+    if (twentyFourMatch != null) {
+      final hour = int.parse(twentyFourMatch.group(1)!);
+      final minute = int.parse(twentyFourMatch.group(2)!);
+      return TimeOfDay(hour: hour, minute: minute);
+    }
+
+    return null;
+  }
+
+  Widget _buildOfficeMetaInfo(OfficeConfig office) {
+    final policy = office.policy;
+    final telegram = office.telegramConfig;
+
+    Widget infoChip(IconData icon, String text) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 14,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: 6),
+            Text(text, style: Theme.of(context).textTheme.labelMedium),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(24, 16, 24, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              infoChip(
+                Icons.login,
+                '${AppStrings.tr('check_in_label')} ${policy.checkInStart}',
+              ),
+              infoChip(
+                Icons.logout,
+                '${AppStrings.tr('check_out_label')} ${policy.checkOutEnd}',
+              ),
+              infoChip(
+                Icons.beach_access_outlined,
+                '${AppStrings.tr('annual_label')} ${policy.annualLeaveLimit}',
+              ),
+              infoChip(
+                Icons.local_hospital_outlined,
+                '${AppStrings.tr('sick_label')} ${policy.sickLeaveLimit}',
+              ),
+              infoChip(
+                Icons.smart_toy_outlined,
+                telegram.botUsername.isNotEmpty
+                    ? telegram.botUsername
+                    : AppStrings.tr('no_telegram_username'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          InkWell(
+            onTap: telegram.botLink.isEmpty
+                ? null
+                : () async {
+                    await Clipboard.setData(
+                      ClipboardData(text: telegram.botLink),
+                    );
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          AppStrings.tr('bot_link_copied'),
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                      ),
+                    );
+                  },
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  const Icon(Icons.link, size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      telegram.botLink.isNotEmpty
+                          ? telegram.botLink
+                          : AppStrings.tr('no_telegram_link'),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.blue,
+                        decoration: TextDecoration.underline,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    Icons.copy,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

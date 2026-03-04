@@ -1,625 +1,124 @@
-final List<Map<String, dynamic>> attendanceRecords = [
-  // January 2026 - user_winner_777 (20 workdays)
-  {
-    "uid": "user_winner_777",
-    "date": "2026-02-17",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.572, "lng": 104.893},
-  },
-  {
-    "uid": "user_winner_777",
-    "date": "2026-01-03",
-    "check_in": "08:05 AM",
-    "check_out": "05:05 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.572, "lng": 104.893},
-  },
-  {
-    "uid": "user_winner_777",
-    "date": "2026-02-17",
-    "check_in": "08:10 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 8.8,
-    "status": "late",
-    "lat_lng": {"lat": 11.572, "lng": 104.893},
-  },
-  {
-    "uid": "user_winner_777",
-    "date": "2026-01-07",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.572, "lng": 104.893},
-  },
-  {
-    "uid": "user_winner_777",
-    "date": "2026-01-08",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.572, "lng": 104.893},
-  },
-  {
-    "uid": "user_winner_777",
-    "date": "2026-01-09",
-    "check_in": "08:15 AM",
-    "check_out": "05:05 PM",
-    "total_hours": 8.8,
-    "status": "late",
-    "lat_lng": {"lat": 11.572, "lng": 104.893},
-  },
-  {
-    "uid": "user_winner_777",
-    "date": "2026-01-10",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.572, "lng": 104.893},
-  },
-  {
-    "uid": "user_winner_777",
-    "date": "2026-01-13",
-    "check_in": "08:05 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 8.9,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.572, "lng": 104.893},
-  },
-  {
-    "uid": "user_winner_777",
-    "date": "2026-01-14",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.572, "lng": 104.893},
-  },
-  {
-    "uid": "user_winner_777",
-    "date": "2026-01-15",
-    "check_in": "08:20 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 8.6,
-    "status": "late",
-    "lat_lng": {"lat": 11.572, "lng": 104.893},
-  },
-  {
-    "uid": "user_winner_777",
-    "date": "2026-01-16",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.572, "lng": 104.893},
-  },
-  {
-    "uid": "user_winner_777",
-    "date": "2026-01-17",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.572, "lng": 104.893},
-  },
-  {
-    "uid": "user_winner_777",
-    "date": "2026-01-20",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.572, "lng": 104.893},
-  },
-  {
-    "uid": "user_winner_777",
-    "date": "2026-01-21",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.572, "lng": 104.893},
-  },
-  {
-    "uid": "user_winner_777",
-    "date": "2026-01-22",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.572, "lng": 104.893},
-  },
-  {
-    "uid": "user_winner_777",
-    "date": "2026-01-23",
-    "check_in": "08:25 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 8.6,
-    "status": "late",
-    "lat_lng": {"lat": 11.572, "lng": 104.893},
-  },
-  {
-    "uid": "user_winner_777",
-    "date": "2026-01-24",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.572, "lng": 104.893},
-  },
-  {
-    "uid": "user_winner_777",
-    "date": "2026-01-27",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.572, "lng": 104.893},
-  },
-  {
-    "uid": "user_winner_777",
-    "date": "2026-01-28",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.572, "lng": 104.893},
-  },
-  {
-    "uid": "user_winner_777",
-    "date": "2026-01-29",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.572, "lng": 104.893},
-  },
-  {
-    "uid": "user_winner_777",
-    "date": "2026-01-30",
-    "check_in": "08:30 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 8.5,
-    "status": "late",
-    "lat_lng": {"lat": 11.572, "lng": 104.893},
-  },
+import 'dart:math';
 
-  // February 2026 - user_winner_777
-  {
-    "uid": "user_winner_777",
-    "date": "2026-02-02",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.572, "lng": 104.893},
-  },
-  {
-    "uid": "user_winner_777",
-    "date": "2026-02-03",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.572, "lng": 104.893},
-  },
-  {
-    "uid": "user_winner_777",
-    "date": "2026-02-04",
-    "check_in": "08:15 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 8.75,
-    "status": "late",
-    "lat_lng": {"lat": 11.572, "lng": 104.893},
-  },
-  {
-    "uid": "user_winner_777",
-    "date": "2026-02-05",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.572, "lng": 104.893},
-  },
-  {
-    "uid": "user_winner_777",
-    "date": "2026-02-06",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.572, "lng": 104.893},
-  },
-  {
-    "uid": "user_winner_777",
-    "date": "2026-02-08",
-    "check_in": "08:05 AM",
-    "check_out": "05:10 PM",
-    "total_hours": 9.1,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.572, "lng": 104.893},
-  },
-  {
-    "uid": "user_winner_777",
-    "date": "2026-02-09",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.572, "lng": 104.893},
-  },
-  {
-    "uid": "user_winner_777",
-    "date": "2026-02-10",
-    "check_in": "08:10 AM",
-    "check_out": "05:05 PM",
-    "total_hours": 8.9,
-    "status": "late",
-    "lat_lng": {"lat": 11.572, "lng": 104.893},
-  },
-  {
-    "uid": "user_winner_777",
-    "date": "2026-02-11",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.572, "lng": 104.893},
-  },
+import 'package:flutter_worksmart_mobile_app/core/util/mock_data/userFinalData.dart';
 
-  // January 2026 - user_sophy_888
-  {
-    "uid": "user_sophy_888",
-    "date": "2026-01-02",
-    "check_in": "08:20 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 8.6,
-    "status": "late",
-    "lat_lng": {"lat": 11.575, "lng": 104.895},
-  },
-  {
-    "uid": "user_sophy_888",
-    "date": "2026-01-03",
-    "check_in": "08:15 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 8.75,
-    "status": "late",
-    "lat_lng": {"lat": 11.575, "lng": 104.895},
-  },
-  {
-    "uid": "user_sophy_888",
-    "date": "2026-01-06",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.575, "lng": 104.895},
-  },
-  {
-    "uid": "user_sophy_888",
-    "date": "2026-01-07",
-    "check_in": "08:30 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 8.5,
-    "status": "late",
-    "lat_lng": {"lat": 11.575, "lng": 104.895},
-  },
-  {
-    "uid": "user_sophy_888",
-    "date": "2026-01-08",
-    "check_in": "08:20 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 8.6,
-    "status": "late",
-    "lat_lng": {"lat": 11.575, "lng": 104.895},
-  },
-  {
-    "uid": "user_sophy_888",
-    "date": "2026-01-09",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.575, "lng": 104.895},
-  },
-  {
-    "uid": "user_sophy_888",
-    "date": "2026-01-10",
-    "check_in": "08:25 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 8.58,
-    "status": "late",
-    "lat_lng": {"lat": 11.575, "lng": 104.895},
-  },
-  {
-    "uid": "user_sophy_888",
-    "date": "2026-01-13",
-    "check_in": "08:15 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 8.75,
-    "status": "late",
-    "lat_lng": {"lat": 11.575, "lng": 104.895},
-  },
-  {
-    "uid": "user_sophy_888",
-    "date": "2026-01-14",
-    "check_in": "08:30 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 8.5,
-    "status": "late",
-    "lat_lng": {"lat": 11.575, "lng": 104.895},
-  },
-  {
-    "uid": "user_sophy_888",
-    "date": "2026-01-15",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.575, "lng": 104.895},
-  },
-  {
-    "uid": "user_sophy_888",
-    "date": "2026-01-16",
-    "check_in": "08:10 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 8.8,
-    "status": "late",
-    "lat_lng": {"lat": 11.575, "lng": 104.895},
-  },
-  {
-    "uid": "user_sophy_888",
-    "date": "2026-01-17",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.575, "lng": 104.895},
-  },
+final Random _random = Random();
 
-  // February 2026 - user_sophy_888
-  {
-    "uid": "user_sophy_888",
-    "date": "2026-02-02",
-    "check_in": "08:15 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 8.75,
-    "status": "late",
-    "lat_lng": {"lat": 11.575, "lng": 104.895},
-  },
-  {
-    "uid": "user_sophy_888",
-    "date": "2026-02-03",
-    "check_in": "08:20 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 8.6,
-    "status": "late",
-    "lat_lng": {"lat": 11.575, "lng": 104.895},
-  },
-  {
-    "uid": "user_sophy_888",
-    "date": "2026-02-04",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.575, "lng": 104.895},
-  },
-  {
-    "uid": "user_sophy_888",
-    "date": "2026-02-08",
-    "check_in": "08:25 AM",
-    "check_out": "05:15 PM",
-    "total_hours": 8.8,
-    "status": "late",
-    "lat_lng": {"lat": 11.575, "lng": 104.895},
-  },
-  {
-    "uid": "user_sophy_888",
-    "date": "2026-02-09",
-    "check_in": "07:55 AM",
-    "check_out": "04:50 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.575, "lng": 104.895},
-  },
-  {
-    "uid": "user_sophy_888",
-    "date": "2026-02-10",
-    "check_in": "08:15 AM",
-    "check_out": "05:05 PM",
-    "total_hours": 8.8,
-    "status": "late",
-    "lat_lng": {"lat": 11.575, "lng": 104.895},
-  },
-  {
-    "uid": "user_sophy_888",
-    "date": "2026-02-11",
-    "check_in": "08:20 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 8.6,
-    "status": "late",
-    "lat_lng": {"lat": 11.575, "lng": 104.895},
-  },
+final List<Map<String, dynamic>> attendanceRecords =
+    _buildAttendanceRecordsFromOctToNowForAllEmployees();
 
-  // January 2026 - user_rith_123
-  {
-    "uid": "user_rith_123",
-    "date": "2026-01-02",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.568, "lng": 104.890},
-  },
-  {
-    "uid": "user_rith_123",
-    "date": "2026-01-03",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.568, "lng": 104.890},
-  },
-  {
-    "uid": "user_rith_123",
-    "date": "2026-01-06",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.568, "lng": 104.890},
-  },
-  {
-    "uid": "user_rith_123",
-    "date": "2026-01-07",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.568, "lng": 104.890},
-  },
-  {
-    "uid": "user_rith_123",
-    "date": "2026-01-08",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.568, "lng": 104.890},
-  },
-  {
-    "uid": "user_rith_123",
-    "date": "2026-01-09",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.568, "lng": 104.890},
-  },
-  {
-    "uid": "user_rith_123",
-    "date": "2026-01-10",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.568, "lng": 104.890},
-  },
-  {
-    "uid": "user_rith_123",
-    "date": "2026-01-13",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.568, "lng": 104.890},
-  },
-  {
-    "uid": "user_rith_123",
-    "date": "2026-01-14",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.568, "lng": 104.890},
-  },
-  {
-    "uid": "user_rith_123",
-    "date": "2026-01-15",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.568, "lng": 104.890},
-  },
-  {
-    "uid": "user_rith_123",
-    "date": "2026-01-16",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.568, "lng": 104.890},
-  },
-  {
-    "uid": "user_rith_123",
-    "date": "2026-01-17",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.568, "lng": 104.890},
-  },
+const String _demoAccountUid = 'user_winner_777';
 
-  // February 2026 - user_rith_123
-  {
-    "uid": "user_rith_123",
-    "date": "2026-02-02",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.568, "lng": 104.890},
-  },
-  {
-    "uid": "user_rith_123",
-    "date": "2026-02-03",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.568, "lng": 104.890},
-  },
-  {
-    "uid": "user_rith_123",
-    "date": "2026-02-04",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.568, "lng": 104.890},
-  },
-  {
-    "uid": "user_rith_123",
-    "date": "2026-02-05",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.568, "lng": 104.890},
-  },
-  {
-    "uid": "user_rith_123",
-    "date": "2026-02-06",
-    "check_in": "08:00 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.0,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.568, "lng": 104.890},
-  },
-  {
-    "uid": "user_rith_123",
-    "date": "2026-02-10",
-    "check_in": "08:02 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 8.97,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.568, "lng": 104.890},
-  },
-  {
-    "uid": "user_rith_123",
-    "date": "2026-02-11",
-    "check_in": "07:58 AM",
-    "check_out": "05:00 PM",
-    "total_hours": 9.03,
-    "status": "on_time",
-    "lat_lng": {"lat": 11.568, "lng": 104.890},
-  },
-];
+List<Map<String, dynamic>>
+_buildAttendanceRecordsFromOctToNowForAllEmployees() {
+  final employeeIds = usersFinalData
+      .map((user) => user['uid'])
+      .whereType<String>()
+      .where((uid) => uid != _demoAccountUid)
+      .toList();
+
+  final records = <Map<String, dynamic>>[];
+  for (final uid in employeeIds) {
+    records.addAll(_buildAttendanceRecordsFromOctToNow(uid));
+  }
+
+  records.addAll(_buildNonDailyAttendanceForDemoAccount());
+
+  return records;
+}
+
+List<Map<String, dynamic>> _buildNonDailyAttendanceForDemoAccount() {
+  final demoUserExists = usersFinalData.any(
+    (user) => user['uid'] == _demoAccountUid,
+  );
+  if (!demoUserExists) return [];
+
+  final now = DateTime.now();
+  final startYear = now.month >= 10 ? now.year : now.year - 1;
+  final startDate = DateTime(startYear, 10, 1);
+  final records = <Map<String, dynamic>>[];
+
+  for (
+    var day = startDate;
+    !day.isAfter(now);
+    day = day.add(const Duration(days: 2))
+  ) {
+    final isAbsent = _random.nextInt(6) == 0;
+    final isLate = _random.nextInt(4) == 0;
+    final lateMinutes = isLate ? (5 + _random.nextInt(11)) : 0;
+
+    records.add(
+      _buildAttendanceRecord(
+        uid: _demoAccountUid,
+        date: day,
+        isAbsent: isAbsent,
+        isLate: !isAbsent && isLate,
+        lateMinutes: lateMinutes,
+      ),
+    );
+  }
+
+  return records;
+}
+
+List<Map<String, dynamic>> _buildAttendanceRecordsFromOctToNow(String uid) {
+  final userExists = usersFinalData.any((user) => user['uid'] == uid);
+  if (!userExists) return [];
+
+  final now = DateTime.now();
+  final startYear = now.month >= 10 ? now.year : now.year - 1;
+  final startDate = DateTime(startYear, 10, 1);
+
+  final records = <Map<String, dynamic>>[];
+
+  for (
+    var day = startDate;
+    !day.isAfter(now);
+    day = day.add(const Duration(days: 1))
+  ) {
+    final isAbsent = _random.nextInt(12) == 0;
+    final isLate = !isAbsent && _random.nextInt(5) == 0;
+    final lateMinutes = isLate ? (5 + _random.nextInt(21)) : 0;
+
+    records.add(
+      _buildAttendanceRecord(
+        uid: uid,
+        date: day,
+        isAbsent: isAbsent,
+        isLate: isLate,
+        lateMinutes: lateMinutes,
+      ),
+    );
+  }
+
+  return records;
+}
+
+Map<String, dynamic> _buildAttendanceRecord({
+  required String uid,
+  required DateTime date,
+  required bool isAbsent,
+  required bool isLate,
+  required int lateMinutes,
+}) {
+  return {
+    'uid': uid,
+    'date': _formatDate(date),
+    'check_in': isAbsent
+        ? null
+        : (isLate
+              ? '08:${lateMinutes.toString().padLeft(2, '0')} AM'
+              : '08:00 AM'),
+    'check_out': isAbsent ? null : '05:00 PM',
+    'total_hours': isAbsent ? 0.0 : (isLate ? (9 - (lateMinutes / 60)) : 9.0),
+    'status': isAbsent ? 'absent' : (isLate ? 'late' : 'on_time'),
+    'lat_lng': {'lat': 11.572, 'lng': 104.893},
+  };
+}
+
+String _formatDate(DateTime date) {
+  final year = date.year.toString();
+  final month = date.month.toString().padLeft(2, '0');
+  final day = date.day.toString().padLeft(2, '0');
+  return '$year-$month-$day';
+}

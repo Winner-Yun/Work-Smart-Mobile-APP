@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart'; // <-- ADDED: flutter_animate import
 import 'package:flutter_worksmart_mobile_app/app/routes/app_admin_route.dart';
+import 'package:flutter_worksmart_mobile_app/config/language_manager.dart';
+import 'package:flutter_worksmart_mobile_app/core/constants/app_img.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 import 'package:flutter_worksmart_mobile_app/features/admin/auth/logic/auth_admin_logic.dart';
@@ -64,50 +66,55 @@ class _AuthAdminScreenState extends State<AuthAdminScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final bool isMobile = size.width < 900;
+    return AnimatedBuilder(
+      animation: LanguageManager(),
+      builder: (context, _) {
+        final size = MediaQuery.of(context).size;
+        final bool isMobile = size.width < 900;
 
-    return Scaffold(
-      backgroundColor: AppColors.lightBg,
-      body: Center(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.all(isMobile ? 16 : 24),
-          child:
-              Container(
-                    clipBehavior: Clip.antiAlias,
-                    constraints: const BoxConstraints(
-                      maxWidth: 1000,
-                      minHeight: 600,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.lightSurface,
-                      borderRadius: BorderRadius.circular(28),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
-                          blurRadius: 40,
-                          offset: const Offset(0, 15),
+        return Scaffold(
+          backgroundColor: AppColors.lightBg,
+          body: Center(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.all(isMobile ? 16 : 24),
+              child:
+                  Container(
+                        clipBehavior: Clip.antiAlias,
+                        constraints: const BoxConstraints(
+                          maxWidth: 1000,
+                          minHeight: 600,
                         ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(flex: 5, child: _buildFormSide(isMobile)),
-                        if (!isMobile)
-                          Expanded(flex: 5, child: _buildVisualSide()),
-                      ],
-                    ),
-                  )
-                  .animate()
-                  .fade(duration: 600.ms, curve: Curves.easeOut)
-                  .scaleXY(
-                    begin: 0.95,
-                    end: 1.0,
-                    duration: 600.ms,
-                    curve: Curves.easeOutBack,
-                  ),
-        ),
-      ),
+                        decoration: BoxDecoration(
+                          color: AppColors.lightSurface,
+                          borderRadius: BorderRadius.circular(28),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.08),
+                              blurRadius: 40,
+                              offset: const Offset(0, 15),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(flex: 5, child: _buildFormSide(isMobile)),
+                            if (!isMobile)
+                              Expanded(flex: 5, child: _buildVisualSide()),
+                          ],
+                        ),
+                      )
+                      .animate()
+                      .fade(duration: 600.ms, curve: Curves.easeOut)
+                      .scaleXY(
+                        begin: 0.95,
+                        end: 1.0,
+                        duration: 600.ms,
+                        curve: Curves.easeOutBack,
+                      ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -125,7 +132,6 @@ class _AuthAdminScreenState extends State<AuthAdminScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children:
               [
-                    // Brand Badge
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 14,
@@ -135,13 +141,41 @@ class _AuthAdminScreenState extends State<AuthAdminScreen> {
                         color: AppColors.secondary.withOpacity(0.12),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Text(
-                        "ADMIN PORTAL",
+                      child: Text(
+                        AppStrings.tr('admin_portal_badge'),
                         style: TextStyle(
                           color: AppColors.secondary,
                           fontSize: 11,
                           fontWeight: FontWeight.w800,
-                          letterSpacing: 1.5,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          LanguageManager().changeLanguage(
+                            LanguageManager().locale == 'en' ? 'km' : 'en',
+                          );
+                        },
+                        icon: const Icon(Icons.language_outlined, size: 18),
+                        label: Text(
+                          '${AppStrings.tr('language_label')}: ${LanguageManager().locale.toUpperCase()}',
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primary,
+                          side: BorderSide(
+                            color: AppColors.primary.withOpacity(0.25),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 10,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
                     ),
@@ -166,16 +200,15 @@ class _AuthAdminScreenState extends State<AuthAdminScreen> {
                     ),
                     const SizedBox(height: 48),
 
-                    // Input Fields
-                    _buildLabel("Username"),
+                    _buildLabel(AppStrings.tr('username')),
                     _buildTextField(
                       controller: _usernameController,
-                      hint: "Enter your username",
+                      hint: AppStrings.tr('enter_username'),
                       icon: Icons.alternate_email_rounded,
                       validator: _authLogic.validateUsername,
                     ),
                     const SizedBox(height: 24),
-                    _buildLabel("Password"),
+                    _buildLabel(AppStrings.tr('password')),
                     _buildTextField(
                       controller: _passwordController,
                       hint: "••••••••",
@@ -185,7 +218,6 @@ class _AuthAdminScreenState extends State<AuthAdminScreen> {
                     ),
                     const SizedBox(height: 40),
 
-                    // Login Button
                     SizedBox(
                       width: double.infinity,
                       height: 56,
@@ -291,10 +323,10 @@ class _AuthAdminScreenState extends State<AuthAdminScreen> {
                       ),
                     ],
                   ),
-                  child: const Icon(
-                    Icons.admin_panel_settings_rounded,
-                    size: 80,
-                    color: AppColors.secondary,
+                  child: Image.asset(
+                    AppImg.appIconLight,
+                    width: 84,
+                    height: 84,
                   ),
                 ),
 
@@ -315,7 +347,7 @@ class _AuthAdminScreenState extends State<AuthAdminScreen> {
 
                 const SizedBox(height: 16),
                 Text(
-                      "Manage your workspace, users, and analytical data from one centralized secure hub.",
+                      AppStrings.tr('admin_login_visual_subtitle'),
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.8),

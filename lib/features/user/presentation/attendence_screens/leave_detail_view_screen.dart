@@ -2,17 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/logic/leave_request_logic.dart';
 import 'package:flutter_worksmart_mobile_app/shared/model/activity_models/leave_record.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class LeaveDetailViewScreen extends StatelessWidget {
   final LeaveRecord leave;
+  final String? userId;
 
-  const LeaveDetailViewScreen({super.key, required this.leave});
+  const LeaveDetailViewScreen({super.key, required this.leave, this.userId});
 
   @override
   Widget build(BuildContext context) {
+    final bool shouldShowAttachmentSection = _shouldShowAttachmentSection();
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _buildAppBar(context),
@@ -28,7 +31,7 @@ class LeaveDetailViewScreen extends StatelessWidget {
             _buildDetailsGrid(context).animate().fadeIn(delay: 200.ms),
             const SizedBox(height: 20),
             _buildReasonSection(context).animate().fadeIn(delay: 250.ms),
-            if (leave.attachmentUrl != null) ...[
+            if (shouldShowAttachmentSection) ...[
               const SizedBox(height: 20),
               _buildAttachmentSection(context).animate().fadeIn(delay: 300.ms),
             ],
@@ -60,8 +63,27 @@ class LeaveDetailViewScreen extends StatelessWidget {
           fontSize: 18,
         ),
       ),
+      actions: [
+        if (LeaveRequestLogic.canRemoveStatus(leave.status))
+          IconButton(
+            icon: const Icon(Icons.delete_outline, color: Colors.red),
+            onPressed: () => _confirmAndDelete(context),
+          ),
+      ],
       centerTitle: true,
     );
+  }
+
+  Future<void> _confirmAndDelete(BuildContext context) async {
+    final bool removed = await LeaveRequestLogic.confirmAndDeleteLeave(
+      context,
+      record: leave,
+      userId: userId,
+    );
+    if (!removed) return;
+    if (context.mounted) {
+      Navigator.pop(context, true);
+    }
   }
 
   Widget _buildStatusHeader(BuildContext context) {
@@ -395,6 +417,9 @@ class LeaveDetailViewScreen extends StatelessWidget {
   }
 
   Widget _buildAttachmentSection(BuildContext context) {
+    final bool hasAttachment =
+        leave.attachmentUrl != null && leave.attachmentUrl!.isNotEmpty;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -417,73 +442,73 @@ class LeaveDetailViewScreen extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 12),
-        GestureDetector(
-          onTap: () => _openAttachment(leave.attachmentUrl!),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Theme.of(
+              context,
+            ).colorScheme.primary.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
               color: Theme.of(
                 context,
-              ).colorScheme.primary.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Theme.of(
-                  context,
-                ).colorScheme.primary.withValues(alpha: 0.2),
-                width: 1,
+              ).colorScheme.primary.withValues(alpha: 0.2),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.insert_drive_file,
+                color: Theme.of(context).colorScheme.primary,
+                size: 22,
               ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.insert_drive_file,
-                  color: Theme.of(context).colorScheme.primary,
-                  size: 22,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Medical Report',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13,
-                        ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      AppStrings.tr('medical_report'),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
                       ),
-                      Text(
-                        leave.attachmentUrl ?? '',
-                        style: const TextStyle(
-                          color: AppColors.textGrey,
-                          fontSize: 11,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      hasAttachment
+                          ? leave.attachmentUrl!
+                          : AppStrings.tr('no_attachments'),
+                      style: const TextStyle(
+                        color: AppColors.textGrey,
+                        fontSize: 11,
                       ),
-                    ],
-                  ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
-                Icon(
-                  Icons.download,
-                  color: Theme.of(context).colorScheme.primary,
-                  size: 18,
-                ),
-              ],
-            ),
+              ),
+              Icon(
+                Icons.download,
+                color: Theme.of(context).colorScheme.primary,
+                size: 18,
+              ),
+            ],
           ),
         ),
       ],
     );
   }
 
-  Future<void> _openAttachment(String url) async {
-    final Uri uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
+  bool _shouldShowAttachmentSection() {
+    final bool hasAttachment =
+        leave.attachmentUrl != null && leave.attachmentUrl!.isNotEmpty;
+    if (!hasAttachment) return false;
+
+    return leave.type == 'sick_leave';
   }
 
   String _getStatusKey(String status) {

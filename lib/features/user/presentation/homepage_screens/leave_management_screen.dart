@@ -4,6 +4,7 @@ import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 import 'package:flutter_worksmart_mobile_app/core/util/mock_data/userFinalData.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/logic/leave_request_logic.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/presentation/attendence_screens/leave_detail_view_screen.dart';
 import 'package:flutter_worksmart_mobile_app/shared/model/activity_models/leave_record.dart';
 import 'package:flutter_worksmart_mobile_app/shared/model/user_model/user_profile.dart';
@@ -35,6 +36,7 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
   late int _sickUsed;
   late double _annualRatio;
   late double _sickRatio;
+  String? _selectedForRemoveRequestId;
 
   @override
   void initState() {
@@ -98,6 +100,44 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
     return approvedRecords.fold(
       0,
       (sum, record) => sum + record.durationInDays,
+    );
+  }
+
+  void _refreshLeaveDataWithAnimation() {
+    _loadData();
+    _annualAnimation = Tween<double>(begin: 0, end: _annualRatio).animate(
+      CurvedAnimation(parent: _annualController, curve: Curves.easeInOut),
+    );
+    _sickAnimation = Tween<double>(begin: 0, end: _sickRatio).animate(
+      CurvedAnimation(parent: _sickController, curve: Curves.easeInOut),
+    );
+    _annualController.forward(from: 0);
+    _sickController.forward(from: 0);
+  }
+
+  Future<void> _confirmAndDelete(LeaveRecord record) async {
+    final bool removed = await LeaveRequestLogic.confirmAndDeleteLeave(
+      context,
+      record: record,
+      userId: _currentUser.uid,
+      showSnackBar: false,
+    );
+    if (!removed) return;
+
+    setState(() {
+      _selectedForRemoveRequestId = null;
+      _refreshLeaveDataWithAnimation();
+    });
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        content: Text(
+          AppStrings.tr('leave_request_removed'),
+          style: TextStyle(color: Colors.white),
+        ),
+      ),
     );
   }
 
@@ -298,10 +338,13 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
   }
 
   Widget _buildTimelineItem(LeaveRecord record) {
-    final String titleKey = record.type;
-    final String statusKey = _getStatusKey(record.status);
-    final Color color = _getStatusColor(record.status);
+    final String title = LeaveRequestLogic.getLeaveTitle(record.type);
+    final String statusText = LeaveRequestLogic.getStatusText(record.status);
+    final Color color = LeaveRequestLogic.getStatusColor(record.status);
     final String dateLabel = _formatDateRange(record.startDate, record.endDate);
+    final bool isRemovable = LeaveRequestLogic.canRemoveStatus(record.status);
+    final bool isSelectedForRemove =
+        isRemovable && _selectedForRemoveRequestId == record.requestId;
 
     return Material(
       color: Colors.transparent,
@@ -310,13 +353,44 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
         highlightColor: Colors.transparent,
         splashColor: Colors.transparent,
         borderRadius: BorderRadius.circular(15),
-        onTap: () {
-          Navigator.push(
+        onLongPress: () {
+          if (!isRemovable) return;
+          setState(() {
+            _selectedForRemoveRequestId = isSelectedForRemove
+                ? null
+                : record.requestId;
+          });
+        },
+        onTap: () async {
+          if (_selectedForRemoveRequestId != null) {
+            if (!isRemovable) {
+              await LeaveRequestLogic.showRemoveNotAllowedDialog(context);
+              return;
+            }
+            setState(() {
+              _selectedForRemoveRequestId = isSelectedForRemove
+                  ? null
+                  : record.requestId;
+            });
+            return;
+          }
+
+          final bool? wasDeleted = await Navigator.push<bool>(
             context,
             MaterialPageRoute(
-              builder: (context) => LeaveDetailViewScreen(leave: record),
+              builder: (context) => LeaveDetailViewScreen(
+                leave: record,
+                userId: _currentUser.uid,
+              ),
             ),
           );
+
+          if (wasDeleted == true && mounted) {
+            setState(() {
+              _selectedForRemoveRequestId = null;
+              _refreshLeaveDataWithAnimation();
+            });
+          }
         },
         child: Container(
           margin: const EdgeInsets.only(top: 12),
@@ -324,6 +398,12 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
           decoration: BoxDecoration(
             color: Theme.of(context).cardTheme.color,
             borderRadius: BorderRadius.circular(15),
+            border: isSelectedForRemove
+                ? Border.all(
+                    color: Colors.red.withValues(alpha: 0.35),
+                    width: 1,
+                  )
+                : null,
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.03),
@@ -347,7 +427,7 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      AppStrings.tr(titleKey),
+                      title,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
@@ -365,14 +445,32 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
                   ],
                 ),
               ),
-              Text(
-                AppStrings.tr(statusKey),
-                style: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 11,
-                ),
-              ),
+              isSelectedForRemove
+                  ? TextButton.icon(
+                      onPressed: () => _confirmAndDelete(record),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.red,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        minimumSize: const Size(0, 30),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      icon: const Icon(Icons.delete_outline, size: 16),
+                      label: Text(
+                        AppStrings.tr('remove_button'),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    )
+                  : Text(
+                      statusText,
+                      style: TextStyle(
+                        color: color,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11,
+                      ),
+                    ),
             ],
           ),
         ),
@@ -389,30 +487,6 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
       return startLabel;
     }
     return "$startLabel - $endLabel";
-  }
-
-  String _getStatusKey(String status) {
-    switch (status) {
-      case 'approved':
-        return 'status_approved';
-      case 'rejected':
-        return 'status_rejected';
-      case 'pending':
-      default:
-        return 'status_pending';
-    }
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'approved':
-        return Colors.green;
-      case 'rejected':
-        return Colors.red;
-      case 'pending':
-      default:
-        return Colors.orange;
-    }
   }
 
   Widget _buildSectionHeader(String title, String action) {

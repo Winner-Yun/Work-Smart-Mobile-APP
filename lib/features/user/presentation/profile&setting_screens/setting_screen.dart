@@ -113,9 +113,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   isNotification,
                   (v) => setState(() => isNotification = v),
                 ),
-                _buildCustomDivider(context),
               ]),
-              const SizedBox(height: 30),
+              const SizedBox(height: 24),
               _buildSectionHeader(AppStrings.tr('support_section')),
               _buildPremiumGroup(context, [
                 _buildPremiumNavTile(
@@ -144,7 +143,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onTap: () {},
                 ),
               ]),
-              const SizedBox(height: 40),
+              const SizedBox(height: 28),
               _buildBrandFooter(context),
             ],
           ),
@@ -158,36 +157,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required VoidCallback onTap,
     required BuildContext context,
   }) {
-    bool isPressed = false;
-    return StatefulBuilder(
-      builder: (context, setLocalState) {
-        return AnimatedContainer(
-          duration: 150.ms,
-          margin: const EdgeInsets.symmetric(vertical: 2),
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardTheme.color,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: isPressed
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 20,
-                      spreadRadius: 2,
-                      offset: const Offset(0, 8),
-                    ),
-                  ]
-                : [],
-          ),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(20),
-            onTapDown: (_) => setLocalState(() => isPressed = true),
-            onTapUp: (_) => setLocalState(() => isPressed = false),
-            onTapCancel: () => setLocalState(() => isPressed = false),
-            onTap: onTap,
-            child: child,
-          ),
-        );
-      },
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 2),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: child,
+      ),
     );
   }
 
@@ -210,10 +190,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       title: Text(
         AppStrings.tr('settings_title'),
         style: TextStyle(
-          color: Theme.of(context).textTheme.bodyLarge?.color,
-          fontWeight: FontWeight.w900,
-          fontSize: 20,
-          letterSpacing: 0.5,
+          color: Theme.of(context).colorScheme.primary,
+          fontWeight: FontWeight.bold,
+          fontSize: 19,
         ),
       ),
     );
@@ -221,49 +200,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.only(left: 8, bottom: 12),
+      padding: const EdgeInsets.only(left: 2, bottom: 10),
       child: Text(
-        title.toUpperCase(),
+        title,
         style: TextStyle(
           color: Colors.grey.shade500,
-          fontSize: 18,
-          letterSpacing: 1.2,
-          fontWeight: FontWeight.w800,
+          fontSize: 13,
+          letterSpacing: 0.2,
+          fontWeight: FontWeight.w700,
         ),
       ),
-    ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.2);
+    );
   }
 
   Widget _buildPremiumGroup(BuildContext context, List<Widget> children) {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(children: children),
-    ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.1, end: 0);
+    ).animate().fadeIn(duration: 420.ms);
   }
 
   Widget _buildLanguageTile(BuildContext context) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      leading: _buildGradientIcon(
-        Icons.translate_rounded,
-        Colors.blue,
-        Colors.cyan,
-      ),
+      leading: _buildSoftIcon(context, Icons.translate_rounded, Colors.blue),
       title: Text(
         AppStrings.tr('language_label'),
         style: TextStyle(
           fontWeight: FontWeight.bold,
-          fontSize: 16,
+          fontSize: 15,
           color: Theme.of(context).textTheme.bodyLarge?.color,
         ),
       ),
@@ -297,20 +272,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
       },
       child: AnimatedContainer(
         duration: 250.ms,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: active
               ? Theme.of(context).scaffoldBackgroundColor
               : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: active
-              ? [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8)]
-              : null,
+          borderRadius: BorderRadius.circular(10),
         ),
         child: Text(
           text,
           style: TextStyle(
-            fontSize: 13,
+            fontSize: 12,
             fontWeight: active ? FontWeight.bold : FontWeight.w500,
             color: active
                 ? (isDark ? Colors.white : const Color(0xFF004C4C))
@@ -334,12 +306,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       onTap: () => onChanged(!value),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-        leading: _buildGradientIcon(icon, color, color.withOpacity(0.5)),
+        leading: _buildSoftIcon(context, icon, color),
         title: Text(
           title,
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            fontSize: 16,
+            fontSize: 15,
             color: Theme.of(context).textTheme.bodyLarge?.color,
           ),
         ),
@@ -365,14 +337,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       onTap: onTap ?? () {},
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-        leading: _buildGradientIcon(icon, color, color.withOpacity(0.5)),
+        leading: _buildSoftIcon(context, icon, color),
         title: Text(
           title,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            fontSize: 16,
+            fontSize: 15,
             color: Theme.of(context).textTheme.bodyLarge?.color,
           ),
         ),
@@ -387,25 +359,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildGradientIcon(IconData icon, Color startColor, Color endColor) {
+  Widget _buildSoftIcon(BuildContext context, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [startColor, endColor],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: startColor.withOpacity(0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: Icon(icon, color: Colors.white, size: 22),
+      child: Icon(icon, color: color, size: 20),
     );
   }
 
@@ -426,9 +387,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           'WORKSMART',
           style: TextStyle(
             color: Theme.of(context).textTheme.bodyLarge?.color,
-            fontSize: 14,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 2,
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.2,
           ),
         ),
         Text(
@@ -436,8 +397,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           style: TextStyle(
             color: Colors.grey.shade400,
             fontSize: 10,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.8,
           ),
         ),
       ],

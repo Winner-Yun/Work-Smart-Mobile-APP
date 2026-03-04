@@ -9,4 +9,5 @@ class AppImg {
   static String appIconDark = 'assets/icons/appIconDarkMode.png';
   static String appIconLight = 'assets/icons/appIconwebicon.png';
   static String robotLove = 'assets/images/robotlove.png';
+  static String emptyState = 'assets/icons/nodata.png';
 }

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_worksmart_mobile_app/core/constants/app_img.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 import 'package:flutter_worksmart_mobile_app/core/util/mock_data/userFinalData.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/logic/leave_request_logic.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/presentation/attendence_screens/leave_detail_view_screen.dart';
 import 'package:flutter_worksmart_mobile_app/shared/model/activity_models/leave_record.dart';
 import 'package:flutter_worksmart_mobile_app/shared/model/user_model/user_profile.dart';
+import 'package:flutter_worksmart_mobile_app/shared/widget/user/data_empty_state.dart';
 import 'package:intl/intl.dart';
 
 class LeaveAllRequestsScreen extends StatefulWidget {
@@ -23,6 +26,9 @@ class _LeaveAllRequestsScreenState extends State<LeaveAllRequestsScreen> {
   late List<LeaveRecord> _filteredHistory;
   late String? loggedInUserId;
   DateTime? _selectedDate;
+  String? _selectedForRemoveRequestId;
+  bool _isRemoveMode = false;
+  LeaveSortBy _sortBy = LeaveSortBy.dateNewest;
 
   final DateFormat _dateFormatter = DateFormat('dd MMM yyyy');
 
@@ -47,30 +53,11 @@ class _LeaveAllRequestsScreenState extends State<LeaveAllRequestsScreen> {
   }
 
   void _applyFilter() {
-    if (_selectedDate == null) {
-      _filteredHistory = _history.toList();
-      return;
-    }
-
-    final DateTime target = DateTime(
-      _selectedDate!.year,
-      _selectedDate!.month,
-      _selectedDate!.day,
+    _filteredHistory = LeaveRequestLogic.filterHistoryByDate(
+      _history,
+      _selectedDate,
     );
-
-    _filteredHistory = _history.where((record) {
-      final DateTime start = DateTime(
-        record.startDate.year,
-        record.startDate.month,
-        record.startDate.day,
-      );
-      final DateTime end = DateTime(
-        record.endDate.year,
-        record.endDate.month,
-        record.endDate.day,
-      );
-      return !target.isBefore(start) && !target.isAfter(end);
-    }).toList();
+    _filteredHistory = LeaveRequestLogic.sortHistory(_filteredHistory, _sortBy);
   }
 
   Future<void> _pickDate(BuildContext context) async {
@@ -97,6 +84,71 @@ class _LeaveAllRequestsScreenState extends State<LeaveAllRequestsScreen> {
     });
   }
 
+  void _handleLongPress(LeaveRecord record, bool isSelectedForRemove) {
+    if (!LeaveRequestLogic.canRemoveStatus(record.status)) return;
+    final LeaveRemoveModeState state =
+        LeaveRequestLogic.getLongPressRemoveModeState(
+          record: record,
+          isSelectedForRemove: isSelectedForRemove,
+        );
+
+    setState(() {
+      _selectedForRemoveRequestId = state.selectedForRemoveRequestId;
+      _isRemoveMode = state.isRemoveMode;
+    });
+  }
+
+  Future<void> _handleTap(LeaveRecord record, bool isSelectedForRemove) async {
+    if (_isRemoveMode) {
+      if (!LeaveRequestLogic.canRemoveStatus(record.status)) {
+        await LeaveRequestLogic.showRemoveNotAllowedDialog(context);
+        return;
+      }
+      final LeaveRemoveModeState state =
+          LeaveRequestLogic.getTapRemoveModeState(
+            record: record,
+            isSelectedForRemove: isSelectedForRemove,
+          );
+
+      setState(() {
+        _selectedForRemoveRequestId = state.selectedForRemoveRequestId;
+        _isRemoveMode = state.isRemoveMode;
+      });
+      return;
+    }
+
+    final bool? wasDeleted = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            LeaveDetailViewScreen(leave: record, userId: _currentUser.uid),
+      ),
+    );
+
+    if (wasDeleted == true && mounted) {
+      setState(() {
+        _selectedForRemoveRequestId = null;
+        _isRemoveMode = false;
+        _loadData();
+      });
+    }
+  }
+
+  Future<void> _confirmAndDelete(LeaveRecord record) async {
+    final bool removed = await LeaveRequestLogic.confirmAndDeleteLeave(
+      context,
+      record: record,
+      userId: _currentUser.uid,
+    );
+    if (!removed) return;
+
+    setState(() {
+      _selectedForRemoveRequestId = null;
+      _isRemoveMode = false;
+      _loadData();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -104,10 +156,18 @@ class _LeaveAllRequestsScreenState extends State<LeaveAllRequestsScreen> {
       appBar: _buildAppBar(context),
       body: Column(
         children: [
-          _buildDateFilter(context),
+          _buildFilterAndSort(context),
           Expanded(
             child: _filteredHistory.isEmpty
                 ? _buildEmptyState(context)
+                      .animate(key: const ValueKey('leave-empty-state'))
+                      .fadeIn(duration: 260.ms, curve: Curves.easeOut)
+                      .slideY(
+                        begin: 0.06,
+                        end: 0,
+                        duration: 260.ms,
+                        curve: Curves.easeOut,
+                      )
                 : ListView.builder(
                     padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
                     physics: const BouncingScrollPhysics(),
@@ -150,94 +210,173 @@ class _LeaveAllRequestsScreenState extends State<LeaveAllRequestsScreen> {
     );
   }
 
-  Widget _buildDateFilter(BuildContext context) {
+  Widget _buildFilterAndSort(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardTheme.color,
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Icon(
-              Icons.calendar_today,
-              size: 18,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                _selectedDate == null
-                    ? 'All dates'
-                    : _dateFormatter.format(_selectedDate!),
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
+      padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+      child: Column(
+        children: [
+          // Date Filter
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardTheme.color,
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.03),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
                 ),
-              ),
+              ],
             ),
-            TextButton(
-              onPressed: () => _pickDate(context),
-              child: Text(
-                AppStrings.tr('select_date'),
-                style: TextStyle(
+            child: Row(
+              children: [
+                Icon(
+                  Icons.calendar_today,
+                  size: 18,
                   color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.bold,
                 ),
-              ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    _selectedDate == null
+                        ? 'All dates'
+                        : _dateFormatter.format(_selectedDate!),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => _pickDate(context),
+                  child: Text(
+                    AppStrings.tr('select_date'),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                if (_selectedDate != null)
+                  IconButton(
+                    onPressed: _clearDate,
+                    icon: const Icon(Icons.close, size: 18),
+                    color: Colors.grey,
+                    tooltip: 'Clear',
+                  ),
+              ],
             ),
-            if (_selectedDate != null)
-              IconButton(
-                onPressed: _clearDate,
-                icon: const Icon(Icons.close, size: 18),
-                color: Colors.grey,
-                tooltip: 'Clear',
-              ),
-          ],
-        ),
+          ).animate().fadeIn(),
+          const SizedBox(height: 12),
+          // Sort Dropdown
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardTheme.color,
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.03),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.sort,
+                  size: 18,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: DropdownButton<LeaveSortBy>(
+                    value: _sortBy,
+                    underline: const SizedBox(),
+                    isExpanded: true,
+                    onChanged: (LeaveSortBy? newValue) {
+                      if (newValue != null) {
+                        setState(() {
+                          _sortBy = newValue;
+                          _applyFilter();
+                        });
+                      }
+                    },
+                    items: [
+                      DropdownMenuItem(
+                        value: LeaveSortBy.dateNewest,
+                        child: Text(
+                          AppStrings.tr('sort_newest_date'),
+                          style: TextStyle(
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
+                          ),
+                        ),
+                      ),
+                      DropdownMenuItem(
+                        value: LeaveSortBy.dateOldest,
+                        child: Text(
+                          AppStrings.tr('sort_oldest_date'),
+                          style: TextStyle(
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
+                          ),
+                        ),
+                      ),
+                      DropdownMenuItem(
+                        value: LeaveSortBy.statusPending,
+                        child: Text(
+                          AppStrings.tr('status_pending'),
+                          style: TextStyle(
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
+                          ),
+                        ),
+                      ),
+                      DropdownMenuItem(
+                        value: LeaveSortBy.statusApproved,
+                        child: Text(
+                          AppStrings.tr('status_approved'),
+                          style: TextStyle(
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
+                          ),
+                        ),
+                      ),
+                      DropdownMenuItem(
+                        value: LeaveSortBy.statusRejected,
+                        child: Text(
+                          AppStrings.tr('status_rejected'),
+                          style: TextStyle(
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ).animate().fadeIn(),
+        ],
       ),
-    ).animate().fadeIn();
+    );
   }
 
   Widget _buildEmptyState(BuildContext context) {
-    return Center(
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardTheme.color,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.info_outline, color: AppColors.textGrey),
-            const SizedBox(width: 10),
-            Text(
-              AppStrings.tr('no_records'),
-              style: const TextStyle(color: AppColors.textGrey),
-            ),
-          ],
-        ),
-      ).animate().fadeIn(),
+    return DataEmptyState(
+      imageAsset: AppImg.emptyState,
+      message: AppStrings.tr('no_records'),
     );
   }
 
   Widget _buildRequestListItem(LeaveRecord record) {
-    final String title = _getLeaveTitle(record.type);
-    final String subtitle = _formatDateRange(record);
-    final String status = _getStatusText(record.status);
-    final Color statusColor = _getStatusColor(record.status);
-    final IconData icon = _getLeaveIcon(record.type);
+    final String title = LeaveRequestLogic.getLeaveTitle(record.type);
+    final String subtitle = LeaveRequestLogic.formatDateRange(record);
+    final String status = LeaveRequestLogic.getStatusText(record.status);
+    final Color statusColor = LeaveRequestLogic.getStatusColor(record.status);
+    final IconData icon = LeaveRequestLogic.getLeaveIcon(record.type);
+    final bool isRemovable = LeaveRequestLogic.canRemoveStatus(record.status);
+    final bool isSelectedForRemove =
+        isRemovable && _selectedForRemoveRequestId == record.requestId;
 
     return Material(
       color: Colors.transparent,
@@ -246,13 +385,11 @@ class _LeaveAllRequestsScreenState extends State<LeaveAllRequestsScreen> {
         highlightColor: Colors.transparent,
         splashColor: Colors.transparent,
         borderRadius: BorderRadius.circular(15),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => LeaveDetailViewScreen(leave: record),
-            ),
-          );
+        onLongPress: () {
+          _handleLongPress(record, isSelectedForRemove);
+        },
+        onTap: () async {
+          await _handleTap(record, isSelectedForRemove);
         },
         child: Container(
           margin: const EdgeInsets.only(bottom: 12),
@@ -260,6 +397,12 @@ class _LeaveAllRequestsScreenState extends State<LeaveAllRequestsScreen> {
           decoration: BoxDecoration(
             color: Theme.of(context).cardTheme.color,
             borderRadius: BorderRadius.circular(15),
+            border: isSelectedForRemove
+                ? Border.all(
+                    color: Colors.red.withValues(alpha: 0.35),
+                    width: 1,
+                  )
+                : null,
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.03),
@@ -304,94 +447,46 @@ class _LeaveAllRequestsScreenState extends State<LeaveAllRequestsScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  status,
-                  style: TextStyle(
-                    color: statusColor,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+              isSelectedForRemove
+                  ? TextButton.icon(
+                      onPressed: () => _confirmAndDelete(record),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.red,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        minimumSize: const Size(0, 30),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      icon: const Icon(Icons.delete_outline, size: 16),
+                      label: Text(
+                        AppStrings.tr('remove_button'),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    )
+                  : Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: statusColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        status,
+                        style: TextStyle(
+                          color: statusColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
             ],
           ),
         ),
       ),
     );
-  }
-
-  String _getLeaveTitle(String type) {
-    switch (type) {
-      case 'annual_leave':
-        return AppStrings.tr('annual_leave');
-      case 'sick_leave':
-        return AppStrings.tr('sick_leave');
-      default:
-        return type.replaceAll('_', ' ');
-    }
-  }
-
-  IconData _getLeaveIcon(String type) {
-    switch (type) {
-      case 'annual_leave':
-        return Icons.beach_access_outlined;
-      case 'sick_leave':
-        return Icons.medical_services_outlined;
-      default:
-        return Icons.calendar_today_outlined;
-    }
-  }
-
-  String _getStatusText(String status) {
-    switch (status) {
-      case 'approved':
-        return AppStrings.tr('status_approved');
-      case 'rejected':
-        return AppStrings.tr('status_rejected');
-      case 'pending':
-      default:
-        return AppStrings.tr('status_pending');
-    }
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'approved':
-        return Colors.green;
-      case 'rejected':
-        return Colors.red;
-      case 'pending':
-      default:
-        return Colors.orange;
-    }
-  }
-
-  String _formatDateRange(LeaveRecord record) {
-    final DateTime startDate = record.startDate;
-    final DateTime endDate = record.endDate;
-
-    if (startDate.year == endDate.year &&
-        startDate.month == endDate.month &&
-        startDate.day == endDate.day) {
-      return _dateFormatter.format(startDate);
-    }
-
-    final String endText = _dateFormatter.format(endDate);
-    String startText = DateFormat('dd MMM').format(startDate);
-
-    if (startDate.year == endDate.year && startDate.month == endDate.month) {
-      startText = DateFormat('dd').format(startDate);
-    }
-
-    return '$startText - $endText';
   }
 }

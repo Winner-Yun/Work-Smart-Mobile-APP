@@ -1,8 +1,13 @@
+import 'dart:math' as math;
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_admin_route.dart';
 import 'package:flutter_worksmart_mobile_app/config/language_manager.dart';
 import 'package:flutter_worksmart_mobile_app/config/theme_manager.dart';
+import 'package:flutter_worksmart_mobile_app/core/constants/app_img.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/map_styles.dart';
@@ -25,12 +30,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   late final DashboardController _controller;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String _attendanceSearchQuery = '';
-  String _sortBy = 'name'; // Default sort
+  String _sortBy = 'name';
+  int _attendancePage = 0;
 
   // Map Specifics
   late final OfficeConfig _officeConfig;
   late final gmaps.LatLng _officeLocation;
   gmaps.GoogleMapController? _mapController;
+  gmaps.BitmapDescriptor? _officeMarkerIcon;
 
   // Hover State
   final bool _isProfileHovering = false;
@@ -44,6 +51,30 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       _officeConfig.geofence.lat,
       _officeConfig.geofence.lng,
     );
+    _loadOfficeMarkerIcon();
+  }
+
+  Future<void> _loadOfficeMarkerIcon() async {
+    try {
+      final ByteData data = await rootBundle.load(AppImg.pinIcon);
+      final ui.Codec codec = await ui.instantiateImageCodec(
+        data.buffer.asUint8List(),
+        targetWidth: 40,
+      );
+      final ui.FrameInfo frameInfo = await codec.getNextFrame();
+      final bytes = await frameInfo.image.toByteData(
+        format: ui.ImageByteFormat.png,
+      );
+      if (bytes == null || !mounted) return;
+
+      setState(() {
+        _officeMarkerIcon = gmaps.BitmapDescriptor.fromBytes(
+          bytes.buffer.asUint8List(),
+        );
+      });
+    } catch (e) {
+      debugPrint('Error loading office pin icon: $e');
+    }
   }
 
   @override
@@ -79,7 +110,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       builder: (context, _) {
         return LayoutBuilder(
           builder: (context, constraints) {
-            // Responsive Breakpoints
             final isDesktop = constraints.maxWidth >= 1100;
 
             final isCompact = !isDesktop;
@@ -108,7 +138,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Expanded(child: _buildGeofenceCard()),
+                                      SizedBox(
+                                        width:
+                                            MediaQuery.sizeOf(context).width *
+                                            0.5,
+                                        child: _buildGeofenceCard(),
+                                      ),
                                       const SizedBox(width: 32),
                                       Expanded(child: _buildTopPerformers()),
                                     ],
@@ -230,9 +265,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   // UI SECTIONS (The "One Class" approach)
   // ==========================================
 
-  // --- 2. Header ---
-
-  // --- 3. Statistics Grid ---
   Widget _buildStatsGrid(bool isCompact) {
     final stats = buildDashboardStats();
 
@@ -451,7 +483,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     final allRows = buildAttendanceRows(limit: 100);
 
     var filteredRows = _attendanceSearchQuery.isEmpty
-        ? allRows.take(5).toList()
+        ? allRows
         : allRows
               .where(
                 (row) =>
@@ -468,6 +500,21 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               .toList();
 
     filteredRows = _applySorting(filteredRows);
+    const pageSize = 5;
+    const rowHeight = 74.0;
+    const paginationBarHeight = 44.0;
+    final totalPages = filteredRows.isEmpty
+        ? 1
+        : ((filteredRows.length + pageSize - 1) ~/ pageSize);
+    final currentPage = _attendancePage.clamp(0, totalPages - 1);
+    final startIndex = currentPage * pageSize;
+    final endIndex = math.min(startIndex + pageSize, filteredRows.length);
+    final pagedRows = filteredRows.isEmpty
+        ? <AttendanceRowData>[]
+        : filteredRows.sublist(startIndex, endIndex);
+    final emptySlots = pageSize - pagedRows.length;
+    final showingFrom = filteredRows.isEmpty ? 0 : startIndex + 1;
+    final showingTo = filteredRows.isEmpty ? 0 : endIndex;
 
     Widget header(String text) => Expanded(
       child: Text(
@@ -608,175 +655,316 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ).animate().fadeIn().slideY(begin: 0.2),
             )
           // Table Rows
-          else
-            ...filteredRows.map((row) {
-              final color = row.isLate
-                  ? AppColors.secondary
-                  : AppColors.success;
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0),
-                child: MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () {
-                        _showEmployeeProfile(row);
-                      },
-                      borderRadius: BorderRadius.circular(12),
-                      hoverColor: Theme.of(
-                        context,
-                      ).colorScheme.primary.withOpacity(0.05),
+          else ...[
+            SizedBox(
+              height: pageSize * rowHeight,
+              child: Column(
+                children: [
+                  ...pagedRows.map((row) {
+                    final color = row.isLate
+                        ? AppColors.secondary
+                        : AppColors.success;
+
+                    return SizedBox(
+                      height: rowHeight,
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 8.0,
-                          horizontal: 8.0,
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Row(
-                                children: [
-                                  _buildProfileAvatar(
-                                    name: row.name,
-                                    imageUrl: row.profileUrl,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        row.name,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 13,
+                        padding: const EdgeInsets.symmetric(vertical: 4.0),
+                        child: MouseRegion(
+                          cursor: SystemMouseCursors.click,
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () {
+                                _showEmployeeProfile(row);
+                              },
+                              borderRadius: BorderRadius.circular(12),
+                              hoverColor: Theme.of(
+                                context,
+                              ).colorScheme.primary.withOpacity(0.05),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8.0,
+                                  horizontal: 8.0,
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Expanded(
+                                      child: Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.center,
+                                          children: [
+                                            _buildProfileAvatar(
+                                              name: row.name,
+                                              imageUrl: row.profileUrl,
+                                            ),
+                                            SizedBox(width: 12),
+                                            Center(
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    row.name,
+                                                    style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 13,
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                  Text(
+                                                    row.dept,
+                                                    style: TextStyle(
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .onSurface
+                                                          .withOpacity(0.6),
+                                                      fontSize: 11,
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                      Text(
-                                        row.dept,
-                                        style: TextStyle(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSurface
-                                              .withOpacity(0.6),
-                                          fontSize: 11,
+                                    ),
+                                    Expanded(
+                                      child: Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Text(
+                                              row.checkIn,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 13,
+                                              ),
+                                            ),
+                                            Text(
+                                              row.timeStatus,
+                                              style: TextStyle(
+                                                color: row.isLate
+                                                    ? Theme.of(
+                                                        context,
+                                                      ).colorScheme.secondary
+                                                    : Theme.of(context)
+                                                          .colorScheme
+                                                          .onSurface
+                                                          .withOpacity(0.6),
+                                                fontSize: 9,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    row.checkIn,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 13,
                                     ),
-                                  ),
-                                  Text(
-                                    row.timeStatus,
-                                    style: TextStyle(
-                                      color: row.isLate
-                                          ? Theme.of(
-                                              context,
-                                            ).colorScheme.secondary
-                                          : Theme.of(context)
-                                                .colorScheme
-                                                .onSurface
-                                                .withOpacity(0.6),
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    row.checkOut,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                  Text(
-                                    row.timeStatus,
-                                    style: TextStyle(
-                                      color: row.isLate
-                                          ? Theme.of(
-                                              context,
-                                            ).colorScheme.secondary
-                                          : Theme.of(context)
-                                                .colorScheme
-                                                .onSurface
-                                                .withOpacity(0.6),
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Expanded(
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: color.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.circle, size: 6, color: color),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        row.statusLabel,
-                                        style: TextStyle(
-                                          color: color,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.bold,
+                                    Expanded(
+                                      child: Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Text(
+                                              row.checkOut,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 13,
+                                              ),
+                                            ),
+                                            Text(
+                                              row.timeStatus,
+                                              style: TextStyle(
+                                                color: row.isLate
+                                                    ? Theme.of(
+                                                        context,
+                                                      ).colorScheme.secondary
+                                                    : Theme.of(context)
+                                                          .colorScheme
+                                                          .onSurface
+                                                          .withOpacity(0.6),
+                                                fontSize: 9,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                    Expanded(
+                                      child: Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: color.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(
+                                              20,
+                                            ),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                Icons.circle,
+                                                size: 6,
+                                                color: color,
+                                              ),
+                                              const SizedBox(width: 6),
+                                              Text(
+                                                row.statusLabel,
+                                                style: TextStyle(
+                                                  color: color,
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    Icon(
+                                      Icons.donut_large,
+                                      size: 18,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface.withOpacity(0.6),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
-                            Icon(
-                              Icons.donut_large,
-                              size: 18,
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                  ...List.generate(
+                    emptySlots,
+                    (_) => SizedBox(
+                      height: rowHeight,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(
                               color: Theme.of(
                                 context,
-                              ).colorScheme.onSurface.withOpacity(0.6),
+                              ).dividerColor.withOpacity(0.25),
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     ),
                   ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              height: paginationBarHeight,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              decoration: BoxDecoration(
+                color: Theme.of(
+                  context,
+                ).colorScheme.surfaceVariant.withOpacity(0.35),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Theme.of(context).dividerColor.withOpacity(0.4),
                 ),
-              );
-            }),
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    _trFormat('attendance_showing_range', {
+                      'from': '$showingFrom',
+                      'to': '$showingTo',
+                      'total': '${filteredRows.length}',
+                    }),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.7),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    _trFormat('attendance_page_fraction', {
+                      'current': '${currentPage + 1}',
+                      'total': '$totalPages',
+                    }),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.7),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: currentPage > 0
+                        ? () {
+                            setState(() {
+                              _attendancePage = currentPage - 1;
+                            });
+                          }
+                        : null,
+                    icon: const Icon(Icons.chevron_left),
+                    tooltip: AppStrings.tr('previous_page'),
+                  ),
+                  IconButton(
+                    onPressed: currentPage < totalPages - 1
+                        ? () {
+                            setState(() {
+                              _attendancePage = currentPage + 1;
+                            });
+                          }
+                        : null,
+                    icon: const Icon(Icons.chevron_right),
+                    tooltip: AppStrings.tr('next_page'),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 
-  // --- . Right Panel (Map & Top Performers) ---
+  String _trFormat(String key, Map<String, String> values) {
+    var text = AppStrings.tr(key);
+    values.forEach((k, v) {
+      text = text.replaceAll('{$k}', v);
+    });
+    return text;
+  }
+
   Widget _buildRightPanel() {
     return Column(
       children: [
@@ -871,6 +1059,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   gmaps.Marker(
                     markerId: const gmaps.MarkerId('office'),
                     position: _officeLocation,
+                    icon:
+                        _officeMarkerIcon ??
+                        gmaps.BitmapDescriptor.defaultMarker,
+                    anchor: const Offset(0.5, 0.5),
                   ),
                 },
                 circles: {
@@ -1065,6 +1257,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         onChanged: (value) {
           setState(() {
             _attendanceSearchQuery = value;
+            _attendancePage = 0;
           });
         },
         style: TextStyle(
@@ -1093,6 +1286,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       onTap: () {
                         setState(() {
                           _attendanceSearchQuery = '';
+                          _attendancePage = 0;
                         });
                       },
                       borderRadius: BorderRadius.circular(20),
@@ -1132,6 +1326,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         onChanged: (value) {
           setState(() {
             _sortBy = value ?? 'name';
+            _attendancePage = 0;
           });
         },
         isExpanded: true,
@@ -1323,81 +1518,81 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       context: context,
       builder: (context) => Dialog(
         backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(24),
         child: Container(
           constraints: const BoxConstraints(maxWidth: 500),
+          clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
+                color: Colors.black.withOpacity(0.12),
+                blurRadius: 24,
+                offset: const Offset(0, 12),
               ),
             ],
           ),
           child: SingleChildScrollView(
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // Header with background gradient
                 Container(
+                  width: double.infinity,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        primary.withOpacity(0.15),
-                        primary.withOpacity(0.05),
+                        primary.withOpacity(0.08),
+                        primary.withOpacity(0.02),
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(24),
-                      topRight: Radius.circular(24),
-                    ),
                   ),
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(32),
                   child: Column(
                     children: [
-                      // Profile Avatar
                       _buildProfileAvatar(
                         name: employee.name,
                         imageUrl: employee.profileUrl,
-                        radius: 40,
+                        radius: 32,
                       ),
                       const SizedBox(height: 16),
-                      // Employee Name
                       Text(
                         employee.name,
                         style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.5,
                         ),
                         textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 8),
-                      // Department
+                      const SizedBox(height: 4),
                       Text(
                         employee.dept,
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 15,
                           color: Theme.of(
                             context,
                           ).colorScheme.onSurface.withOpacity(0.6),
                           fontWeight: FontWeight.w500,
                         ),
                         textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 12),
-                      // Status Badge
+                      const SizedBox(height: 16),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
+                          horizontal: 16,
+                          vertical: 8,
                         ),
                         decoration: BoxDecoration(
                           color: (isLate ? secondary : AppColors.success)
                               .withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(100),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -1407,13 +1602,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               size: 8,
                               color: isLate ? secondary : AppColors.success,
                             ),
-                            const SizedBox(width: 6),
+                            const SizedBox(width: 8),
                             Text(
                               employee.statusLabel,
                               style: TextStyle(
                                 color: isLate ? secondary : AppColors.success,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                                letterSpacing: 0.2,
                               ),
                             ),
                           ],
@@ -1422,35 +1618,40 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     ],
                   ),
                 ),
-                // Details Section
                 Padding(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
                   child: Column(
                     children: [
-                      // Check-in Details
                       Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
                           color: Theme.of(
                             context,
-                          ).colorScheme.surfaceVariant.withOpacity(0.5),
-                          borderRadius: BorderRadius.circular(12),
+                          ).colorScheme.surfaceVariant.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(16),
                           border: Border.all(
                             color: Theme.of(
                               context,
-                            ).dividerColor.withOpacity(0.3),
+                            ).dividerColor.withOpacity(0.1),
                           ),
                         ),
                         child: Column(
                           children: [
                             Row(
                               children: [
-                                Icon(
-                                  Icons.login_rounded,
-                                  size: 20,
-                                  color: primary,
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: primary.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(
+                                    Icons.login_rounded,
+                                    size: 20,
+                                    color: primary,
+                                  ),
                                 ),
-                                const SizedBox(width: 12),
+                                const SizedBox(width: 16),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
@@ -1459,7 +1660,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                       Text(
                                         AppStrings.tr('check_in_time'),
                                         style: TextStyle(
-                                          fontSize: 12,
+                                          fontSize: 13,
                                           color: Theme.of(context)
                                               .colorScheme
                                               .onSurface
@@ -1467,38 +1668,66 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
-                                      const SizedBox(height: 4),
+                                      const SizedBox(height: 2),
                                       Text(
                                         employee.checkIn,
                                         style: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
-                                Text(
-                                  employee.timeStatus,
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: isLate
-                                        ? secondary
-                                        : AppColors.success,
-                                    fontWeight: FontWeight.bold,
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        (isLate ? secondary : AppColors.success)
+                                            .withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    employee.timeStatus,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: isLate
+                                          ? secondary
+                                          : AppColors.success,
+                                      fontWeight: FontWeight.w700,
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
-                            const Divider(height: 20),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              child: Divider(
+                                height: 1,
+                                thickness: 1,
+                                color: Theme.of(
+                                  context,
+                                ).dividerColor.withOpacity(0.1),
+                              ),
+                            ),
                             Row(
                               children: [
-                                Icon(
-                                  Icons.logout_rounded,
-                                  size: 20,
-                                  color: primary,
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: primary.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(
+                                    Icons.logout_rounded,
+                                    size: 20,
+                                    color: primary,
+                                  ),
                                 ),
-                                const SizedBox(width: 12),
+                                const SizedBox(width: 16),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
@@ -1507,7 +1736,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                       Text(
                                         AppStrings.tr('check_out_time'),
                                         style: TextStyle(
-                                          fontSize: 12,
+                                          fontSize: 13,
                                           color: Theme.of(context)
                                               .colorScheme
                                               .onSurface
@@ -1515,12 +1744,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
-                                      const SizedBox(height: 4),
+                                      const SizedBox(height: 2),
                                       Text(
                                         employee.checkOut,
                                         style: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
                                         ),
                                       ),
                                     ],
@@ -1531,26 +1760,42 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 20),
-                      // Action Buttons
+                      const SizedBox(height: 24),
                       Row(
                         children: [
                           Expanded(
                             child: OutlinedButton.icon(
                               onPressed: () => Navigator.pop(context),
-                              icon: const Icon(Icons.close),
-                              label: const Text('Close'),
+                              icon: const Icon(Icons.close, size: 20),
+                              label: Text(AppStrings.tr('close')),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 16),
                           Expanded(
                             child: ElevatedButton.icon(
                               onPressed: () {
                                 Navigator.pop(context);
                                 _showEmployeeDetails(employee);
                               },
-                              icon: const Icon(Icons.info_outline),
-                              label: const Text('Details'),
+                              icon: const Icon(Icons.info_outline, size: 20),
+                              label: Text(AppStrings.tr('details_button')),
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
                             ),
                           ),
                         ],
@@ -1575,36 +1820,34 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       context: context,
       builder: (context) => Dialog(
         backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(24),
         child: Container(
           constraints: const BoxConstraints(maxWidth: 600),
+          clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
+                color: Colors.black.withOpacity(0.12),
+                blurRadius: 24,
+                offset: const Offset(0, 12),
               ),
             ],
           ),
           child: SingleChildScrollView(
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // Header
                 Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        primary.withOpacity(0.2),
-                        primary.withOpacity(0.05),
+                        primary.withOpacity(0.08),
+                        primary.withOpacity(0.02),
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                    ),
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(24),
-                      topRight: Radius.circular(24),
                     ),
                   ),
                   padding: const EdgeInsets.all(24),
@@ -1613,7 +1856,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       _buildProfileAvatar(
                         name: employee.name,
                         imageUrl: employee.profileUrl,
-                        radius: 30,
+                        radius: 32,
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -1623,48 +1866,56 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             Text(
                               employee.name,
                               style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
+                                fontSize: 22,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: -0.5,
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(height: 4),
                             Text(
                               employee.dept,
                               style: TextStyle(
-                                fontSize: 13,
+                                fontSize: 14,
                                 color: Theme.of(
                                   context,
                                 ).colorScheme.onSurface.withOpacity(0.6),
+                                fontWeight: FontWeight.w500,
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
                       ),
+                      const SizedBox(width: 12),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
+                          horizontal: 12,
+                          vertical: 6,
                         ),
                         decoration: BoxDecoration(
                           color: (isLate ? secondary : AppColors.success)
                               .withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(100),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
                               Icons.circle,
-                              size: 6,
+                              size: 8,
                               color: isLate ? secondary : AppColors.success,
                             ),
-                            const SizedBox(width: 4),
+                            const SizedBox(width: 6),
                             Text(
                               employee.statusLabel,
                               style: TextStyle(
                                 color: isLate ? secondary : AppColors.success,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 12,
+                                letterSpacing: 0.2,
                               ),
                             ),
                           ],
@@ -1673,26 +1924,24 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     ],
                   ),
                 ),
-                // Details Content
                 Padding(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
                   child: Column(
                     children: [
-                      // Time Details Section
                       _buildDetailCard(
-                        title: 'Attendance Details',
+                        title: AppStrings.tr('attendance_details'),
                         icon: Icons.schedule,
                         primary: primary,
                         children: [
                           _buildDetailRow(
-                            'Check-in Time',
+                            AppStrings.tr('check_in_time'),
                             employee.checkIn,
                             employee.timeStatus,
                             isLate ? secondary : AppColors.success,
                           ),
-                          const Divider(height: 20),
+                          const Divider(height: 24, thickness: 0.5),
                           _buildDetailRow(
-                            'Check-out Time',
+                            AppStrings.tr('check_out_time'),
                             employee.checkOut,
                             '-',
                             Theme.of(
@@ -1702,21 +1951,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      // Department Section
                       _buildDetailCard(
-                        title: 'Employee Information',
+                        title: AppStrings.tr('employee_information'),
                         icon: Icons.person_outline,
                         primary: primary,
                         children: [
                           _buildDetailRow(
-                            'Department',
+                            AppStrings.tr('department_label'),
                             employee.dept,
                             '',
                             Colors.transparent,
                           ),
-                          const Divider(height: 20),
+                          const Divider(height: 24, thickness: 0.5),
                           _buildDetailRow(
-                            'Status Label',
+                            AppStrings.tr('status_label'),
                             employee.statusLabel,
                             '',
                             Colors.transparent,
@@ -1724,76 +1972,103 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      // Contact Information
                       _buildDetailCard(
-                        title: 'Contact Information',
+                        title: AppStrings.tr('contact_information'),
                         icon: Icons.contact_mail_outlined,
                         primary: primary,
                         children: [
                           _buildDetailRow(
-                            'Email',
-                            employee.email ?? 'N/A',
+                            AppStrings.tr('email_label'),
+                            employee.email ?? AppStrings.tr('not_available'),
                             '',
                             Colors.transparent,
                           ),
-                          const Divider(height: 20),
+                          const Divider(height: 24, thickness: 0.5),
                           _buildDetailRow(
-                            'Phone Number',
-                            employee.phone ?? 'N/A',
+                            AppStrings.tr('phone_label'),
+                            employee.phone ?? AppStrings.tr('not_available'),
                             '',
                             Colors.transparent,
                           ),
                         ],
                       ),
                       const SizedBox(height: 16),
-                      // Organization Details
                       _buildDetailCard(
-                        title: 'Organization Details',
+                        title: AppStrings.tr('organization_details'),
                         icon: Icons.business_outlined,
                         primary: primary,
                         children: [
                           _buildDetailRow(
-                            'Office ID',
-                            employee.officeId ?? 'N/A',
+                            AppStrings.tr('office_id_label'),
+                            employee.officeId ?? AppStrings.tr('not_available'),
                             '',
                             Colors.transparent,
                           ),
-                          const Divider(height: 20),
+                          const Divider(height: 24, thickness: 0.5),
                           _buildDetailRow(
-                            'Department ID',
-                            employee.departmentId ?? 'N/A',
+                            AppStrings.tr('department_id_label'),
+                            employee.departmentId ??
+                                AppStrings.tr('not_available'),
                             '',
                             Colors.transparent,
                           ),
                         ],
                       ),
-                      const SizedBox(height: 24),
-                      // Action Buttons
+                      const SizedBox(height: 32),
                       Row(
                         children: [
                           Expanded(
                             child: OutlinedButton.icon(
                               onPressed: () => Navigator.pop(context),
-                              icon: const Icon(Icons.close),
-                              label: const Text('Close'),
+                              icon: const Icon(Icons.close, size: 20),
+                              label: Text(AppStrings.tr('close')),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 16),
                           Expanded(
                             child: ElevatedButton.icon(
                               onPressed: () {
                                 Navigator.pop(context);
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    backgroundColor: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
                                     content: Text(
-                                      '${employee.name} details saved to clipboard',
+                                      _trFormat('employee_details_saved', {
+                                        'name': employee.name,
+                                      }),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                      ),
                                     ),
                                     duration: const Duration(seconds: 2),
                                   ),
                                 );
                               },
-                              icon: const Icon(Icons.file_download),
-                              label: const Text('Export'),
+                              icon: const Icon(Icons.file_download, size: 20),
+                              label: Text(AppStrings.tr('export_button')),
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
                             ),
                           ),
                         ],

@@ -167,6 +167,12 @@ class GeofencingController extends ChangeNotifier {
     required double lng,
     required int radiusMeters,
     required String addressLabel,
+    required String checkInStart,
+    required String checkOutEnd,
+    required int annualLeaveLimit,
+    required int sickLeaveLimit,
+    required String botUsername,
+    required String botLink,
   }) async {
     try {
       final newOfficeId = 'office_${DateTime.now().millisecondsSinceEpoch}';
@@ -183,24 +189,94 @@ class GeofencingController extends ChangeNotifier {
         groupName: groupName,
         geofence: newGeofence,
         policy: Policy(
-          checkInStart: '09:00',
-          checkOutEnd: '18:00',
+          checkInStart: checkInStart,
+          checkOutEnd: checkOutEnd,
           lateBufferMinutes: 15,
-          annualLeaveLimit: 20,
-          sickLeaveLimit: 10,
+          annualLeaveLimit: annualLeaveLimit,
+          sickLeaveLimit: sickLeaveLimit,
         ),
         telegramConfig: TelegramConfig(
-          botUsername: '',
-          botLink: '',
-          qrCodeData: '',
+          botUsername: botUsername,
+          botLink: botLink,
+          qrCodeData: _generateQrCodeData(botLink, newOfficeId),
         ),
       );
 
       _allOffices.add(newOffice);
-      selectOffice(newOfficeId);
+      await selectOffice(newOfficeId);
       notifyListeners();
     } catch (e) {
       if (kDebugMode) print('Error adding new office: $e');
+      rethrow;
+    }
+  }
+
+  String _generateQrCodeData(String botLink, String officeId) {
+    final trimmed = botLink.trim();
+    if (trimmed.isEmpty) return '';
+    if (trimmed.contains('start=')) return trimmed;
+    final separator = trimmed.contains('?') ? '&' : '?';
+    return '$trimmed${separator}start=$officeId';
+  }
+
+  Future<void> updateOfficeDetails({
+    required String officeId,
+    required String newName,
+    required String newGroup,
+    required String checkInStart,
+    required String checkOutEnd,
+    required int annualLeaveLimit,
+    required int sickLeaveLimit,
+    required String botUsername,
+    required String botLink,
+  }) async {
+    try {
+      final index = _allOffices.indexWhere((o) => o.officeId == officeId);
+      if (index != -1) {
+        final generatedQrCodeData = _generateQrCodeData(botLink, officeId);
+        _allOffices[index] = OfficeConfig(
+          officeId: _allOffices[index].officeId,
+          officeName: newName,
+          groupName: newGroup,
+          geofence: _allOffices[index].geofence,
+          policy: Policy(
+            checkInStart: checkInStart,
+            checkOutEnd: checkOutEnd,
+            lateBufferMinutes: _allOffices[index].policy.lateBufferMinutes,
+            annualLeaveLimit: annualLeaveLimit,
+            sickLeaveLimit: sickLeaveLimit,
+          ),
+          telegramConfig: TelegramConfig(
+            botUsername: botUsername,
+            botLink: botLink,
+            qrCodeData: generatedQrCodeData,
+          ),
+        );
+
+        if (_selectedOfficeId == officeId) {
+          _selectedOffice = _allOffices[index];
+        }
+        notifyListeners();
+      }
+    } catch (e) {
+      if (kDebugMode) print('Error updating office details: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> deleteOffice(String officeId) async {
+    try {
+      _allOffices.removeWhere((o) => o.officeId == officeId);
+
+      if (_selectedOfficeId == officeId) {
+        _selectedOfficeId = null;
+        _selectedOffice = null;
+        _tempGeofence = null;
+        _isEditing = false;
+      }
+      notifyListeners();
+    } catch (e) {
+      if (kDebugMode) print('Error deleting office: $e');
       rethrow;
     }
   }

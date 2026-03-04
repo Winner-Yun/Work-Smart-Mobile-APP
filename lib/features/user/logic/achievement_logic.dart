@@ -7,20 +7,37 @@ abstract class AchievementLogic extends State<AchievementScreen> {
   late UserProfile currentUser;
   late List<UserProfile> allEmployees;
   late String? loggedInUserId;
+  late String? loggedInUsername;
 
   @override
   void initState() {
     super.initState();
-    loggedInUserId = widget.loginData?['uid'];
+    loggedInUserId =
+        widget.loginData?['uid']?.toString() ??
+        widget.loginData?['user_id']?.toString();
+    loggedInUsername = widget.loginData?['username']?.toString();
     _loadData();
   }
 
   void _loadData() {
-    // Load current user from login data
-    final currentUserData = usersFinalData.firstWhere(
-      (user) => user['uid'] == (loggedInUserId ?? "user_winner_777"),
-      orElse: () => usersFinalData[0],
-    );
+    final normalizedUsername = loggedInUsername?.trim().toLowerCase();
+
+    final currentUserData = usersFinalData.firstWhere((user) {
+      final uid = user['uid']?.toString();
+      final displayName = user['display_name']?.toString().trim().toLowerCase();
+
+      final matchedByUid =
+          loggedInUserId != null &&
+          loggedInUserId!.isNotEmpty &&
+          uid == loggedInUserId;
+
+      final matchedByUsername =
+          normalizedUsername != null &&
+          normalizedUsername.isNotEmpty &&
+          displayName == normalizedUsername;
+
+      return matchedByUid || matchedByUsername;
+    }, orElse: () => usersFinalData[0]);
     currentUser = UserProfile.fromJson(currentUserData);
 
     // Load all employees to calculate rank

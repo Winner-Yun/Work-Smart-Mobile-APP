@@ -13,7 +13,7 @@ class UpdateRouteTitle {
 
     // Admin routes
     if (settings.name == AppAdminRoute.adminDashboard) {
-      title = 'Dashboard | WorkSmart';
+      title = 'Homepage | WorkSmart';
     } else if (settings.name == AppAdminRoute.authAdminScreen) {
       title = 'Admin Login | WorkSmart';
     } else if (settings.name == AppAdminRoute.staffManagement) {
@@ -28,8 +28,6 @@ class UpdateRouteTitle {
       title = 'Analytics Reports | WorkSmart';
     } else if (settings.name == AppAdminRoute.systemSettings) {
       title = 'System Settings | WorkSmart';
-    } else if (settings.name == AppAdminRoute.adminTutorial) {
-      title = 'Tutorial | WorkSmart';
     }
     // User routes
     else if (settings.name == AppRoute.authScreen) {

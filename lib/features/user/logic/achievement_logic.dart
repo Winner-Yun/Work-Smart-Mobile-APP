@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_worksmart_mobile_app/core/util/mock_data/userFinalData.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/database/user_data.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/presentation/achievement_screens/achievement_screen.dart';
 import 'package:flutter_worksmart_mobile_app/shared/model/user_model/user_profile.dart';
 
@@ -37,7 +37,7 @@ abstract class AchievementLogic extends State<AchievementScreen> {
           displayName == normalizedUsername;
 
       return matchedByUid || matchedByUsername;
-    }, orElse: () => usersFinalData[0]);
+    }, orElse: () => defaultUserRecord);
     currentUser = UserProfile.fromJson(currentUserData);
 
     // Load all employees to calculate rank

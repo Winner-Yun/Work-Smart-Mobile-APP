@@ -8,6 +8,7 @@ class AppProfileAvatar extends StatelessWidget {
   final Color? textColor;
   final FontWeight fontWeight;
   final double? fontSize;
+  final ImageProvider<Object>? foregroundImage;
 
   const AppProfileAvatar({
     super.key,
@@ -18,21 +19,23 @@ class AppProfileAvatar extends StatelessWidget {
     this.textColor,
     this.fontWeight = FontWeight.w700,
     this.fontSize,
+    this.foregroundImage,
   });
 
   @override
   Widget build(BuildContext context) {
     final normalizedUrl = imageUrl.trim();
     final initials = _getInitials(displayName);
+    final ImageProvider<Object>? resolvedForegroundImage =
+        foregroundImage ??
+        (normalizedUrl.isEmpty ? null : NetworkImage(normalizedUrl));
 
     return CircleAvatar(
       radius: radius,
       backgroundColor:
           backgroundColor ??
           Theme.of(context).colorScheme.primary.withOpacity(0.12),
-      foregroundImage: normalizedUrl.isEmpty
-          ? null
-          : NetworkImage(normalizedUrl),
+      foregroundImage: resolvedForegroundImage,
       child: Text(
         initials,
         style: TextStyle(

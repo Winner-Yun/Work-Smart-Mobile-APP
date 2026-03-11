@@ -71,6 +71,13 @@ class AppStrings {
           'Manage your workspace, users, and analytical data from one centralized secure hub.',
       'finish': 'Finish',
       'invalid_credentials': 'Invalid username or password',
+      'account_suspended_title': 'Account Suspended',
+      'account_suspended_description':
+          'You cannot log in to this account right now.',
+      'account_suspended_message':
+          'Your account has been suspended. Please contact the administrator.',
+      'account_suspended_ok': 'OK',
+      'warning_label': 'Warning',
       'username_required': 'Username is required',
       'password_required': 'Password is required',
       'username_too_short': 'Username must be at least 2 characters',
@@ -104,6 +111,10 @@ class AppStrings {
       "success_title": "Success!",
       "success_message": "Your password has been changed successfully.",
       "back_to_login": "Back to Login",
+      "old_password_incorrect": "Old password is incorrect.",
+      "password_change_failed": "Failed to change password. Please try again.",
+      "password_target_user_not_found":
+          "Unable to find your account for password reset.",
 
       // --- Tutorial ---
       'skip': 'Skip',
@@ -161,6 +172,7 @@ class AppStrings {
       'days': 'Days',
       'office_zone': 'Office Zone',
       'outside_zone': 'Outside Zone',
+      'map_marker_me': 'Me',
       'gps_status': 'GPS Status',
       'ready_to_scan': 'Ready to Scan',
       'too_far': 'Too Far',
@@ -199,6 +211,7 @@ class AppStrings {
           'You have been successfully registered for attendance.',
       'face_scan_success': 'Attendance Registered Successfully!',
       'at': 'at',
+      'time_placeholder': '--:--',
       'office_updated_success': 'Office information updated successfully',
       'office_deleted_success': 'Office deleted successfully',
 
@@ -290,6 +303,13 @@ class AppStrings {
       'validation_select_start_end_date': 'Please select start and end date',
       'annual_request_submitted': 'Annual leave request submitted successfully',
       'sick_request_submitted': 'Sick leave request submitted successfully',
+      'leave_request_submit_failed':
+          'Failed to submit leave request. Please try again.',
+      'annual_leave_no_remaining_days':
+          'You have no annual leave days remaining.',
+      'sick_leave_no_remaining_days': 'You have no sick leave days remaining.',
+      'annual_leave_duration_exceeds_remaining':
+          'Requested {requestedDays} day(s), but only {remainingDays} day(s) remaining.',
       'select_leave_date': 'Select Leave Date',
       'tap_to_select_date': 'Tap to select date',
 
@@ -383,6 +403,12 @@ class AppStrings {
       'confirm_logout_msg': 'Are you sure you want to logout?',
       'cancel_button': 'Cancel',
       'logout_button': 'Logout',
+      'unable_to_resolve_user_id': 'Unable to resolve user id.',
+      'profile_image_updated_successfully':
+          'Profile image updated successfully.',
+      'profile_image_upload_failed': 'Failed to upload profile image',
+      'face_sample_upload_failed': 'Failed to upload face sample',
+      'attendance_scan_save_failed': 'Failed to save attendance record',
 
       // --- Settings ---
       'settings_title': 'Settings',
@@ -476,9 +502,15 @@ class AppStrings {
       'full_name_label': 'Full Name',
       'full_name_hint': 'e.g. Winner Yun',
       'name_required': 'Name is required',
+      'name_length_invalid': 'Name must be between 2 and 60 characters',
       'role_title_label': 'Role Title',
       'role_title_hint': 'e.g. Senior Flutter Developer',
       'role_required': 'Role is required',
+      'role_length_invalid': 'Role must be between 2 and 50 characters',
+      'office_required': 'Office is required',
+      'department_required': 'Department is required',
+      'select_office_placeholder': 'Select office',
+      'select_department_placeholder': 'Select department',
       'contact_system_section': 'Contact & System',
       'generated_auto': 'Generated automatically',
       'system_id_label': 'System ID (UID)',
@@ -520,6 +552,13 @@ class AppStrings {
       'checked_in': 'Checked in',
       'check_out_time': 'CHECK-OUT',
       'status': 'Status',
+      'retry': 'Retry',
+      'previous_day': 'Previous day',
+      'next_day': 'Next day',
+      'refresh': 'Refresh',
+      'avg_hours': 'Avg Hours',
+      'copy': 'Copy',
+      'location_copied': 'Location copied',
       'ontime_vs_late': 'On-time vs Late',
       'late_count': 'late',
       'pending_requests': 'Pending Requests',
@@ -543,6 +582,10 @@ class AppStrings {
       'analytics': 'Analytics',
       'geofencing': 'Geofencing',
       'performance_leaderboard': 'Performance',
+      'attendent_record': 'Attendent Record',
+      'attendent_record_subtitle':
+          'Review daily employee check-in and check-out activity.',
+      'attendent_record_search_hint': 'Search by name, ID, or email...',
       'system_settings': 'System Settings',
       'admin_settings_subtitle':
           'Manage platform preferences and admin controls',
@@ -639,8 +682,22 @@ class AppStrings {
       'confirm_deletion_title': 'Confirm Deletion',
       'delete_user_confirm_message':
           'Are you sure you want to remove this user? This profile and all associated data will be lost.',
+      'delete_user_type_delete_instruction':
+          'Type DELETE to confirm this action.',
+      'delete_user_type_delete_label': 'Confirmation text',
+      'delete_user_type_delete_placeholder': 'DELETE',
+      'delete_user_type_delete_mismatch':
+          'Please type DELETE to enable deletion.',
+      'delete_user_admin_password_instruction':
+          'Enter your admin password to continue.',
+      'delete_user_admin_password_label': 'Admin password',
+      'delete_user_admin_password_placeholder': 'Enter admin password',
+      'delete_user_admin_password_invalid':
+          'Incorrect admin password. Try again.',
       'keep_user': 'Keep User',
       'user_created_success': 'User "{name}" created successfully',
+      'user_updated_success': 'User "{name}" updated successfully',
+      'user_deleted_success': 'User "{name}" deleted successfully',
 
       // --- Geofencing Additional ---
       'geofencing_management': 'Geofencing Management',
@@ -656,7 +713,9 @@ class AppStrings {
       'group_department': 'Group/Department',
       'engineering_example': 'e.g. Development Team',
       'office_name_required': 'Office name required',
+      'office_name_min_length': 'Office name must be at least 5 letters',
       'group_name_required': 'Group name required',
+      'group_name_min_length': 'Group name must be at least 5 letters',
       'location_selected': 'Location Selected',
       'set_office_location': 'Set Office Location',
       'latitude': 'Lat',
@@ -665,14 +724,53 @@ class AppStrings {
       'tap_open_map': 'Tap to open interactive map',
       'create_new_office': 'Create New Office',
       'define_geofenced_area': 'Define a new geofenced area for your team.',
+      'existing_office_add_department_hint':
+          'Existing office selected. Saving will add this department to it.',
+      'delete_department': 'Delete Department',
+      'confirm_delete_department_msg':
+          'Are you sure you want to delete department',
+      'department_deleted_success': 'Department deleted successfully!',
+      'cannot_delete_last_department':
+          'At least one department is required for each office.',
       'create_office': 'Create Office',
       'office_created_success': 'Office created successfully!',
       'loading': 'Loading...',
       'policy_check_in_time': 'Policy Check-in Time',
       'policy_check_out_time': 'Policy Check-out Time',
+      'checkout_scan_allow_time': 'Allow Check-out Scan Time',
+      'checkout_scan_allow_15': '15 min before check-out end',
+      'checkout_scan_allow_30': '30 min before check-out end',
+      'checkout_scan_allow_custom': 'Custom',
+      'checkout_scan_allow_custom_label': 'Custom minutes before check-out end',
+      'checkout_scan_allow_custom_hint': 'Enter minutes',
+      'checkout_scan_allow_custom_required':
+          'Please enter custom scan allowance minutes',
+      'checkout_scan_allow_custom_invalid':
+          'Please enter a valid positive minute value',
+      'checkout_scan_allow_time_required':
+          'Please select check-out scan allowance',
+      'checkout_scan_allow_must_before_checkout':
+          'Selected scan time must be earlier than check-out time',
+      'checkout_scan_start_at': 'Scan starts at',
+      'late_consider_time': 'Consider Late Time',
+      'late_consider_5': '5 min after check-in start',
+      'late_consider_15': '15 min after check-in start',
+      'late_consider_custom': 'Custom',
+      'late_consider_custom_label': 'Custom minutes after check-in start',
+      'late_consider_custom_hint': 'Enter minutes',
+      'late_consider_custom_required':
+          'Please enter custom late tolerance minutes',
+      'late_consider_custom_invalid':
+          'Please enter a valid positive minute value',
+      'late_consider_time_required': 'Please select late tolerance',
+      'late_consider_must_before_checkout':
+          'Late tolerance must still be within working hours',
+      'late_consider_starts_at': 'Late starts at',
       'check_in_time_required': 'Check-in time is required',
       'check_out_time_required': 'Check-out time is required',
       'invalid_time_format': 'Please enter a valid time (hh:mm AM/PM)',
+      'check_out_must_be_after_check_in':
+          'Check-out time must be later than check-in time',
       'annual_leave_limit': 'Annual Leave Limit',
       'sick_leave_limit': 'Sick Leave Limit',
       'annual_leave_required': 'Annual leave is required',
@@ -689,6 +787,7 @@ class AppStrings {
           'Please complete all required fields first',
       'check_in_label': 'Check-in',
       'check_out_label': 'Check-out',
+      'late_consider_label': 'Late +',
       'annual_label': 'Annual',
       'sick_label': 'Sick',
       'no_telegram_username': 'No Telegram username',
@@ -805,6 +904,12 @@ class AppStrings {
           'គ្រប់គ្រងកន្លែងធ្វើការ អ្នកប្រើប្រាស់ និងទិន្នន័យវិភាគរបស់អ្នក ពីមជ្ឈមណ្ឌលសុវត្ថិភាពតែមួយ។',
       'finish': 'បញ្ចប់',
       'invalid_credentials': 'ឈ្មោះប្រើប្រាស់ ឬ ពាក្យសម្ងាត់មិនត្រឹមត្រូវ',
+      'account_suspended_title': 'គណនីបានផ្អាក',
+      'account_suspended_description': 'អ្នកមិនអាចចូលប្រើគណនីនេះបានទេនៅពេលនេះ។',
+      'account_suspended_message':
+          'គណនីរបស់អ្នកត្រូវបានផ្អាក។ សូមទាក់ទងអ្នកគ្រប់គ្រង។',
+      'account_suspended_ok': 'យល់ព្រម',
+      'warning_label': 'ការព្រមាន',
       'username_required': 'ឈ្មោះប្រើប្រាស់ត្រូវបាន តម្រូវ',
       'password_required': 'ពាក្យសម្ងាត់ត្រូវបាន តម្រូវ',
       'username_too_short': 'ឈ្មោះប្រើប្រាស់ត្រូវមានយ៉ាងតិច ២ តួអក្សរ',
@@ -838,6 +943,11 @@ class AppStrings {
       "success_title": "ជោគជ័យ!",
       "success_message": "លេខសម្ងាត់របស់អ្នកត្រូវបានផ្លាស់ប្តូររួចរាល់ហើយ។",
       "back_to_login": "ត្រឡប់ទៅទំព័រចូល",
+      "old_password_incorrect": "លេខសម្ងាត់ចាស់មិនត្រឹមត្រូវ។",
+      "password_change_failed":
+          "មិនអាចផ្លាស់ប្តូរលេខសម្ងាត់បានទេ។ សូមព្យាយាមម្តងទៀត។",
+      "password_target_user_not_found":
+          "មិនអាចស្វែងរកគណនីរបស់អ្នកសម្រាប់ប្តូរលេខសម្ងាត់បានទេ។",
 
       // --- Tutorial ---
       'skip': 'រំលង',
@@ -895,6 +1005,7 @@ class AppStrings {
       'days': 'ថ្ងៃ',
       'office_zone': 'ក្នុងតំបន់ការិយាល័យ',
       'outside_zone': 'ក្រៅតំបន់ការិយាល័យ',
+      'map_marker_me': 'ខ្ញុំ',
       'gps_status': 'ស្ថានភាព GPS',
       'ready_to_scan': 'ស្កេន',
       'too_far': 'នៅឆ្ងាយពេក',
@@ -932,6 +1043,7 @@ class AppStrings {
       'face_scan_success_desc': 'អ្នកត្រូវបានចុះវត្តមានដោយជោគជ័យ។!',
       'face_scan_success': 'បានចុះវត្តមានជោគជ័យ!',
       'at': 'នៅ',
+      'time_placeholder': '--:--',
       'office_updated_success':
           'ព័ត៌មានការិយាល័យបានធ្វើបច្ចុប្បន្នភាពដោយជោគជ័យ!',
       'office_deleted_success': 'ការិយាល័យបានលុបដោយជោគជ័យ!',
@@ -1024,6 +1136,13 @@ class AppStrings {
           'សូមជ្រើសរើសថ្ងៃចាប់ផ្តើម និងថ្ងៃបញ្ចប់',
       'annual_request_submitted': 'សំណើច្បាប់ប្រចាំឆ្នាំត្រូវបានផ្ញើដោយជោគជ័យ',
       'sick_request_submitted': 'សំណើច្បាប់ឈឺត្រូវបានផ្ញើដោយជោគជ័យ',
+      'leave_request_submit_failed':
+          'ការផ្ញើសំណើឈប់សម្រាកបរាជ័យ។ សូមព្យាយាមម្តងទៀត។',
+      'annual_leave_no_remaining_days':
+          'អ្នកមិនមានថ្ងៃឈប់សម្រាកប្រចាំឆ្នាំនៅសល់ទេ។',
+      'sick_leave_no_remaining_days': 'អ្នកមិនមានថ្ងៃឈប់សម្រាកឈឺនៅសល់ទេ។',
+      'annual_leave_duration_exceeds_remaining':
+          'បានស្នើសុំ {requestedDays} ថ្ងៃ ប៉ុន្តែមានសល់ត្រឹម {remainingDays} ថ្ងៃប៉ុណ្ណោះ។',
       'select_leave_date': 'ជ្រើសរើសកាលបរិច្ឆេទ',
       'tap_to_select_date': 'ចុចដើម្បីជ្រើសរើសកាលបរិច្ឆេទ',
 
@@ -1116,6 +1235,12 @@ class AppStrings {
       'confirm_logout_msg': 'តើអ្នកប្រាកដជាចង់ចាកចេញមែនទេ?',
       'cancel_button': 'បោះបង់',
       'logout_button': 'ចាកចេញ',
+      'unable_to_resolve_user_id': 'មិនអាចកំណត់អត្តសញ្ញាណអ្នកប្រើបានទេ។',
+      'profile_image_updated_successfully':
+          'បានធ្វើបច្ចុប្បន្នភាពរូបភាពប្រវត្តិរូបដោយជោគជ័យ។',
+      'profile_image_upload_failed': 'មិនអាចអាប់ឡូដរូបភាពប្រវត្តិរូបបានទេ',
+      'face_sample_upload_failed': 'មិនអាចអាប់ឡូដរូបថតមុខបានទេ',
+      'attendance_scan_save_failed': 'មិនអាចរក្សាទុកកំណត់ត្រាវត្តមានបានទេ',
 
       // --- Settings ---
       'settings_title': 'ការកំណត់',
@@ -1186,6 +1311,13 @@ class AppStrings {
       'checked_in': 'បានចូល',
       'check_out_time': 'ពេលចាកចេញ',
       'status': 'ស្ថានភាព',
+      'retry': 'ព្យាយាមម្តងទៀត',
+      'previous_day': 'ថ្ងៃមុន',
+      'next_day': 'ថ្ងៃបន្ទាប់',
+      'refresh': 'ផ្ទុកឡើងវិញ',
+      'avg_hours': 'ម៉ោងមធ្យម',
+      'copy': 'ចម្លង',
+      'location_copied': 'បានចម្លងទីតាំង',
       'ontime_vs_late': 'ទាន់ពេល ធៀបនឹង មកយឺត',
       'late_count': 'មកយឺត',
       'pending_requests': 'សំណើរង់ចាំ',
@@ -1209,6 +1341,10 @@ class AppStrings {
       'analytics': 'ការវិភាគ',
       'geofencing': 'Geofencing',
       'performance_leaderboard': 'ចំណាត់ថ្នាក់ការអនុវត្ត',
+      'attendent_record': 'កំណត់ត្រាវត្តមាន',
+      'attendent_record_subtitle':
+          'ពិនិត្យសកម្មភាពចូល និងចាកចេញប្រចាំថ្ងៃរបស់បុគ្គលិក។',
+      'attendent_record_search_hint': 'ស្វែងរកតាមឈ្មោះ លេខសម្គាល់ ឬអ៊ីមែល...',
       'system_settings': 'ការកំណត់ប្រព័ន្ធ',
       'admin_settings_subtitle':
           'គ្រប់គ្រងការកំណត់ និងការត្រួតពិនិត្យសម្រាប់អ្នកគ្រប់គ្រង',
@@ -1309,8 +1445,23 @@ class AppStrings {
       'confirm_deletion_title': 'បញ្ជាក់ការលុប',
       'delete_user_confirm_message':
           'តើអ្នកប្រាកដថាចង់លុបអ្នកប្រើប្រាស់នេះមែនទេ? ប្រវត្តិរូប និងទិន្នន័យពាក់ព័ន្ធទាំងអស់នឹងបាត់បង់។',
+      'delete_user_type_delete_instruction':
+          'សូមវាយពាក្យ DELETE ដើម្បីបញ្ជាក់សកម្មភាពនេះ។',
+      'delete_user_type_delete_label': 'អត្ថបទបញ្ជាក់',
+      'delete_user_type_delete_placeholder': 'DELETE',
+      'delete_user_type_delete_mismatch':
+          'សូមវាយពាក្យ DELETE ដើម្បីអនុញ្ញាតការលុប។',
+      'delete_user_admin_password_instruction':
+          'សូមបញ្ចូលពាក្យសម្ងាត់អ្នកគ្រប់គ្រង ដើម្បីបន្ត។',
+      'delete_user_admin_password_label': 'ពាក្យសម្ងាត់អ្នកគ្រប់គ្រង',
+      'delete_user_admin_password_placeholder':
+          'បញ្ចូលពាក្យសម្ងាត់អ្នកគ្រប់គ្រង',
+      'delete_user_admin_password_invalid':
+          'ពាក្យសម្ងាត់អ្នកគ្រប់គ្រងមិនត្រឹមត្រូវ។ សូមព្យាយាមម្តងទៀត។',
       'keep_user': 'រក្សាទុកអ្នកប្រើប្រាស់',
       'user_created_success': 'បានបង្កើតអ្នកប្រើប្រាស់ "{name}" ដោយជោគជ័យ',
+      'user_updated_success': 'បានកែប្រែអ្នកប្រើប្រាស់ "{name}" ដោយជោគជ័យ',
+      'user_deleted_success': 'បានលុបអ្នកប្រើប្រាស់ "{name}" ដោយជោគជ័យ',
 
       // --- Geofencing Additional ---
       'geofencing_management': 'ការគ្រប់គ្រង Geofence',
@@ -1326,7 +1477,9 @@ class AppStrings {
       'group_department': 'ក្រុម/ផ្នែក',
       'engineering_example': 'ឧ. Development Team',
       'office_name_required': 'ឈ្មោះការិយាល័យត្រូវបានទាមទារ',
+      'office_name_min_length': 'ឈ្មោះការិយាល័យត្រូវមានយ៉ាងតិច 5 តួអក្សរ',
       'group_name_required': 'ឈ្មោះក្រុមត្រូវបានទាមទារ',
+      'group_name_min_length': 'ឈ្មោះក្រុម/ផ្នែកត្រូវមានយ៉ាងតិច 5 តួអក្សរ',
       'location_selected': 'ទីតាំងបានជ្រើសរើស',
       'set_office_location': 'កំណត់ទីតាំងការិយាល័យ',
       'latitude': 'រយៈទទឹង',
@@ -1336,14 +1489,49 @@ class AppStrings {
       'create_new_office': 'បង្កើតការិយាល័យថ្មី',
       'define_geofenced_area':
           'កំណត់ផ្ទៃដីវិស័យភូមិសាស្ត្រថ្មីសម្រាប់ក្រុមរបស់អ្នក។',
+      'existing_office_add_department_hint':
+          'បានជ្រើសរើសការិយាល័យដែលមានស្រាប់។ ការរក្សាទុកនឹងបន្ថែមផ្នែកនេះទៅក្នុងការិយាល័យនោះ។',
+      'delete_department': 'លុបផ្នែក',
+      'confirm_delete_department_msg': 'តើអ្នកប្រាកដថាចង់លុបផ្នែក',
+      'department_deleted_success': 'ផ្នែកត្រូវបានលុបដោយជោគជ័យ!',
+      'cannot_delete_last_department': 'ការិយាល័យត្រូវមានយ៉ាងហោចណាស់មួយផ្នែក។',
       'create_office': 'បង្កើតការិយាល័យ',
       'office_created_success': 'ការិយាល័យបានបង្កើតដោយជោគជ័យ!',
       'loading': 'កំពុងផ្ទុក...',
       'policy_check_in_time': 'ម៉ោងចូលធ្វើការ (គោលការណ៍)',
       'policy_check_out_time': 'ម៉ោងចេញពីការងារ (គោលការណ៍)',
+      'checkout_scan_allow_time': 'ពេលអនុញ្ញាតស្កេនចេញ',
+      'checkout_scan_allow_15': '15 នាទី មុនម៉ោងចេញបញ្ចប់',
+      'checkout_scan_allow_30': '30 នាទី មុនម៉ោងចេញបញ្ចប់',
+      'checkout_scan_allow_custom': 'កំណត់ដោយខ្លួនឯង',
+      'checkout_scan_allow_custom_label':
+          'ចំនួននាទីផ្ទាល់ខ្លួន មុនម៉ោងចេញបញ្ចប់',
+      'checkout_scan_allow_custom_hint': 'បញ្ចូលចំនួននាទី',
+      'checkout_scan_allow_custom_required':
+          'សូមបញ្ចូលចំនួននាទីអនុញ្ញាតស្កេនចេញ',
+      'checkout_scan_allow_custom_invalid':
+          'សូមបញ្ចូលចំនួននាទីវិជ្ជមានដែលត្រឹមត្រូវ',
+      'checkout_scan_allow_time_required': 'សូមជ្រើសរើសពេលអនុញ្ញាតស្កេនចេញ',
+      'checkout_scan_allow_must_before_checkout':
+          'ពេលស្កេនចេញត្រូវតែមុនម៉ោងចេញបញ្ចប់',
+      'checkout_scan_start_at': 'អាចស្កេនចាប់ពីម៉ោង',
+      'late_consider_time': 'ពេលកំណត់មកយឺត',
+      'late_consider_5': '5 នាទី បន្ទាប់ពីម៉ោងចូល',
+      'late_consider_15': '15 នាទី បន្ទាប់ពីម៉ោងចូល',
+      'late_consider_custom': 'កំណត់ដោយខ្លួនឯង',
+      'late_consider_custom_label': 'ចំនួននាទីផ្ទាល់ខ្លួន បន្ទាប់ពីម៉ោងចូល',
+      'late_consider_custom_hint': 'បញ្ចូលចំនួននាទី',
+      'late_consider_custom_required': 'សូមបញ្ចូលចំនួននាទីសម្រាប់កំណត់មកយឺត',
+      'late_consider_custom_invalid': 'សូមបញ្ចូលចំនួននាទីវិជ្ជមានដែលត្រឹមត្រូវ',
+      'late_consider_time_required': 'សូមជ្រើសរើសពេលកំណត់មកយឺត',
+      'late_consider_must_before_checkout':
+          'ពេលកំណត់មកយឺតត្រូវស្ថិតក្នុងម៉ោងធ្វើការ',
+      'late_consider_starts_at': 'ចាប់ពីម៉ោងនេះ នឹងរាប់ថាមកយឺត',
       'check_in_time_required': 'ត្រូវបញ្ចូលម៉ោងចូលធ្វើការ',
       'check_out_time_required': 'ត្រូវបញ្ចូលម៉ោងចេញពីការងារ',
       'invalid_time_format': 'សូមបញ្ចូលម៉ោងត្រឹមត្រូវ (hh:mm AM/PM)',
+      'check_out_must_be_after_check_in':
+          'Check-out time ត្រូវតែបន្ទាប់ពីពេល Check-in time',
       'annual_leave_limit': 'កំណត់ថ្ងៃឈប់សម្រាកប្រចាំឆ្នាំ',
       'sick_leave_limit': 'កំណត់ថ្ងៃឈប់សម្រាកឈឺ',
       'annual_leave_required': 'ត្រូវបញ្ចូលចំនួនថ្ងៃឈប់សម្រាកប្រចាំឆ្នាំ',
@@ -1359,6 +1547,7 @@ class AppStrings {
       'complete_required_fields_first': 'សូមបំពេញព័ត៌មានចាំបាច់ទាំងអស់ជាមុនសិន',
       'check_in_label': 'ចូល',
       'check_out_label': 'ចេញ',
+      'late_consider_label': 'មកយឺត +',
       'annual_label': 'ប្រចាំឆ្នាំ',
       'sick_label': 'ឈឺ',
       'no_telegram_username': 'មិនមានឈ្មោះអ្នកប្រើ Telegram',
@@ -1413,9 +1602,15 @@ class AppStrings {
       'full_name_label': 'ឈ្មោះពេញ',
       'full_name_hint': 'ឧ. Winner Yun',
       'name_required': 'ត្រូវបញ្ចូលឈ្មោះ',
+      'name_length_invalid': 'ឈ្មោះត្រូវមានពី 2 ដល់ 60 តួអក្សរ',
       'role_title_label': 'តួនាទីការងារ',
       'role_title_hint': 'ឧ. Senior Flutter Developer',
       'role_required': 'ត្រូវបញ្ចូលតួនាទី',
+      'role_length_invalid': 'តួនាទីត្រូវមានពី 2 ដល់ 50 តួអក្សរ',
+      'office_required': 'ត្រូវជ្រើសរើសការិយាល័យ',
+      'department_required': 'ត្រូវជ្រើសរើសផ្នែក',
+      'select_office_placeholder': 'សូមជ្រើសរើសការិយាល័យ',
+      'select_department_placeholder': 'សូមជ្រើសរើសផ្នែក',
       'contact_system_section': 'ទំនាក់ទំនង និងប្រព័ន្ធ',
       'generated_auto': 'បង្កើតដោយស្វ័យប្រវត្តិ',
       'system_id_label': 'លេខប្រព័ន្ធ (UID)',

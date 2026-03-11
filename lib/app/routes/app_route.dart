@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_worksmart_mobile_app/core/util/database/database_helper.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/auth/presentation/authscreen.dart';
@@ -57,6 +58,10 @@ class AppRoute {
       final args =
           ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
       if (args != null) {
+        final userType = args['userType']?.toString().toLowerCase();
+        if (userType == 'admin') {
+          return AppAdminRoute.routes[AppAdminRoute.adminDashboard]!(context);
+        }
         final initialIndex = args['initialIndex'] as int? ?? 0;
         return MainScreen(loginData: args, initialIndex: initialIndex);
       }
@@ -129,6 +134,11 @@ class _CachedLoginGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasFirebaseAdminSession = FirebaseAuth.instance.currentUser != null;
+    if (hasFirebaseAdminSession) {
+      return AppAdminRoute.routes[AppAdminRoute.adminDashboard]!(context);
+    }
+
     return FutureBuilder<Map<String, dynamic>?>(
       future: DatabaseHelper().getCachedLogin(),
       builder: (context, snapshot) {
@@ -143,10 +153,15 @@ class _CachedLoginGate extends StatelessWidget {
           return const Authscreen();
         }
 
+        final userType = cachedLogin['user_type']?.toString().toLowerCase();
+        if (userType == 'admin') {
+          return const Authscreen();
+        }
+
         final loginData = {
           'uid': cachedLogin['user_id'],
           'username': cachedLogin['username'],
-          'userType': cachedLogin['user_type'],
+          'userType': userType ?? 'employee',
         };
 
         return MainScreen(loginData: loginData);

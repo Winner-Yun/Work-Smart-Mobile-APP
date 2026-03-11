@@ -3,7 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
-import 'package:flutter_worksmart_mobile_app/core/util/mock_data/userFinalData.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/database/user_data.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/logic/leave_request_logic.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/presentation/attendence_screens/leave_detail_view_screen.dart';
 import 'package:flutter_worksmart_mobile_app/shared/model/activity_models/leave_record.dart';
@@ -59,7 +59,7 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
   void _loadData() {
     final currentUserData = usersFinalData.firstWhere(
       (user) => user['uid'] == (widget.loginData?['uid'] ?? "user_winner_777"),
-      orElse: () => usersFinalData[0],
+      orElse: () => defaultUserRecord,
     );
     _currentUser = UserProfile.fromJson(currentUserData);
 
@@ -543,13 +543,7 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
         children: [
           Expanded(
             child: OutlinedButton(
-              onPressed: () {
-                Navigator.pushNamed(
-                  context,
-                  AppRoute.sickleaveScreen,
-                  arguments: widget.loginData,
-                );
-              },
+              onPressed: () => _openLeaveRequest(AppRoute.sickleaveScreen),
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(0, 55),
                 side: BorderSide(color: Theme.of(context).colorScheme.primary),
@@ -571,13 +565,7 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
           const SizedBox(width: 15),
           Expanded(
             child: ElevatedButton(
-              onPressed: () {
-                Navigator.pushNamed(
-                  context,
-                  AppRoute.annualleaveScreen,
-                  arguments: widget.loginData,
-                );
-              },
+              onPressed: () => _openLeaveRequest(AppRoute.annualleaveScreen),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.primary,
                 minimumSize: const Size(0, 55),
@@ -599,5 +587,15 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
         ],
       ),
     );
+  }
+
+  Future<void> _openLeaveRequest(String routeName) async {
+    await Navigator.pushNamed(context, routeName, arguments: widget.loginData);
+    if (!mounted) return;
+
+    setState(() {
+      _selectedForRemoveRequestId = null;
+      _refreshLeaveDataWithAnimation();
+    });
   }
 }

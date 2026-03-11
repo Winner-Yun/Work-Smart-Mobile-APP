@@ -4,7 +4,8 @@ import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 import 'package:flutter_worksmart_mobile_app/core/util/database/database_helper.dart';
-import 'package:flutter_worksmart_mobile_app/core/util/mock_data/userFinalData.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/database/realtime_data_controller.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/database/user_data.dart';
 
 class TelegramIntegration extends StatefulWidget {
   final Map<String, dynamic>? loginData;
@@ -16,23 +17,57 @@ class TelegramIntegration extends StatefulWidget {
 }
 
 class _TelegramIntegrationState extends State<TelegramIntegration> {
+  static final RealtimeDataController _dataController =
+      RealtimeDataController();
+
   bool _isConnecting = false;
 
   Future<void> _handleConnect() async {
+    if (_isConnecting) return;
     setState(() => _isConnecting = true);
 
     // Get current user ID
-    final userId = widget.loginData?['uid'] ?? 'user_winner_777';
+    final String userId = (widget.loginData?['uid'] ?? 'user_winner_777')
+        .toString()
+        .trim();
 
-    // Find and update
-    final userIndex = usersFinalData.indexWhere(
+    final int userIndex = usersFinalData.indexWhere(
       (user) => user['uid'] == userId,
     );
-    if (userIndex != -1) {
-      usersFinalData[userIndex]['telegram']['is_connected'] = true;
-    }
 
-    await DatabaseHelper().saveConfig('telegram_connected_$userId', 'true');
+    final Map<String, dynamic> telegramData =
+        userIndex != -1 && usersFinalData[userIndex]['telegram'] is Map
+        ? Map<String, dynamic>.from(
+            usersFinalData[userIndex]['telegram'] as Map,
+          )
+        : <String, dynamic>{};
+    telegramData['is_connected'] = true;
+
+    try {
+      if (userId.isNotEmpty) {
+        await _dataController.updateUserRecord(userId, {
+          'telegram': telegramData,
+        });
+      }
+
+      if (userIndex != -1) {
+        usersFinalData[userIndex]['telegram'] = telegramData;
+      }
+
+      await DatabaseHelper().saveConfig('telegram_connected_$userId', 'true');
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isConnecting = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to connect Telegram. Please try again.'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      return;
+    }
 
     await Future.delayed(const Duration(milliseconds: 800));
 
@@ -286,7 +321,7 @@ class _TelegramIntegrationState extends State<TelegramIntegration> {
         ...[
           _buildStepItem(
             context,
-            '១', 
+            '១',
             AppStrings.tr('step_1_title'),
             AppStrings.tr('step_1_desc'),
           ),

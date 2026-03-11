@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_worksmart_mobile_app/features/admin/auth/presentation/auth_page/auth_admin_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/admin/dashboard/presentation/analytics__screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/admin/dashboard/presentation/attendent_record_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/admin/dashboard/presentation/geofencing_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/admin/dashboard/presentation/homepage_dashboard_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/admin/dashboard/presentation/manage_users_screen.dart';
@@ -18,6 +19,7 @@ class AppAdminRoute {
   static const String leaveRequests = '/admin-leave-requests';
   static const String analyticsReports = '/admin-analytics-reports';
   static const String manualFaceReview = '/admin-manual-face-review';
+  static const String attendentRecord = '/admin-attendent-record';
   static const String systemSettings = '/admin-system-settings';
 
   // ──────────────── ADMIN ROUTE DEFINITIONS ────────────────
@@ -30,6 +32,7 @@ class AppAdminRoute {
     leaveRequests: (context) => const MangeLeaveEmpDashboardScreen(),
     analyticsReports: (context) => const AnalyticsScreen(),
     manualFaceReview: (context) => const ManualFaceReviewScreen(),
+    attendentRecord: (context) => const AttendentRecordScreen(),
     systemSettings: (context) => const AdminSystemSettingsScreen(),
   };
 }

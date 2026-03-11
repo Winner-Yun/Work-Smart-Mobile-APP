@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_admin_route.dart';
+import 'package:flutter_worksmart_mobile_app/config/env.dart';
 import 'package:flutter_worksmart_mobile_app/config/language_manager.dart';
 import 'package:flutter_worksmart_mobile_app/config/theme_manager.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
@@ -22,6 +23,10 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
   late final ManageUsersController _controller;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late TextEditingController _searchController;
+  static const int _minNameLength = 2;
+  static const int _maxNameLength = 60;
+  static const int _minRoleLength = 2;
+  static const int _maxRoleLength = 50;
 
   @override
   void initState() {
@@ -237,9 +242,54 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
         return AppStrings.tr('face_status_approved');
       case 'rejected':
         return AppStrings.tr('face_status_rejected');
+      case 'uninitialized':
+        return AppStrings.tr('face_status_uninitialized');
       default:
         return AppStrings.tr('face_status_pending');
     }
+  }
+
+  String? _validateNameLength(String? value) {
+    final normalized = (value ?? '').trim();
+    if (normalized.isEmpty) {
+      return AppStrings.tr('name_required');
+    }
+    if (normalized.length < _minNameLength ||
+        normalized.length > _maxNameLength) {
+      return AppStrings.tr('name_length_invalid');
+    }
+    return null;
+  }
+
+  String? _validateRoleLength(String? value) {
+    final normalized = (value ?? '').trim();
+    if (normalized.isEmpty) {
+      return AppStrings.tr('role_required');
+    }
+    if (normalized.length < _minRoleLength ||
+        normalized.length > _maxRoleLength) {
+      return AppStrings.tr('role_length_invalid');
+    }
+    return null;
+  }
+
+  void _showSuccessSnackBar(BuildContext context, String message) {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.surface,
+          ),
+        ),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        showCloseIcon: true,
+      ),
+    );
   }
 
   Widget _buildUserStats() {
@@ -400,6 +450,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
   Widget _buildUsersTable(bool isCompact) {
     final users = _controller.filteredUsers;
     final departments = _controller.getAllDepartments();
+    final double columnGap = isCompact ? 8 : 14;
 
     Widget header(String text) => Expanded(
       child: Text(
@@ -891,10 +942,15 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
             child: Row(
               children: [
                 header(AppStrings.tr('name_label')),
+                SizedBox(width: columnGap),
                 header(AppStrings.tr('email_label')),
+                SizedBox(width: columnGap),
                 header(AppStrings.tr('role_label')),
+                SizedBox(width: columnGap),
                 header(AppStrings.tr('department_label')),
+                SizedBox(width: columnGap),
                 header(AppStrings.tr('status_label')),
+                SizedBox(width: columnGap),
                 const SizedBox(width: 100), // Fixed width for actions column
               ],
             ),
@@ -1007,26 +1063,36 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          user.displayName,
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 14,
-                                            color: Theme.of(
-                                              context,
-                                            ).colorScheme.onSurface,
+                                        Tooltip(
+                                          message: user.displayName,
+                                          child: Text(
+                                            user.displayName,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 14,
+                                              color: Theme.of(
+                                                context,
+                                              ).colorScheme.onSurface,
+                                            ),
                                           ),
                                         ),
                                         const SizedBox(height: 4),
-                                        Text(
-                                          user.uid,
-                                          style: TextStyle(
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .onSurface
-                                                .withOpacity(0.5),
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w500,
+                                        Tooltip(
+                                          message: user.uid,
+                                          child: Text(
+                                            user.uid,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface
+                                                  .withOpacity(0.5),
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
+                                            ),
                                           ),
                                         ),
                                       ],
@@ -1035,19 +1101,26 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                                 ],
                               ),
                             ),
+                            SizedBox(width: columnGap),
                             // Email
                             Expanded(
-                              child: Text(
-                                user.email,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurface.withOpacity(0.8),
+                              child: Tooltip(
+                                message: user.email,
+                                child: Text(
+                                  user.email,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface.withOpacity(0.8),
+                                  ),
                                 ),
                               ),
                             ),
+                            SizedBox(width: columnGap),
                             // Role
                             Expanded(
                               child: Text(
@@ -1061,6 +1134,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                                 ),
                               ),
                             ),
+                            SizedBox(width: columnGap),
                             // Department
                             Expanded(
                               child: Text(
@@ -1074,6 +1148,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                                 ),
                               ),
                             ),
+                            SizedBox(width: columnGap),
                             // Status
                             Expanded(
                               child: Align(
@@ -1112,6 +1187,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                                 ),
                               ),
                             ),
+                            SizedBox(width: columnGap),
                             // Actions
                             SizedBox(
                               width: 100,
@@ -1196,7 +1272,15 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
   }
 
   void _showEditDialog(BuildContext context, UserEmployee user) {
+    final rootContext = context;
     String selectedStatus = user.status ?? 'active';
+    String? selectedOffice = user.officeId.trim().isEmpty
+        ? null
+        : user.officeId.trim();
+    String? selectedDepartment = user.departmentId.trim().isEmpty
+        ? null
+        : user.departmentId.trim();
+    bool isSaving = false;
     final TextEditingController roleController = TextEditingController(
       text: user.roleTitle,
     );
@@ -1207,6 +1291,29 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (context, setState) {
+            final officeOptions = _controller.getAllOfficeIdsForCreate();
+            final safeOfficeOptions = officeOptions.toSet().toList()
+              ..sort(
+                (a, b) => _controller
+                    .getOfficeDisplayName(a)
+                    .toLowerCase()
+                    .compareTo(
+                      _controller.getOfficeDisplayName(b).toLowerCase(),
+                    ),
+              );
+            if (selectedOffice != null &&
+                !safeOfficeOptions.contains(selectedOffice)) {
+              safeOfficeOptions.insert(0, selectedOffice!);
+            }
+
+            final departmentOptions = _controller.getAllDepartments();
+            final safeDepartmentOptions = departmentOptions.toSet().toList()
+              ..sort();
+            if (selectedDepartment != null &&
+                !safeDepartmentOptions.contains(selectedDepartment)) {
+              safeDepartmentOptions.insert(0, selectedDepartment!);
+            }
+
             final statusColor = selectedStatus == 'active'
                 ? AppColors.success
                 : selectedStatus == 'suspended'
@@ -1394,6 +1501,97 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                                   ),
                                 ),
                           ),
+                          const SizedBox(height: 20),
+                          buildSectionLabel(
+                            context,
+                            AppStrings.tr('contact_system_section'),
+                          ),
+                          const SizedBox(height: 8),
+                          DropdownButtonFormField<String>(
+                            value: selectedOffice,
+                            isExpanded: true,
+                            hint: Text(
+                              AppStrings.tr('select_office_placeholder'),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            decoration:
+                                _inputStyle(
+                                  context,
+                                  Theme.of(context).colorScheme.primary,
+                                  'office',
+                                ).copyWith(
+                                  prefixIcon: Icon(
+                                    Icons.apartment_rounded,
+                                    size: 20,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                  ),
+                                ),
+                            items: safeOfficeOptions.map((officeId) {
+                              return DropdownMenuItem(
+                                value: officeId,
+                                child: Text(
+                                  _controller.getOfficeDisplayName(officeId),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              setState(() {
+                                selectedOffice = value;
+                                if (value != null) {
+                                  final preferredDepartment = _controller
+                                      .getPreferredDepartmentForOffice(value);
+                                  if (preferredDepartment != null &&
+                                      preferredDepartment.trim().isNotEmpty) {
+                                    selectedDepartment = preferredDepartment;
+                                  }
+                                }
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          DropdownButtonFormField<String>(
+                            value: selectedDepartment,
+                            isExpanded: true,
+                            hint: Text(
+                              AppStrings.tr('select_department_placeholder'),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            decoration:
+                                _inputStyle(
+                                  context,
+                                  Theme.of(context).colorScheme.primary,
+                                  'department',
+                                ).copyWith(
+                                  prefixIcon: Icon(
+                                    Icons.business_center_rounded,
+                                    size: 20,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                  ),
+                                ),
+                            items: safeDepartmentOptions.map((department) {
+                              return DropdownMenuItem(
+                                value: department,
+                                child: Text(
+                                  department,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              setState(() {
+                                selectedDepartment = value;
+                              });
+                            },
+                          ),
                         ],
                       ),
                     ),
@@ -1403,7 +1601,9 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                         children: [
                           Expanded(
                             child: TextButton(
-                              onPressed: () => Navigator.pop(context),
+                              onPressed: isSaving
+                                  ? null
+                                  : () => Navigator.pop(context),
                               style: TextButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 16,
@@ -1426,17 +1626,128 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                           Expanded(
                             flex: 2,
                             child: ElevatedButton(
-                              onPressed: () {
-                                _controller.updateUserStatus(
-                                  user.uid,
-                                  selectedStatus,
-                                );
-                                _controller.updateUserRole(
-                                  user.uid,
-                                  roleController.text.trim(),
-                                );
-                                Navigator.pop(context);
-                              },
+                              onPressed: isSaving
+                                  ? null
+                                  : () async {
+                                      final trimmedRole = roleController.text
+                                          .trim();
+                                      final roleChanged =
+                                          trimmedRole != user.roleTitle.trim();
+                                      final statusChanged =
+                                          selectedStatus !=
+                                          (user.status ?? 'active');
+                                      final normalizedOffice =
+                                          selectedOffice?.trim() ?? '';
+                                      final normalizedDepartment =
+                                          selectedDepartment?.trim() ?? '';
+                                      final officeChanged =
+                                          normalizedOffice !=
+                                          user.officeId.trim();
+                                      final departmentChanged =
+                                          normalizedDepartment !=
+                                          user.departmentId.trim();
+                                      final roleValidationMessage =
+                                          _validateRoleLength(trimmedRole);
+
+                                      if (normalizedOffice.isEmpty) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              AppStrings.tr('office_required'),
+                                            ),
+                                            behavior: SnackBarBehavior.floating,
+                                            backgroundColor: Theme.of(
+                                              context,
+                                            ).colorScheme.error,
+                                          ),
+                                        );
+                                        return;
+                                      }
+
+                                      if (normalizedDepartment.isEmpty) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              AppStrings.tr(
+                                                'department_required',
+                                              ),
+                                            ),
+                                            behavior: SnackBarBehavior.floating,
+                                            backgroundColor: Theme.of(
+                                              context,
+                                            ).colorScheme.error,
+                                          ),
+                                        );
+                                        return;
+                                      }
+
+                                      if (roleChanged &&
+                                          roleValidationMessage != null) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              roleValidationMessage,
+                                            ),
+                                            behavior: SnackBarBehavior.floating,
+                                            backgroundColor: Theme.of(
+                                              context,
+                                            ).colorScheme.error,
+                                          ),
+                                        );
+                                        return;
+                                      }
+
+                                      if (!statusChanged &&
+                                          !roleChanged &&
+                                          !officeChanged &&
+                                          !departmentChanged) {
+                                        Navigator.pop(context);
+                                        return;
+                                      }
+
+                                      setState(() => isSaving = true);
+
+                                      if (statusChanged) {
+                                        await _controller.updateUserStatus(
+                                          user.uid,
+                                          selectedStatus,
+                                        );
+                                      }
+                                      if (roleChanged) {
+                                        await _controller.updateUserRole(
+                                          user.uid,
+                                          trimmedRole,
+                                        );
+                                      }
+                                      if (officeChanged || departmentChanged) {
+                                        await _controller
+                                            .updateUserOfficeAndDepartment(
+                                              uid: user.uid,
+                                              officeId: normalizedOffice,
+                                              departmentId:
+                                                  normalizedDepartment,
+                                            );
+                                      }
+
+                                      if (!context.mounted) return;
+                                      Navigator.pop(context);
+                                      if (!mounted) return;
+                                      _showSuccessSnackBar(
+                                        rootContext,
+                                        AppStrings.tr(
+                                          'user_updated_success',
+                                        ).replaceAll(
+                                          '{name}',
+                                          user.displayName,
+                                        ),
+                                      );
+                                    },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Theme.of(
                                   context,
@@ -1452,10 +1763,26 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                               ),
-                              child: Text(
-                                AppStrings.tr('save_changes'),
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
+                              child: isSaving
+                                  ? SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Theme.of(
+                                                context,
+                                              ).colorScheme.onPrimary,
+                                            ),
+                                      ),
+                                    )
+                                  : Text(
+                                      AppStrings.tr('save_changes'),
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
                             ),
                           ),
                         ],
@@ -1472,6 +1799,10 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
   }
 
   void _showUserDetailsDialog(BuildContext context, UserEmployee user) {
+    final officeDisplayName = user.officeId.trim().isEmpty
+        ? AppStrings.tr('not_available')
+        : _controller.getOfficeDisplayName(user.officeId);
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -1605,7 +1936,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                           detailRow(
                             context,
                             AppStrings.tr('office_label'),
-                            user.officeId,
+                            officeDisplayName,
                           ),
                           detailRow(
                             context,
@@ -1691,6 +2022,13 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
   }
 
   void _showDeleteConfirm(BuildContext context, UserEmployee user) {
+    final rootContext = context;
+    String deleteConfirmText = '';
+    String adminPasswordText = '';
+    bool isDeleting = false;
+    bool isAdminPasswordInvalid = false;
+    bool obscureAdminPassword = true;
+
     showGeneralDialog(
       context: context,
       barrierDismissible: true,
@@ -1702,139 +2040,319 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
           scale: anim1.value,
           child: Opacity(
             opacity: anim1.value,
-            child: AlertDialog(
-              icon: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.error.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.delete_sweep_rounded,
-                  color: AppColors.error,
-                  size: 28,
-                ),
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(28),
-              ),
-              title: Text(
-                AppStrings.tr('confirm_deletion_title'),
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    AppStrings.tr('delete_user_confirm_message'),
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      height: 1.5,
+            child: StatefulBuilder(
+              builder: (context, setDialogState) {
+                final normalizedInput = deleteConfirmText.trim().toLowerCase();
+                final hasDeleteInput = normalizedInput.isNotEmpty;
+                final hasAdminPassword = adminPasswordText.trim().isNotEmpty;
+                final canDelete =
+                    normalizedInput == 'delete' && hasAdminPassword;
+
+                return AlertDialog(
+                  icon: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.delete_sweep_rounded,
+                      color: AppColors.error,
+                      size: 28,
                     ),
                   ),
-                  const SizedBox(height: 24),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Theme.of(context).dividerColor.withOpacity(0.1),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.03),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(28),
+                  ),
+                  title: Text(
+                    AppStrings.tr('confirm_deletion_title'),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        AppStrings.tr('delete_user_confirm_message'),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          height: 1.5,
                         ),
-                      ],
-                    ),
-                    child: Row(
+                      ),
+                      const SizedBox(height: 24),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surface,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: Theme.of(
+                              context,
+                            ).dividerColor.withOpacity(0.1),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.03),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              backgroundColor: AppColors.error.withOpacity(0.2),
+                              child: Text(
+                                user.displayName[0].toUpperCase(),
+                                style: TextStyle(
+                                  color: AppColors.error,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    user.displayName,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  Text(
+                                    '${AppStrings.tr('user_id_label')}: ${user.uid}',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey[500],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          AppStrings.tr('delete_user_type_delete_instruction'),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withOpacity(0.8),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        textCapitalization: TextCapitalization.characters,
+                        onChanged: (value) {
+                          setDialogState(() {
+                            deleteConfirmText = value;
+                          });
+                        },
+                        decoration: InputDecoration(
+                          labelText: AppStrings.tr(
+                            'delete_user_type_delete_label',
+                          ),
+                          hintText: AppStrings.tr(
+                            'delete_user_type_delete_placeholder',
+                          ),
+                          prefixIcon: const Icon(Icons.keyboard_alt_rounded),
+                          filled: true,
+                          fillColor: Theme.of(
+                            context,
+                          ).colorScheme.surfaceContainerLow,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                      if (hasDeleteInput && normalizedInput != 'delete')
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              AppStrings.tr('delete_user_type_delete_mismatch'),
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Theme.of(context).colorScheme.error,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      const SizedBox(height: 16),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          AppStrings.tr(
+                            'delete_user_admin_password_instruction',
+                          ),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withOpacity(0.8),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        obscureText: obscureAdminPassword,
+                        onChanged: (value) {
+                          setDialogState(() {
+                            adminPasswordText = value;
+                            isAdminPasswordInvalid = false;
+                          });
+                        },
+                        decoration: InputDecoration(
+                          labelText: AppStrings.tr(
+                            'delete_user_admin_password_label',
+                          ),
+                          hintText: AppStrings.tr(
+                            'delete_user_admin_password_placeholder',
+                          ),
+                          prefixIcon: const Icon(Icons.lock_rounded),
+                          suffixIcon: IconButton(
+                            onPressed: () {
+                              setDialogState(() {
+                                obscureAdminPassword = !obscureAdminPassword;
+                              });
+                            },
+                            icon: Icon(
+                              obscureAdminPassword
+                                  ? Icons.visibility_off_rounded
+                                  : Icons.visibility_rounded,
+                            ),
+                          ),
+                          filled: true,
+                          fillColor: Theme.of(
+                            context,
+                          ).colorScheme.surfaceContainerLow,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                      if (isAdminPasswordInvalid)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              AppStrings.tr(
+                                'delete_user_admin_password_invalid',
+                              ),
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Theme.of(context).colorScheme.error,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                  actions: [
+                    Row(
                       children: [
-                        CircleAvatar(
-                          backgroundColor: AppColors.error.withOpacity(0.2),
-                          child: Text(
-                            user.displayName[0].toUpperCase(),
-                            style: TextStyle(
-                              color: AppColors.error,
-                              fontWeight: FontWeight.bold,
+                        Expanded(
+                          child: TextButton(
+                            onPressed: isDeleting
+                                ? null
+                                : () => Navigator.pop(context),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: Text(
+                              AppStrings.tr('keep_user'),
+                              style: TextStyle(color: Colors.grey[600]),
                             ),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                user.displayName,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
+                          child: ElevatedButton(
+                            onPressed: canDelete && !isDeleting
+                                ? () async {
+                                    setDialogState(() {
+                                      isDeleting = true;
+                                      isAdminPasswordInvalid = false;
+                                    });
+
+                                    final isPasswordValid = await _controller
+                                        .verifyCurrentAdminPassword(
+                                          adminPasswordText,
+                                        );
+                                    if (!context.mounted) return;
+                                    if (!isPasswordValid) {
+                                      setDialogState(() {
+                                        isDeleting = false;
+                                        isAdminPasswordInvalid = true;
+                                      });
+                                      return;
+                                    }
+
+                                    await _controller.removeUser(user.uid);
+                                    if (!context.mounted) return;
+                                    Navigator.pop(context);
+                                    if (!mounted) return;
+                                    _showSuccessSnackBar(
+                                      rootContext,
+                                      AppStrings.tr(
+                                        'user_deleted_success',
+                                      ).replaceAll('{name}', user.displayName),
+                                    );
+                                  }
+                                : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.error,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              Text(
-                                '${AppStrings.tr('user_id_label')}: ${user.uid}',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.grey[500],
-                                ),
-                              ),
-                            ],
+                            ),
+                            child: isDeleting
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white,
+                                      ),
+                                    ),
+                                  )
+                                : Text(
+                                    AppStrings.tr('delete'),
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                           ),
                         ),
                       ],
                     ),
-                  ),
-                ],
-              ),
-              actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-              actions: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: Text(
-                          AppStrings.tr('keep_user'),
-                          style: TextStyle(color: Colors.grey[600]),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          _controller.removeUser(user.uid);
-                          Navigator.pop(context);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.error,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: Text(
-                          AppStrings.tr('delete'),
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ),
                   ],
-                ),
-              ],
+                );
+              },
             ),
           ),
         );
@@ -1844,20 +2362,23 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
 
   void _showCreateUserDialog(BuildContext context) {
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+    final rootContext = context;
 
     final TextEditingController uidController = TextEditingController();
     final TextEditingController nameController = TextEditingController();
     final TextEditingController emailController = TextEditingController();
     final TextEditingController phoneController = TextEditingController();
     final TextEditingController roleController = TextEditingController();
+    final TextEditingController passwordController = TextEditingController();
+    final defaultCreateUserPassword = Env.defaultUserPassword.trim();
+    passwordController.text = defaultCreateUserPassword;
+    bool isSubmitting = false;
 
     bool uidEdited = false;
     bool emailEdited = false;
-    String selectedDepartment = _controller.getAllDepartments().isNotEmpty
-        ? _controller.getAllDepartments().first
-        : 'it';
+    String? selectedOffice;
+    String? selectedDepartment;
     String selectedGender = 'male';
-    String selectedOffice = 'hq_phnom_penh_01';
     String selectedStatus = 'active';
 
     void updateAutoFields(String name) {
@@ -1866,7 +2387,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
       if (!emailEdited) emailController.text = _buildEmail(name);
     }
 
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (BuildContext context) {
         final isDesktop = MediaQuery.of(context).size.width > 600;
@@ -1879,6 +2400,22 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
           ),
           child: StatefulBuilder(
             builder: (context, setState) {
+              final officeOptions = _controller.getAllOfficeIdsForCreate();
+              final safeOfficeOptions = officeOptions;
+              if (selectedOffice != null &&
+                  !safeOfficeOptions.contains(selectedOffice)) {
+                selectedOffice = null;
+              }
+
+              final departmentOptions = selectedOffice == null
+                  ? const <String>[]
+                  : _controller.getDepartmentsForOffice(selectedOffice!);
+              final safeDepartmentOptions = departmentOptions;
+              if (selectedDepartment != null &&
+                  !safeDepartmentOptions.contains(selectedDepartment)) {
+                selectedDepartment = null;
+              }
+
               return Container(
                 width: 600,
                 constraints: BoxConstraints(
@@ -1944,7 +2481,9 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                             ),
                           ),
                           IconButton(
-                            onPressed: () => Navigator.pop(context),
+                            onPressed: isSubmitting
+                                ? null
+                                : () => Navigator.pop(context),
                             icon: const Icon(Icons.close_rounded),
                             style: IconButton.styleFrom(
                               backgroundColor: Theme.of(
@@ -1984,9 +2523,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                                 controller: nameController,
                                 hint: AppStrings.tr('full_name_hint'),
                                 icon: Icons.person_rounded,
-                                validator: (v) => v?.isEmpty == true
-                                    ? AppStrings.tr('name_required')
-                                    : null,
+                                validator: _validateNameLength,
                                 onChanged: (val) =>
                                     setState(() => updateAutoFields(val)),
                               ),
@@ -1998,9 +2535,27 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                                 controller: roleController,
                                 hint: AppStrings.tr('role_title_hint'),
                                 icon: Icons.work_rounded,
-                                validator: (v) => v?.isEmpty == true
-                                    ? AppStrings.tr('role_required')
-                                    : null,
+                                validator: _validateRoleLength,
+                              ),
+                              const SizedBox(height: 16),
+
+                              buildTextField(
+                                context,
+                                label: AppStrings.tr('password'),
+                                controller: passwordController,
+                                hint: AppStrings.tr('enter_password_hint'),
+                                icon: Icons.lock_rounded,
+                                obscureText: true,
+                                validator: (v) {
+                                  final value = v?.trim() ?? '';
+                                  if (value.isEmpty) {
+                                    return AppStrings.tr('password_required');
+                                  }
+                                  if (value.length < 4) {
+                                    return AppStrings.tr('password_too_short');
+                                  }
+                                  return null;
+                                },
                               ),
                               const SizedBox(height: 16),
 
@@ -2021,6 +2576,36 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                                 context,
                                 AppStrings.tr('contact_system_section'),
                                 Icons.perm_contact_calendar_outlined,
+                              ),
+                              const SizedBox(height: 16),
+
+                              buildDropdown(
+                                context,
+                                label: AppStrings.tr('office_label'),
+                                value: selectedOffice,
+                                items: safeOfficeOptions,
+                                onChanged: (val) {
+                                  setState(() {
+                                    selectedOffice = val;
+                                    selectedDepartment = null;
+
+                                    if (val != null) {
+                                      selectedDepartment = _controller
+                                          .getSingleDepartmentForOffice(val);
+                                    }
+                                  });
+                                },
+                                statusLabel: (officeId) =>
+                                    _controller.getOfficeDisplayName(officeId),
+                                hintText: AppStrings.tr(
+                                  'select_office_placeholder',
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return AppStrings.tr('office_required');
+                                  }
+                                  return null;
+                                },
                               ),
                               const SizedBox(height: 16),
 
@@ -2058,10 +2643,22 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                                       context,
                                       label: AppStrings.tr('department_label'),
                                       value: selectedDepartment,
-                                      items: _controller.getAllDepartments(),
+                                      items: safeDepartmentOptions,
                                       onChanged: (val) => setState(
-                                        () => selectedDepartment = val!,
+                                        () => selectedDepartment = val,
                                       ),
+                                      hintText: AppStrings.tr(
+                                        'select_department_placeholder',
+                                      ),
+                                      validator: (value) {
+                                        if (value == null ||
+                                            value.trim().isEmpty) {
+                                          return AppStrings.tr(
+                                            'department_required',
+                                          );
+                                        }
+                                        return null;
+                                      },
                                     ),
                                   ),
                                   SizedBox(
@@ -2116,7 +2713,9 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           TextButton(
-                            onPressed: () => Navigator.pop(context),
+                            onPressed: isSubmitting
+                                ? null
+                                : () => Navigator.pop(context),
                             style: TextButton.styleFrom(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 24,
@@ -2130,46 +2729,47 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                           ),
                           const SizedBox(width: 12),
                           FilledButton.icon(
-                            onPressed: () {
-                              if (formKey.currentState!.validate()) {
-                                _controller.createUser(
-                                  uid: uidController.text,
-                                  displayName: nameController.text,
-                                  roleTitle: roleController.text,
-                                  gender: selectedGender,
-                                  email: emailController.text,
-                                  phone: phoneController.text,
-                                  departmentId: selectedDepartment,
-                                  officeId: selectedOffice,
-                                  status: selectedStatus,
-                                );
+                            onPressed: isSubmitting
+                                ? null
+                                : () async {
+                                    if (formKey.currentState!.validate()) {
+                                      if (selectedOffice == null ||
+                                          selectedDepartment == null) {
+                                        return;
+                                      }
+                                      setState(() => isSubmitting = true);
+                                      await _controller.createUser(
+                                        uid: uidController.text,
+                                        displayName: nameController.text,
+                                        roleTitle: roleController.text,
+                                        password:
+                                            passwordController.text
+                                                .trim()
+                                                .isEmpty
+                                            ? defaultCreateUserPassword
+                                            : passwordController.text.trim(),
+                                        gender: selectedGender,
+                                        email: emailController.text,
+                                        phone: phoneController.text,
+                                        departmentId: selectedDepartment!,
+                                        officeId: selectedOffice!,
+                                        status: selectedStatus,
+                                      );
 
-                                Navigator.pop(context);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      AppStrings.tr(
-                                        'user_created_success',
-                                      ).replaceAll(
-                                        '{name}',
-                                        nameController.text,
-                                      ),
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.surface,
-                                      ),
-                                    ),
-                                    behavior: SnackBarBehavior.floating,
-                                    backgroundColor: Theme.of(
-                                      context,
-                                    ).colorScheme.primary,
-                                    showCloseIcon: true,
-                                  ),
-                                );
-                              }
-                            },
+                                      if (!context.mounted) return;
+                                      Navigator.pop(context);
+                                      if (!mounted) return;
+                                      _showSuccessSnackBar(
+                                        rootContext,
+                                        AppStrings.tr(
+                                          'user_created_success',
+                                        ).replaceAll(
+                                          '{name}',
+                                          nameController.text,
+                                        ),
+                                      );
+                                    }
+                                  },
                             style: FilledButton.styleFrom(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 24,
@@ -2179,8 +2779,20 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            icon: const Icon(Icons.check_rounded, size: 18),
-                            label: Text(AppStrings.tr('create_user')),
+                            icon: isSubmitting
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(Icons.check_rounded, size: 18),
+                            label: Text(
+                              isSubmitting
+                                  ? AppStrings.tr('loading')
+                                  : AppStrings.tr('create_user'),
+                            ),
                           ),
                         ],
                       ),

@@ -356,7 +356,7 @@ class _PerformanceLeaderboardScreenState
                     ),
                   ),
                   Text(
-                    '${user.achievements.performanceScore}%',
+                    '${user.achievements.performanceScore}${AppStrings.tr('points_label')}',
                     style: TextStyle(
                       color: color,
                       fontWeight: FontWeight.w900,
@@ -688,6 +688,7 @@ class _PerformanceLeaderboardScreenState
                       _headerCell(AppStrings.tr('employee'), 3),
                       _headerCell(AppStrings.tr('department_label'), 2),
                       _headerCell(AppStrings.tr('performance_score'), 1, true),
+                      _headerCell(AppStrings.tr('medals'), 1, true),
                       _headerCell(AppStrings.tr('trend'), 1, true),
                     ],
                   ),
@@ -831,6 +832,26 @@ class _PerformanceLeaderboardScreenState
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+                  ),
+                ),
+              ),
+              Expanded(
+                flex: 1,
+                child: Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.emoji_events_rounded,
+                        size: 14,
+                        color: const Color(0xFFFFB300),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        user.achievements.totalMedals.toString(),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ],
                   ),
                 ),
               ),

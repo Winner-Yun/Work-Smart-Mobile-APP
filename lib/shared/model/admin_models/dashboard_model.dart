@@ -1,3 +1,5 @@
+import 'package:flutter_worksmart_mobile_app/core/constants/default_profile_urls.dart';
+
 class DashboardStatsData {
   final int totalEmployees;
   final int presentCount;
@@ -66,22 +68,28 @@ class LeaveRequest {
   final String id;
   final String employeeId;
   final String employeeName;
+  final String profileUrl;
   final String leaveType;
   final String startDate;
   final String endDate;
   final String reason;
   final String? attachmentUrl;
+  final String? statusUpdatedAtUtc;
+  final int? statusUpdatedAtUnix;
   final String status; // pending, approved, rejected
 
   LeaveRequest({
     required this.id,
     required this.employeeId,
     required this.employeeName,
+    this.profileUrl = '',
     required this.leaveType,
     required this.startDate,
     required this.endDate,
     required this.reason,
     this.attachmentUrl,
+    this.statusUpdatedAtUtc,
+    this.statusUpdatedAtUnix,
     required this.status,
   });
 }
@@ -138,17 +146,22 @@ class UserEmployee {
       if (singleImage.isNotEmpty) singleImage,
       ...parsedList,
     }.toList();
+    final gender = (map['gender'] ?? 'male').toString();
+    final resolvedProfileUrl = DefaultProfileUrls.resolve(
+      gender: gender,
+      providedUrl: map['profile_url']?.toString(),
+    );
 
     return UserEmployee(
       uid: map['uid'] ?? '',
       displayName: map['display_name'] ?? 'Unknown',
       roleTitle: map['role_title'] ?? 'Staff',
-      gender: map['gender'] ?? 'male',
+      gender: gender,
       email: map['email'] ?? '',
       phone: map['phone'] ?? '',
       departmentId: map['department_id'] ?? '',
       officeId: map['office_id'] ?? '',
-      profileUrl: map['profile_url'] ?? '',
+      profileUrl: resolvedProfileUrl,
       faceImageUrl: singleImage,
       faceImageUrls: mergedFaceImages,
       faceCount: biometrics['face_count'] ?? mergedFaceImages.length,

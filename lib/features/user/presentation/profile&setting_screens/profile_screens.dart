@@ -5,8 +5,10 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/cloudinary/cloudinary_profile_image_service.dart';
 import 'package:flutter_worksmart_mobile_app/core/util/database/database_helper.dart';
-import 'package:flutter_worksmart_mobile_app/core/util/mock_data/userFinalData.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/database/realtime_data_controller.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/database/user_data.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/auth/presentation/change_pas_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/presentation/profile&setting_screens/setting_screen.dart';
 import 'package:flutter_worksmart_mobile_app/shared/model/user_model/user_profile.dart';
@@ -26,6 +28,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late UserProfile _currentUser;
   File? _image;
   final ImagePicker _picker = ImagePicker();
+  final RealtimeDataController _dataController = RealtimeDataController();
+  final CloudinaryProfileImageService _cloudinaryProfileImageService =
+      CloudinaryProfileImageService();
+  bool _isUploadingProfileImage = false;
+  String? _resolvedOfficeName;
 
   @override
   void initState() {
@@ -34,24 +41,128 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _loadData() {
-    final currentUserData = usersFinalData.firstWhere(
-      (user) => user['uid'] == (widget.loginData?['uid'] ?? "user_winner_777"),
-      orElse: () => usersFinalData[0],
-    );
+    final String userId = (widget.loginData?['uid'] ?? '').toString().trim();
+
+    final Map<String, dynamic> currentUserData = userId.isEmpty
+        ? defaultUserRecord
+        : usersFinalData.firstWhere(
+            (user) => user['uid']?.toString().trim() == userId,
+            orElse: () => defaultUserRecord,
+          );
+
     _currentUser = UserProfile.fromJson(currentUserData);
+    final inlineOfficeName =
+        (currentUserData['office_name'] ?? currentUserData['officeName'] ?? '')
+            .toString()
+            .trim();
+    _resolvedOfficeName = inlineOfficeName.isEmpty ? null : inlineOfficeName;
+    _loadOfficeName();
+  }
+
+  Future<void> _loadOfficeName() async {
+    final officeId = _currentUser.officeId.trim();
+    if (officeId.isEmpty) {
+      if (!mounted) {
+        _resolvedOfficeName = null;
+        return;
+      }
+      setState(() => _resolvedOfficeName = null);
+      return;
+    }
+
+    try {
+      final office = await _dataController.fetchOfficeConnection(
+        officeId: officeId,
+      );
+      final officeName = (office?['office_name'] ?? office?['officeName'] ?? '')
+          .toString()
+          .trim();
+      if (officeName.isEmpty) {
+        return;
+      }
+
+      if (!mounted) {
+        _resolvedOfficeName = officeName;
+        return;
+      }
+
+      setState(() => _resolvedOfficeName = officeName);
+    } catch (_) {
+      // Keep office id fallback when office name cannot be resolved.
+    }
   }
 
   Future<void> _pickImage(ImageSource source) async {
+    if (_isUploadingProfileImage) return;
+
     try {
       final XFile? pickedFile = await _picker.pickImage(
         source: source,
         imageQuality: 80,
       );
       if (pickedFile != null) {
-        setState(() => _image = File(pickedFile.path));
+        final File imageFile = File(pickedFile.path);
+        setState(() => _image = imageFile);
+        await _uploadAndSaveProfileImage(imageFile);
       }
     } catch (e) {
       debugPrint("Error picking image: $e");
+    }
+  }
+
+  Future<void> _uploadAndSaveProfileImage(File imageFile) async {
+    final String userId = _currentUser.uid.trim();
+    if (userId.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppStrings.tr('unable_to_resolve_user_id'))),
+      );
+      return;
+    }
+
+    setState(() => _isUploadingProfileImage = true);
+
+    try {
+      final String imageUrl = await _cloudinaryProfileImageService
+          .uploadProfileImage(
+            imageFile: imageFile,
+            userId: userId,
+            previousImageUrl: _currentUser.profileUrl,
+          );
+
+      await _dataController.updateUserRecord(userId, {'profile_url': imageUrl});
+
+      final int userIndex = usersFinalData.indexWhere(
+        (user) => user['uid']?.toString().trim() == userId,
+      );
+      if (userIndex != -1) {
+        usersFinalData[userIndex]['profile_url'] = imageUrl;
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _image = null;
+        _loadData();
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppStrings.tr('profile_image_updated_successfully')),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${AppStrings.tr('profile_image_upload_failed')}: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isUploadingProfileImage = false);
+      }
     }
   }
 
@@ -94,9 +205,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     icon: Icons.photo_library_rounded,
                     label: AppStrings.tr('gallery'),
                     color: Theme.of(context).colorScheme.primary,
-                    onTap: () {
-                      _pickImage(ImageSource.gallery);
+                    onTap: () async {
                       Navigator.pop(context);
+                      await _pickImage(ImageSource.gallery);
                     },
                   ),
                   _buildOptionItem(
@@ -104,9 +215,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     icon: Icons.camera_alt_rounded,
                     label: AppStrings.tr('camera'),
                     color: AppColors.secondary,
-                    onTap: () {
-                      _pickImage(ImageSource.camera);
+                    onTap: () async {
                       Navigator.pop(context);
+                      await _pickImage(ImageSource.camera);
                     },
                   ),
                 ],
@@ -253,16 +364,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     fontSize: 28,
                   ),
           ),
+          if (_isUploadingProfileImage)
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.black.withOpacity(0.35),
+                ),
+                child: const Center(
+                  child: SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ),
           GestureDetector(
-            onTap: () => _showPickerOptions(context),
+            onTap: _isUploadingProfileImage
+                ? null
+                : () => _showPickerOptions(context),
             child: CircleAvatar(
               radius: 18,
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              child: const Icon(
-                Icons.camera_alt,
-                size: 18,
-                color: Colors.white,
-              ),
+              backgroundColor: _isUploadingProfileImage
+                  ? Theme.of(context).colorScheme.outline
+                  : Theme.of(context).colorScheme.primary,
+              child: Icon(Icons.camera_alt, size: 18, color: Colors.white),
             ),
           ),
         ],
@@ -271,6 +401,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildInfoCard(BuildContext context) {
+    final bool isPhoneMissing = _currentUser.phone.trim().isEmpty;
+    final String phoneValue = isPhoneMissing
+        ? AppStrings.tr('not_available')
+        : _currentUser.phone;
+    final officeDisplayValue = _resolvedOfficeName?.trim().isNotEmpty == true
+        ? _resolvedOfficeName!.trim()
+        : _currentUser.officeId.trim();
+    final bool isOfficeMissing = officeDisplayValue.isEmpty;
+    final String officeValue = isOfficeMissing
+        ? AppStrings.tr('not_available')
+        : officeDisplayValue;
+    final bool isDepartmentMissing = _currentUser.departmentId.trim().isEmpty;
+    final String departmentValue = isDepartmentMissing
+        ? AppStrings.tr('not_available')
+        : _currentUser.departmentId.trim();
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -286,7 +432,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
             context,
             Icons.phone_outlined,
             AppStrings.tr('phone_label'),
-            _currentUser.phone,
+            phoneValue,
+            valueColor: isPhoneMissing ? Colors.red.shade400 : null,
+          ),
+          const Divider(height: 30, thickness: 0.5),
+          _buildInfoRow(
+            context,
+            Icons.apartment_rounded,
+            AppStrings.tr('office_label'),
+            officeValue,
+            valueColor: isOfficeMissing ? Colors.red.shade400 : null,
+          ),
+          const Divider(height: 30, thickness: 0.5),
+          _buildInfoRow(
+            context,
+            Icons.business_center_outlined,
+            AppStrings.tr('department_label'),
+            departmentValue,
+            valueColor: isDepartmentMissing ? Colors.red.shade400 : null,
           ),
           const Divider(height: 30, thickness: 0.5),
           _buildTelegramStatus(context),
@@ -372,8 +535,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     BuildContext context,
     IconData icon,
     String label,
-    String value,
-  ) {
+    String value, {
+    Color? valueColor,
+  }) {
     return Row(
       children: [
         CircleAvatar(
@@ -399,7 +563,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                  color:
+                      valueColor ??
+                      Theme.of(context).textTheme.bodyLarge?.color,
                 ),
               ),
             ],
@@ -415,8 +581,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) =>
-                const ResetPasswordScreen(isFromProfile: true),
+            builder: (context) => ResetPasswordScreen(
+              isFromProfile: true,
+              userId: _currentUser.uid,
+              resetEmail: _currentUser.email,
+            ),
           ),
         );
       },

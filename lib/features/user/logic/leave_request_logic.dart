@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
-import 'package:flutter_worksmart_mobile_app/core/util/mock_data/userFinalData.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/database/realtime_data_controller.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/database/user_data.dart';
 import 'package:flutter_worksmart_mobile_app/shared/model/activity_models/leave_record.dart';
 import 'package:intl/intl.dart';
 
@@ -23,6 +24,9 @@ class LeaveRemoveModeState {
 }
 
 class LeaveRequestLogic {
+  static final RealtimeDataController _dataController =
+      RealtimeDataController();
+
   static bool isApprovedStatus(String status) {
     if (status == 'approved') return true;
     final String localized = AppStrings.tr('status_approved');
@@ -109,7 +113,7 @@ class LeaveRequestLogic {
     final bool shouldDelete = await confirmRemoveRequest(context);
     if (!shouldDelete) return false;
 
-    final bool removed = removeLeaveRequest(
+    final bool removed = await removeLeaveRequest(
       requestId: record.requestId,
       userId: userId,
     );
@@ -344,47 +348,159 @@ class LeaveRequestLogic {
     return shouldDelete == true;
   }
 
-  static bool removeLeaveRequest({required String requestId, String? userId}) {
-    int userIndex = usersFinalData.indexWhere((user) => user['uid'] == userId);
+  static Future<bool> submitLeaveRequest({
+    required String userId,
+    required String type,
+    required DateTime startDate,
+    required DateTime endDate,
+    required String reason,
+    String? attachmentUrl,
+  }) async {
+    final String normalizedUid = userId.trim();
+    if (normalizedUid.isEmpty) return false;
 
-    if (userIndex < 0) {
-      userIndex = usersFinalData.indexWhere((user) {
-        final List<dynamic> records = user['leave_records'] ?? <dynamic>[];
-        return records.any((item) => item['request_id'] == requestId);
-      });
+    final int userIndex = _findUserIndex(uid: normalizedUid);
+    if (userIndex < 0) return false;
+
+    final List<Map<String, dynamic>> leaveRecords = _copyLeaveRecords(
+      usersFinalData[userIndex]['leave_records'],
+    );
+
+    final String normalizedReason = reason.trim();
+    if (normalizedReason.isEmpty) return false;
+
+    final DateTime normalizedStart = DateTime(
+      startDate.year,
+      startDate.month,
+      startDate.day,
+    );
+    final DateTime normalizedEnd = DateTime(
+      endDate.year,
+      endDate.month,
+      endDate.day,
+    );
+
+    final Map<String, dynamic> request = <String, dynamic>{
+      'request_id': _generateLeaveRequestId(normalizedUid),
+      'type': type,
+      'start_date': normalizedStart.toIso8601String(),
+      'end_date': normalizedEnd.toIso8601String(),
+      'reason': normalizedReason,
+      'status': 'pending',
+    };
+
+    final String? normalizedAttachment = attachmentUrl?.trim();
+    if (normalizedAttachment != null && normalizedAttachment.isNotEmpty) {
+      request['attachment_url'] = normalizedAttachment;
     }
 
+    leaveRecords.insert(0, request);
+
+    try {
+      await _dataController.updateUserRecord(normalizedUid, {
+        'leave_records': leaveRecords,
+      });
+      usersFinalData[userIndex]['leave_records'] = leaveRecords;
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Future<bool> removeLeaveRequest({
+    required String requestId,
+    String? userId,
+  }) async {
+    int userIndex = _findUserIndex(uid: userId?.trim());
+
     if (userIndex < 0) {
-      userIndex = usersFinalData.indexWhere(
-        (user) => user['uid'] == 'user_winner_777',
-      );
+      userIndex = _findUserIndex(requestId: requestId);
     }
 
     if (userIndex < 0) return false;
 
-    final List<Map<String, dynamic>> leaveRecords =
-        List<Map<String, dynamic>>.from(
-          usersFinalData[userIndex]['leave_records'] ??
-              <Map<String, dynamic>>[],
-        );
+    final String targetUid =
+        usersFinalData[userIndex]['uid']?.toString().trim() ?? '';
+    if (targetUid.isEmpty) return false;
 
-    final Map<String, dynamic>? target = leaveRecords
-        .cast<Map<String, dynamic>?>()
-        .firstWhere(
-          (item) => item?['request_id'] == requestId,
-          orElse: () => null,
-        );
+    final List<Map<String, dynamic>> leaveRecords = _copyLeaveRecords(
+      usersFinalData[userIndex]['leave_records'],
+    );
+
+    Map<String, dynamic>? target;
+    for (final item in leaveRecords) {
+      if (item['request_id']?.toString() == requestId) {
+        target = item;
+        break;
+      }
+    }
+
     if (target != null && target['status'] == 'approved') {
       return false;
     }
 
     final int beforeCount = leaveRecords.length;
-    leaveRecords.removeWhere((item) => item['request_id'] == requestId);
+    leaveRecords.removeWhere(
+      (item) => item['request_id']?.toString() == requestId,
+    );
 
     if (beforeCount == leaveRecords.length) return false;
 
-    usersFinalData[userIndex]['leave_records'] = leaveRecords;
-    return true;
+    try {
+      await _dataController.updateUserRecord(targetUid, {
+        'leave_records': leaveRecords,
+      });
+      usersFinalData[userIndex]['leave_records'] = leaveRecords;
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static int _findUserIndex({String? uid, String? requestId}) {
+    final String? normalizedUid = uid?.trim();
+    if (normalizedUid != null && normalizedUid.isNotEmpty) {
+      final int byUid = usersFinalData.indexWhere(
+        (user) => user['uid']?.toString().trim() == normalizedUid,
+      );
+      if (byUid >= 0) return byUid;
+    }
+
+    if (requestId != null && requestId.isNotEmpty) {
+      final int byRequest = usersFinalData.indexWhere((user) {
+        final List<Map<String, dynamic>> records = _copyLeaveRecords(
+          user['leave_records'],
+        );
+        return records.any(
+          (item) => item['request_id']?.toString() == requestId,
+        );
+      });
+      if (byRequest >= 0) return byRequest;
+    }
+
+    return usersFinalData.indexWhere(
+      (user) => user['uid'] == 'user_winner_777',
+    );
+  }
+
+  static List<Map<String, dynamic>> _copyLeaveRecords(dynamic value) {
+    if (value is! List) {
+      return <Map<String, dynamic>>[];
+    }
+
+    return value
+        .whereType<Map>()
+        .map((item) => Map<String, dynamic>.from(item))
+        .toList();
+  }
+
+  static String _generateLeaveRequestId(String uid) {
+    final String alnumUid = uid.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '');
+    final String suffix = alnumUid.length > 6
+        ? alnumUid.substring(alnumUid.length - 6)
+        : alnumUid;
+
+    return 'leave_${DateTime.now().microsecondsSinceEpoch}_$suffix';
   }
 
   static List<LeaveRecord> sortHistory(

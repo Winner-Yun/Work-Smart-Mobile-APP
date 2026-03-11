@@ -3,7 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_img.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
-import 'package:flutter_worksmart_mobile_app/core/util/mock_data/userFinalData.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/database/user_data.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/logic/leave_request_logic.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/presentation/attendence_screens/leave_detail_view_screen.dart';
 import 'package:flutter_worksmart_mobile_app/shared/model/activity_models/leave_record.dart';
@@ -42,7 +42,7 @@ class _LeaveAllRequestsScreenState extends State<LeaveAllRequestsScreen> {
   void _loadData() {
     final currentUserData = usersFinalData.firstWhere(
       (user) => user['uid'] == (loggedInUserId ?? "user_winner_777"),
-      orElse: () => usersFinalData[0],
+      orElse: () => defaultUserRecord,
     );
     _currentUser = UserProfile.fromJson(currentUserData);
 

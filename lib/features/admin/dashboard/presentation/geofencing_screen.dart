@@ -5,6 +5,7 @@ import 'package:flutter_worksmart_mobile_app/app/routes/app_admin_route.dart';
 import 'package:flutter_worksmart_mobile_app/config/language_manager.dart';
 import 'package:flutter_worksmart_mobile_app/config/theme_manager.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
+import 'package:flutter_worksmart_mobile_app/core/constants/map_styles.dart';
 import 'package:flutter_worksmart_mobile_app/features/admin/dashboard/logic/geofencing_logic.dart';
 import 'package:flutter_worksmart_mobile_app/shared/model/office_model/office_config.dart';
 import 'package:flutter_worksmart_mobile_app/shared/widget/admin/admin_header_bar.dart';
@@ -23,6 +24,11 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
   late final GeofencingController _controller;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final TextEditingController _searchController = TextEditingController();
+  final Map<String, String> _selectedDepartmentByOfficeId = <String, String>{};
+  final TextEditingController _departmentInlineEditController =
+      TextEditingController();
+  final FocusNode _departmentInlineEditFocusNode = FocusNode();
+  String? _editingDepartmentOfficeId;
 
   GoogleMapController? _mainMapController;
   double? _lastLat;
@@ -35,8 +41,22 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _applyMainMapStyle();
+  }
+
+  void _applyMainMapStyle() {
+    if (_mainMapController == null) return;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    _mainMapController!.setMapStyle(isDark ? MapStyles.dark : null);
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
+    _departmentInlineEditController.dispose();
+    _departmentInlineEditFocusNode.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -80,8 +100,6 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     _buildHeader(),
-                                    const SizedBox(height: 24),
-                                    _buildStatsRow(),
                                     const SizedBox(height: 24),
                                     Expanded(
                                       child: _buildMasterDetailLayout(
@@ -205,135 +223,6 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
     );
   }
 
-  Widget _buildStatsRow() {
-    final stats = _controller.getGeofenceStats();
-    final statCards = [
-      _buildStatCard(
-        AppStrings.tr('total_locations'),
-        "${stats['totalOffices']}",
-        Icons.domain,
-        Colors.blue,
-      ).animate().fade().slideY(begin: 0.2),
-      _buildStatCard(
-        AppStrings.tr('avg_radius'),
-        "${stats['avgRadius']}${AppStrings.tr('meter_unit')}",
-        Icons.radar,
-        Colors.orange,
-      ).animate().fade().slideY(begin: 0.2),
-      _buildStatCard(
-        AppStrings.tr('max_range'),
-        "${stats['maxRadius']}${AppStrings.tr('meter_unit')}",
-        Icons.expand,
-        Colors.green,
-      ).animate().fade().slideY(begin: 0.2),
-    ];
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth >= 1100) {
-          return Row(
-            children: statCards
-                .map(
-                  (card) => Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: card,
-                    ),
-                  ),
-                )
-                .toList(),
-          );
-        } else if (constraints.maxWidth >= 700) {
-          return Column(
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(right: 8, bottom: 16),
-                      child: statCards[0],
-                    ),
-                  ),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 8, bottom: 16),
-                      child: statCards[1],
-                    ),
-                  ),
-                ],
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: statCards[2],
-              ),
-            ],
-          );
-        } else {
-          return Column(
-            children: statCards
-                .map(
-                  (card) => Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: card,
-                  ),
-                )
-                .toList(),
-          );
-        }
-      },
-    );
-  }
-
-  Widget _buildStatCard(
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: Theme.of(context).dividerColor.withOpacity(0.5),
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: color),
-            ),
-            const SizedBox(width: 16),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.labelMedium?.copyWith(color: Colors.grey),
-                ),
-                Text(
-                  value,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildMasterDetailLayout(bool isDesktop) {
     return Container(
       decoration: BoxDecoration(
@@ -444,6 +333,7 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
                       const Divider(height: 1, indent: 16, endIndent: 16),
                   itemBuilder: (context, index) {
                     final office = offices[index];
+
                     final isSelected =
                         office.officeId == _controller.selectedOfficeId;
                     return ListTile(
@@ -467,16 +357,26 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
                           color: isSelected ? Colors.white : Colors.grey,
                         ),
                       ),
-                      title: Text(
-                        office.officeName,
-                        style: TextStyle(
-                          fontWeight: isSelected
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                        ),
+                      title: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              office.officeName,
+                              style: TextStyle(
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
                       subtitle: Text(
-                        office.groupName,
+                        office.geofence.addressLabel.isNotEmpty
+                            ? office.geofence.addressLabel
+                            : '${AppStrings.tr('latitude')}: ${office.geofence.lat.toStringAsFixed(4)}, ${AppStrings.tr('longitude')}: ${office.geofence.lng.toStringAsFixed(4)}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -492,6 +392,8 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
     final office = _controller.selectedOffice!;
     final geofence = _controller.currentGeofence!;
     final isEditing = _controller.isEditing;
+    final departments = _officeDepartments(office);
+    final selectedDepartmentForHeader = _selectedDepartmentForOffice(office);
 
     return Column(
       children: [
@@ -504,98 +406,114 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
               ),
             ),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
+              Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: Text(
                       office.officeName,
-                      style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(fontWeight: FontWeight.bold),
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
+                  ),
+                  if (!isEditing && selectedDepartmentForHeader != null)
+                    Expanded(
+                      flex: 3,
+                      child: Center(
+                        child: _buildDepartmentDropdownActions(
+                          office: office,
+                          departments: departments,
+                          selectedDepartment: selectedDepartmentForHeader,
+                        ),
+                      ),
+                    )
+                  else
+                    const Spacer(flex: 3),
+                  const SizedBox(width: 12),
+                  if (!isEditing)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit_note),
+                          tooltip: AppStrings.tr('edit_office'),
+                          onPressed: () =>
+                              _showEditOfficeDialog(context, office),
+                        ),
+                        IconButton(
+                          icon: Icon(
+                            Icons.delete_outline,
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                          tooltip: AppStrings.tr('delete_office'),
+                          onPressed: () =>
+                              _showDeleteConfirmation(context, office),
+                        ),
+                        const SizedBox(width: 8),
+                        OutlinedButton.icon(
+                          onPressed: _controller.startEditing,
+                          icon: const Icon(Icons.map_outlined, size: 18),
+                          label: Text(AppStrings.tr('adjust_geofence')),
+                        ),
+                      ],
+                    )
+                  else
                     Row(
                       children: [
-                        Icon(
-                          Icons.location_on,
-                          size: 14,
-                          color: Theme.of(context).colorScheme.primary,
+                        TextButton(
+                          onPressed: _controller.cancelEdit,
+                          child: Text(AppStrings.tr('cancel')),
                         ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            geofence.addressLabel.isNotEmpty
-                                ? geofence.addressLabel
-                                : '${AppStrings.tr('latitude')}: ${geofence.lat.toStringAsFixed(4)}, ${AppStrings.tr('longitude')}: ${geofence.lng.toStringAsFixed(4)}',
-                            style: Theme.of(context).textTheme.bodySmall,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                        const SizedBox(width: 8),
+                        FilledButton.icon(
+                          onPressed: () {
+                            _controller.saveChanges();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                backgroundColor: Theme.of(
+                                  context,
+                                ).colorScheme.primary,
+                                content: Text(
+                                  AppStrings.tr('geofence_updated_success'),
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.check, size: 18),
+                          label: Text(AppStrings.tr('save_changes')),
                         ),
                       ],
                     ),
-                  ],
-                ),
+                ],
               ),
-              if (!isEditing)
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit_note),
-                      tooltip: AppStrings.tr('edit_office'),
-                      onPressed: () => _showEditOfficeDialog(context, office),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(
+                    Icons.location_on,
+                    size: 14,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      geofence.addressLabel.isNotEmpty
+                          ? geofence.addressLabel
+                          : '${AppStrings.tr('latitude')}: ${geofence.lat.toStringAsFixed(4)}, ${AppStrings.tr('longitude')}: ${geofence.lng.toStringAsFixed(4)}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(width: 8),
-                    OutlinedButton.icon(
-                      onPressed: _controller.startEditing,
-                      icon: const Icon(Icons.map_outlined, size: 18),
-                      label: Text(AppStrings.tr('adjust_geofence')),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      icon: Icon(
-                        Icons.delete_outline,
-                        color: Theme.of(context).colorScheme.error,
-                      ),
-                      tooltip: AppStrings.tr('delete'),
-                      onPressed: () => _showDeleteConfirmation(context, office),
-                    ),
-                  ],
-                )
-              else
-                Row(
-                  children: [
-                    TextButton(
-                      onPressed: _controller.cancelEdit,
-                      child: Text(AppStrings.tr('cancel')),
-                    ),
-                    const SizedBox(width: 8),
-                    FilledButton.icon(
-                      onPressed: () {
-                        _controller.saveChanges();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.primary,
-                            content: Text(
-                              AppStrings.tr('geofence_updated_success'),
-                              style: TextStyle(color: Colors.white),
-                            ),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.check, size: 18),
-                      label: Text(AppStrings.tr('save_changes')),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
@@ -690,7 +608,10 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
 
     return GoogleMap(
       initialCameraPosition: CameraPosition(target: center, zoom: 16),
-      onMapCreated: (c) => _mainMapController = c,
+      onMapCreated: (c) {
+        _mainMapController = c;
+        _applyMainMapStyle();
+      },
       onTap: isEditing
           ? (pos) => onPositionChanged?.call(pos.latitude, pos.longitude)
           : null,
@@ -718,19 +639,292 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
     );
   }
 
+  String? _validateOfficeName(String? value) {
+    final name = (value ?? '').trim();
+    if (name.isEmpty) {
+      return AppStrings.tr('office_name_required');
+    }
+
+    final compactLength = name.replaceAll(RegExp(r'\s+'), '').length;
+    if (compactLength < 5) {
+      return AppStrings.tr('office_name_min_length');
+    }
+
+    return null;
+  }
+
+  List<String> _officeDepartments(OfficeConfig office) {
+    final departments = <String>{
+      ...office.departments.map((value) => value.trim()),
+      office.groupName.trim(),
+    }.where((value) => value.isNotEmpty).toList();
+
+    departments.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    return departments;
+  }
+
+  String? _selectedDepartmentForOffice(OfficeConfig office) {
+    final departments = _officeDepartments(office);
+    if (departments.isEmpty) {
+      return null;
+    }
+
+    final selected = _selectedDepartmentByOfficeId[office.officeId];
+    if (selected != null && departments.contains(selected)) {
+      return selected;
+    }
+
+    final fallback = departments.first;
+    _selectedDepartmentByOfficeId[office.officeId] = fallback;
+    return fallback;
+  }
+
+  void _startInlineDepartmentEdit(OfficeConfig office, String departmentName) {
+    final normalizedDepartmentName = departmentName.trim();
+    setState(() {
+      _editingDepartmentOfficeId = office.officeId;
+      _departmentInlineEditController.text = normalizedDepartmentName;
+      _departmentInlineEditController.selection = TextSelection.fromPosition(
+        TextPosition(offset: _departmentInlineEditController.text.length),
+      );
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _departmentInlineEditFocusNode.requestFocus();
+    });
+  }
+
+  void _cancelInlineDepartmentEdit() {
+    setState(() {
+      _editingDepartmentOfficeId = null;
+      _departmentInlineEditController.clear();
+    });
+  }
+
+  Future<void> _saveInlineDepartmentEdit({
+    required OfficeConfig office,
+    required String oldDepartmentName,
+  }) async {
+    final normalizedDepartmentName = _departmentInlineEditController.text
+        .trim();
+    final validationError = _validateGroupName(normalizedDepartmentName);
+    if (validationError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Theme.of(context).colorScheme.error,
+          content: Text(
+            validationError,
+            style: const TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (normalizedDepartmentName == oldDepartmentName.trim()) {
+      _cancelInlineDepartmentEdit();
+      return;
+    }
+
+    await _controller.updateOfficeDetails(
+      officeId: office.officeId,
+      newName: office.officeName,
+      newGroup: normalizedDepartmentName,
+      oldDepartmentName: oldDepartmentName,
+      checkInStart: office.policy.checkInStart,
+      checkOutEnd: office.policy.checkOutEnd,
+      lateBufferMinutes: office.policy.lateBufferMinutes,
+      checkOutScanAllowMinutes: office.policy.checkOutScanAllowMinutes,
+      annualLeaveLimit: office.policy.annualLeaveLimit,
+      sickLeaveLimit: office.policy.sickLeaveLimit,
+      botUsername: office.telegramConfig.botUsername,
+      botLink: office.telegramConfig.botLink,
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      _selectedDepartmentByOfficeId[office.officeId] = normalizedDepartmentName;
+      _editingDepartmentOfficeId = null;
+      _departmentInlineEditController.clear();
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        content: Text(
+          AppStrings.tr('office_updated_success'),
+          style: const TextStyle(color: Colors.white),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDepartmentDropdownActions({
+    required OfficeConfig office,
+    required List<String> departments,
+    required String selectedDepartment,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isInlineEditing = _editingDepartmentOfficeId == office.officeId;
+
+    return Container(
+      width: 340,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withOpacity(0.45),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).dividerColor.withOpacity(0.6),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Text(
+              AppStrings.tr('department_label'),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Expanded(
+                child: isInlineEditing
+                    ? TextField(
+                        controller: _departmentInlineEditController,
+                        focusNode: _departmentInlineEditFocusNode,
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) => _saveInlineDepartmentEdit(
+                          office: office,
+                          oldDepartmentName: selectedDepartment,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: AppStrings.tr('department_label'),
+                          isDense: true,
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 12,
+                          ),
+                        ),
+                      )
+                    : DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: selectedDepartment,
+                          isExpanded: true,
+                          hint: Text(
+                            AppStrings.tr('select_department_placeholder'),
+                          ),
+                          items: departments
+                              .map(
+                                (department) => DropdownMenuItem<String>(
+                                  value: department,
+                                  child: Text(
+                                    department,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (value) {
+                            if (value == null) return;
+                            setState(() {
+                              _selectedDepartmentByOfficeId[office.officeId] =
+                                  value;
+                            });
+                          },
+                        ),
+                      ),
+              ),
+              VerticalDivider(
+                width: 1,
+                thickness: 1,
+                color: Theme.of(context).dividerColor.withOpacity(0.6),
+              ),
+              if (isInlineEditing) ...[
+                IconButton(
+                  icon: const Icon(Icons.check),
+                  tooltip: AppStrings.tr('save_changes'),
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () => _saveInlineDepartmentEdit(
+                    office: office,
+                    oldDepartmentName: selectedDepartment,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  tooltip: AppStrings.tr('cancel'),
+                  visualDensity: VisualDensity.compact,
+                  onPressed: _cancelInlineDepartmentEdit,
+                ),
+              ] else ...[
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  tooltip: AppStrings.tr('edit'),
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () =>
+                      _startInlineDepartmentEdit(office, selectedDepartment),
+                ),
+                IconButton(
+                  icon: Icon(Icons.delete_outline, color: colorScheme.error),
+                  tooltip: AppStrings.tr('delete_department'),
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () => _showDeleteDepartmentConfirmation(
+                    context,
+                    office,
+                    selectedDepartment,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  String? _validateGroupName(String? value) {
+    final name = (value ?? '').trim();
+    if (name.isEmpty) {
+      return AppStrings.tr('group_name_required');
+    }
+
+    final compactLength = name.replaceAll(RegExp(r'\s+'), '').length;
+    if (compactLength < 5) {
+      return AppStrings.tr('group_name_min_length');
+    }
+
+    return null;
+  }
+
   void _showAddOfficeDialog(BuildContext context) {
     _showOfficeFormDialog(context: context);
   }
 
-  void _showEditOfficeDialog(BuildContext context, OfficeConfig office) {
+  void _showEditOfficeDialog(
+    BuildContext context,
+    OfficeConfig office, {
+    String? preferredDepartment,
+  }) {
     _showOfficeFormDialog(
       context: context,
       isEdit: true,
       officeId: office.officeId,
       initialName: office.officeName,
-      initialGroup: office.groupName,
+      initialGroup: preferredDepartment ?? office.groupName,
+      initialDepartments: office.departments,
       initialCheckIn: office.policy.checkInStart,
       initialCheckOut: office.policy.checkOutEnd,
+      initialLateBufferMinutes: office.policy.lateBufferMinutes,
+      initialCheckOutScanAllowMinutes: office.policy.checkOutScanAllowMinutes,
       initialAnnualLeave: office.policy.annualLeaveLimit,
       initialSickLeave: office.policy.sickLeaveLimit,
       initialBotUsername: office.telegramConfig.botUsername,
@@ -744,8 +938,11 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
     String? officeId,
     String? initialName,
     String? initialGroup,
+    List<String>? initialDepartments,
     String? initialCheckIn,
     String? initialCheckOut,
+    int? initialLateBufferMinutes,
+    int? initialCheckOutScanAllowMinutes,
     int? initialAnnualLeave,
     int? initialSickLeave,
     String? initialBotUsername,
@@ -753,12 +950,24 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
   }) {
     final formKey = GlobalKey<FormState>();
     final nameCtrl = TextEditingController(text: initialName);
+    final officeNameFocusNode = FocusNode();
     final groupCtrl = TextEditingController(text: initialGroup);
+    final initialDepartmentsForEdit = <String>{
+      ...?initialDepartments,
+      if ((initialGroup ?? '').trim().isNotEmpty) initialGroup!.trim(),
+    }.toList()..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    final officeNameSuggestions = _controller.getAllOfficeNames();
+    String selectedDepartmentForEdit = (initialGroup ?? '').trim().isNotEmpty
+        ? initialGroup!.trim()
+        : (initialDepartmentsForEdit.isNotEmpty
+              ? initialDepartmentsForEdit.first
+              : '');
+    bool didInitializeEditDepartment = false;
     final checkInCtrl = TextEditingController(
-      text: initialCheckIn ?? '09:00 AM',
+      text: initialCheckIn ?? '08:00 AM',
     );
     final checkOutCtrl = TextEditingController(
-      text: initialCheckOut ?? '06:00 PM',
+      text: initialCheckOut ?? '05:00 PM',
     );
     final annualLeaveCtrl = TextEditingController(
       text: (initialAnnualLeave ?? 20).toString(),
@@ -766,6 +975,42 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
     final sickLeaveCtrl = TextEditingController(
       text: (initialSickLeave ?? 10).toString(),
     );
+    final int initialAllowMinutes = (initialCheckOutScanAllowMinutes ?? 30) > 0
+        ? (initialCheckOutScanAllowMinutes ?? 30)
+        : 30;
+    final bool isInitialPreset =
+        initialAllowMinutes == 15 || initialAllowMinutes == 30;
+    String selectedCheckOutScanAllowOption = isInitialPreset
+        ? initialAllowMinutes.toString()
+        : 'custom';
+    final customCheckOutScanAllowCtrl = TextEditingController(
+      text: isInitialPreset ? '' : initialAllowMinutes.toString(),
+    );
+
+    int resolveCheckOutScanAllowMinutes() {
+      if (selectedCheckOutScanAllowOption == '15') return 15;
+      if (selectedCheckOutScanAllowOption == '30') return 30;
+      return int.tryParse(customCheckOutScanAllowCtrl.text.trim()) ?? 0;
+    }
+
+    final int initialLateMinutes = (initialLateBufferMinutes ?? 15) > 0
+        ? (initialLateBufferMinutes ?? 15)
+        : 15;
+    final bool isInitialLatePreset =
+        initialLateMinutes == 5 || initialLateMinutes == 15;
+    String selectedLateBufferOption = isInitialLatePreset
+        ? initialLateMinutes.toString()
+        : 'custom';
+    final customLateBufferCtrl = TextEditingController(
+      text: isInitialLatePreset ? '' : initialLateMinutes.toString(),
+    );
+
+    int resolveLateBufferMinutes() {
+      if (selectedLateBufferOption == '5') return 5;
+      if (selectedLateBufferOption == '15') return 15;
+      return int.tryParse(customLateBufferCtrl.text.trim()) ?? 0;
+    }
+
     final botUsernameCtrl = TextEditingController(text: initialBotUsername);
     final botLinkCtrl = TextEditingController(text: initialBotLink);
     double? selectedLat;
@@ -776,17 +1021,64 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDialogState) {
+          final matchedExistingOffice = !isEdit
+              ? _controller.findOfficeByName(nameCtrl.text)
+              : null;
+          final isAddingDepartmentToExistingOffice =
+              !isEdit && matchedExistingOffice != null;
+
+          final editDepartmentOptions = isEdit
+              ? (officeId == null
+                    ? initialDepartmentsForEdit
+                    : _controller.getDepartmentsForOffice(officeId))
+              : const <String>[];
+
+          if (isEdit && !didInitializeEditDepartment) {
+            if (editDepartmentOptions.isNotEmpty &&
+                (selectedDepartmentForEdit.isEmpty ||
+                    !editDepartmentOptions.contains(
+                      selectedDepartmentForEdit,
+                    ))) {
+              selectedDepartmentForEdit = editDepartmentOptions.first;
+            }
+            if (groupCtrl.text.trim().isEmpty &&
+                selectedDepartmentForEdit.trim().isNotEmpty) {
+              groupCtrl.text = selectedDepartmentForEdit;
+            }
+            didInitializeEditDepartment = true;
+          }
+
           final hasLocation =
-              isEdit || (selectedLat != null && selectedLng != null);
-          final hasAllRequiredData =
-              nameCtrl.text.trim().isNotEmpty &&
-              groupCtrl.text.trim().isNotEmpty &&
-              checkInCtrl.text.trim().isNotEmpty &&
-              checkOutCtrl.text.trim().isNotEmpty &&
-              botUsernameCtrl.text.trim().isNotEmpty &&
-              botLinkCtrl.text.trim().isNotEmpty &&
-              (int.tryParse(annualLeaveCtrl.text.trim()) ?? -1) >= 0 &&
-              (int.tryParse(sickLeaveCtrl.text.trim()) ?? -1) >= 0;
+              isEdit ||
+              isAddingDepartmentToExistingOffice ||
+              (selectedLat != null && selectedLng != null);
+          final bool isCustomScanAllowSelected =
+              selectedCheckOutScanAllowOption == 'custom';
+          final bool isCustomLateBufferSelected =
+              selectedLateBufferOption == 'custom';
+          final int resolvedCheckOutScanAllowMinutes =
+              resolveCheckOutScanAllowMinutes();
+          final int resolvedLateBufferMinutes = resolveLateBufferMinutes();
+          final scanStartPreview = _getCheckOutScanStartPreview(
+            checkOut: checkOutCtrl.text,
+            allowMinutes: resolvedCheckOutScanAllowMinutes,
+          );
+          final lateStartPreview = _getLateStartPreview(
+            checkIn: checkInCtrl.text,
+            checkOut: checkOutCtrl.text,
+            lateBufferMinutes: resolvedLateBufferMinutes,
+          );
+          final hasAllRequiredData = isAddingDepartmentToExistingOffice
+              ? (nameCtrl.text.trim().isNotEmpty &&
+                    groupCtrl.text.trim().isNotEmpty)
+              : (nameCtrl.text.trim().isNotEmpty &&
+                    groupCtrl.text.trim().isNotEmpty &&
+                    checkInCtrl.text.trim().isNotEmpty &&
+                    checkOutCtrl.text.trim().isNotEmpty &&
+                    botUsernameCtrl.text.trim().isNotEmpty &&
+                    botLinkCtrl.text.trim().isNotEmpty &&
+                    (int.tryParse(annualLeaveCtrl.text.trim()) ?? -1) >= 0 &&
+                    (int.tryParse(sickLeaveCtrl.text.trim()) ?? -1) >= 0);
           final colorScheme = Theme.of(context).colorScheme;
           final modernFillColor = colorScheme.surfaceContainerHighest
               .withOpacity(0.45);
@@ -844,36 +1136,188 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      TextFormField(
-                        controller: nameCtrl,
-                        onChanged: (_) => setDialogState(() {}),
-                        decoration: InputDecoration(
-                          labelText: AppStrings.tr('office_label'),
-                          hintText: AppStrings.tr('headquarters_example'),
-                          prefixIcon: const Icon(Icons.business_outlined),
-                          prefixIconColor: colorScheme.primary,
-                          filled: true,
-                          fillColor: modernFillColor,
-                          border: defaultOutlineBorder,
-                          enabledBorder: defaultOutlineBorder,
-                          focusedBorder: focusedOutlineBorder,
-                          errorBorder: errorOutlineBorder,
-                          focusedErrorBorder: errorOutlineBorder,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 18,
+                      if (isEdit)
+                        TextFormField(
+                          controller: nameCtrl,
+                          onChanged: (_) => setDialogState(() {}),
+                          decoration: InputDecoration(
+                            labelText: AppStrings.tr('office_label'),
+                            hintText: AppStrings.tr('headquarters_example'),
+                            prefixIcon: const Icon(Icons.business_outlined),
+                            prefixIconColor: colorScheme.primary,
+                            filled: true,
+                            fillColor: modernFillColor,
+                            border: defaultOutlineBorder,
+                            enabledBorder: defaultOutlineBorder,
+                            focusedBorder: focusedOutlineBorder,
+                            errorBorder: errorOutlineBorder,
+                            focusedErrorBorder: errorOutlineBorder,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 18,
+                            ),
+                          ),
+                          validator: _validateOfficeName,
+                        )
+                      else
+                        RawAutocomplete<String>(
+                          textEditingController: nameCtrl,
+                          focusNode: officeNameFocusNode,
+                          displayStringForOption: (option) => option,
+                          optionsBuilder: (textEditingValue) {
+                            final query = textEditingValue.text
+                                .trim()
+                                .toLowerCase();
+
+                            if (query.isEmpty) {
+                              return officeNameSuggestions;
+                            }
+
+                            return officeNameSuggestions.where(
+                              (officeName) =>
+                                  officeName.toLowerCase().contains(query),
+                            );
+                          },
+                          onSelected: (value) {
+                            setDialogState(() {
+                              nameCtrl.text = value;
+                            });
+                          },
+                          fieldViewBuilder:
+                              (
+                                context,
+                                textEditingController,
+                                focusNode,
+                                onFieldSubmitted,
+                              ) {
+                                return TextFormField(
+                                  controller: textEditingController,
+                                  focusNode: focusNode,
+                                  onChanged: (_) => setDialogState(() {}),
+                                  decoration: InputDecoration(
+                                    labelText: AppStrings.tr('office_label'),
+                                    hintText: AppStrings.tr(
+                                      'headquarters_example',
+                                    ),
+                                    prefixIcon: const Icon(
+                                      Icons.business_outlined,
+                                    ),
+                                    prefixIconColor: colorScheme.primary,
+                                    filled: true,
+                                    fillColor: modernFillColor,
+                                    border: defaultOutlineBorder,
+                                    enabledBorder: defaultOutlineBorder,
+                                    focusedBorder: focusedOutlineBorder,
+                                    errorBorder: errorOutlineBorder,
+                                    focusedErrorBorder: errorOutlineBorder,
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 18,
+                                    ),
+                                  ),
+                                  validator: _validateOfficeName,
+                                );
+                              },
+                          optionsViewBuilder: (context, onSelected, options) {
+                            final optionList = options.toList();
+                            if (optionList.isEmpty) {
+                              return const SizedBox.shrink();
+                            }
+
+                            return Align(
+                              alignment: Alignment.topLeft,
+                              child: Material(
+                                elevation: 4,
+                                borderRadius: BorderRadius.circular(12),
+                                color: Theme.of(context).colorScheme.surface,
+                                child: SizedBox(
+                                  width: 450,
+                                  child: ListView.separated(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 6,
+                                    ),
+                                    shrinkWrap: true,
+                                    itemCount: optionList.length,
+                                    separatorBuilder: (_, __) => Divider(
+                                      height: 1,
+                                      color: Theme.of(
+                                        context,
+                                      ).dividerColor.withOpacity(0.3),
+                                    ),
+                                    itemBuilder: (context, index) {
+                                      final officeName = optionList[index];
+                                      return ListTile(
+                                        dense: true,
+                                        leading: Icon(
+                                          Icons.apartment_outlined,
+                                          color: colorScheme.primary,
+                                        ),
+                                        title: Text(officeName),
+                                        onTap: () => onSelected(officeName),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      const SizedBox(height: 16),
+
+                      if (isEdit && editDepartmentOptions.length > 1) ...[
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: SizedBox(
+                            width: 230,
+                            child: DropdownButtonFormField<String>(
+                              value: selectedDepartmentForEdit,
+                              isExpanded: true,
+                              decoration: InputDecoration(
+                                labelText: AppStrings.tr(
+                                  'select_department_placeholder',
+                                ),
+                                prefixIcon: const Icon(Icons.list_alt_outlined),
+                                prefixIconColor: colorScheme.primary,
+                                filled: true,
+                                fillColor: modernFillColor,
+                                border: defaultOutlineBorder,
+                                enabledBorder: defaultOutlineBorder,
+                                focusedBorder: focusedOutlineBorder,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 18,
+                                ),
+                              ),
+                              items: editDepartmentOptions
+                                  .map(
+                                    (department) => DropdownMenuItem<String>(
+                                      value: department,
+                                      child: Text(
+                                        department,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (value) {
+                                if (value == null) return;
+                                setDialogState(() {
+                                  selectedDepartmentForEdit = value;
+                                  groupCtrl.text = value;
+                                });
+                              },
+                            ),
                           ),
                         ),
-                        validator: (v) => v == null || v.isEmpty
-                            ? AppStrings.tr('office_name_required')
-                            : null,
-                      ),
-                      const SizedBox(height: 16),
+                        const SizedBox(height: 12),
+                      ],
+
                       TextFormField(
                         controller: groupCtrl,
                         onChanged: (_) => setDialogState(() {}),
                         decoration: InputDecoration(
-                          labelText: AppStrings.tr('group_department'),
+                          labelText: AppStrings.tr('department_label'),
                           hintText: AppStrings.tr('engineering_example'),
                           prefixIcon: const Icon(Icons.group_outlined),
                           prefixIconColor: colorScheme.primary,
@@ -889,429 +1333,786 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
                             vertical: 18,
                           ),
                         ),
-                        validator: (v) => v == null || v.isEmpty
-                            ? AppStrings.tr('group_name_required')
-                            : null,
+                        validator: _validateGroupName,
                       ),
+                      if (!isEdit && isAddingDepartmentToExistingOffice) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: colorScheme.primaryContainer.withOpacity(
+                              0.4,
+                            ),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: colorScheme.primary.withOpacity(0.45),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.merge_type_rounded,
+                                size: 18,
+                                color: colorScheme.primary,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  AppStrings.tr(
+                                    'existing_office_add_department_hint',
+                                  ),
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(
+                                        color: colorScheme.onSurface,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 16),
-                      TextFormField(
-                        controller: checkInCtrl,
-                        readOnly: true,
-                        onTap: () => _pickTimeForController(
-                          context: context,
+                      if (!isAddingDepartmentToExistingOffice) ...[
+                        TextFormField(
                           controller: checkInCtrl,
-                          setDialogState: setDialogState,
-                        ),
-                        decoration: InputDecoration(
-                          labelText: AppStrings.tr('policy_check_in_time'),
-                          hintText: '09:00 AM',
-                          prefixIcon: const Icon(Icons.login),
-                          prefixIconColor: colorScheme.primary,
-                          suffixIcon: const Icon(Icons.access_time),
-                          filled: true,
-                          fillColor: modernFillColor,
-                          border: defaultOutlineBorder,
-                          enabledBorder: defaultOutlineBorder,
-                          focusedBorder: focusedOutlineBorder,
-                          errorBorder: errorOutlineBorder,
-                          focusedErrorBorder: errorOutlineBorder,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 18,
+                          readOnly: true,
+                          onTap: () => _pickTimeForController(
+                            context: context,
+                            controller: checkInCtrl,
+                            setDialogState: setDialogState,
+                            fallbackTime: const TimeOfDay(hour: 8, minute: 0),
                           ),
+                          decoration: InputDecoration(
+                            labelText: AppStrings.tr('policy_check_in_time'),
+                            hintText: '08:00 AM',
+                            prefixIcon: const Icon(Icons.login),
+                            prefixIconColor: colorScheme.primary,
+                            suffixIcon: const Icon(Icons.access_time),
+                            filled: true,
+                            fillColor: modernFillColor,
+                            border: defaultOutlineBorder,
+                            enabledBorder: defaultOutlineBorder,
+                            focusedBorder: focusedOutlineBorder,
+                            errorBorder: errorOutlineBorder,
+                            focusedErrorBorder: errorOutlineBorder,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 18,
+                            ),
+                          ),
+                          validator: (v) => v == null || v.trim().isEmpty
+                              ? AppStrings.tr('check_in_time_required')
+                              : _parseTimeOfDay(v) == null
+                              ? AppStrings.tr('invalid_time_format')
+                              : null,
                         ),
-                        validator: (v) => v == null || v.trim().isEmpty
-                            ? AppStrings.tr('check_in_time_required')
-                            : _parseTimeOfDay(v) == null
-                            ? AppStrings.tr('invalid_time_format')
-                            : null,
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: checkOutCtrl,
-                        readOnly: true,
-                        onTap: () => _pickTimeForController(
-                          context: context,
+                        const SizedBox(height: 16),
+                        TextFormField(
                           controller: checkOutCtrl,
-                          setDialogState: setDialogState,
+                          readOnly: true,
+                          onTap: () => _pickTimeForController(
+                            context: context,
+                            controller: checkOutCtrl,
+                            setDialogState: setDialogState,
+                            fallbackTime: const TimeOfDay(hour: 17, minute: 0),
+                          ),
+                          decoration: InputDecoration(
+                            labelText: AppStrings.tr('policy_check_out_time'),
+                            hintText: '05:00 PM',
+                            prefixIcon: const Icon(Icons.logout),
+                            prefixIconColor: colorScheme.primary,
+                            suffixIcon: const Icon(Icons.access_time),
+                            filled: true,
+                            fillColor: modernFillColor,
+                            border: defaultOutlineBorder,
+                            enabledBorder: defaultOutlineBorder,
+                            focusedBorder: focusedOutlineBorder,
+                            errorBorder: errorOutlineBorder,
+                            focusedErrorBorder: errorOutlineBorder,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 18,
+                            ),
+                          ),
+                          validator: (v) => v == null || v.trim().isEmpty
+                              ? AppStrings.tr('check_out_time_required')
+                              : _parseTimeOfDay(v) == null
+                              ? AppStrings.tr('invalid_time_format')
+                              : !_isCheckOutAfterCheckIn(
+                                  checkIn: checkInCtrl.text,
+                                  checkOut: v,
+                                )
+                              ? AppStrings.tr(
+                                  'check_out_must_be_after_check_in',
+                                )
+                              : null,
                         ),
-                        decoration: InputDecoration(
-                          labelText: AppStrings.tr('policy_check_out_time'),
-                          hintText: '06:00 PM',
-                          prefixIcon: const Icon(Icons.logout),
-                          prefixIconColor: colorScheme.primary,
-                          suffixIcon: const Icon(Icons.access_time),
-                          filled: true,
+                        const SizedBox(height: 16),
+                        _PolicyDropdownField(
+                          value: selectedLateBufferOption,
+                          labelText: AppStrings.tr('late_consider_time'),
+                          prefixIcon: Icons.alarm_outlined,
+                          iconColor: colorScheme.primary,
                           fillColor: modernFillColor,
-                          border: defaultOutlineBorder,
-                          enabledBorder: defaultOutlineBorder,
+                          defaultBorder: defaultOutlineBorder,
                           focusedBorder: focusedOutlineBorder,
-                          errorBorder: errorOutlineBorder,
-                          focusedErrorBorder: errorOutlineBorder,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 18,
-                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return AppStrings.tr(
+                                'late_consider_time_required',
+                              );
+                            }
+
+                            if (value != 'custom') {
+                              final presetMinutes = int.tryParse(value) ?? 0;
+                              if (!_isLateBufferWithinWorkingHours(
+                                checkIn: checkInCtrl.text,
+                                checkOut: checkOutCtrl.text,
+                                lateBufferMinutes: presetMinutes,
+                              )) {
+                                return AppStrings.tr(
+                                  'late_consider_must_before_checkout',
+                                );
+                              }
+                            }
+
+                            return null;
+                          },
+                          items: [
+                            DropdownMenuItem<String>(
+                              value: '5',
+                              child: Text(AppStrings.tr('late_consider_5')),
+                            ),
+                            DropdownMenuItem<String>(
+                              value: '15',
+                              child: Text(AppStrings.tr('late_consider_15')),
+                            ),
+                            DropdownMenuItem<String>(
+                              value: 'custom',
+                              child: Text(
+                                AppStrings.tr('late_consider_custom'),
+                              ),
+                            ),
+                          ],
+                          onChanged: (value) {
+                            setDialogState(() {
+                              selectedLateBufferOption = value;
+                            });
+                          },
                         ),
-                        validator: (v) => v == null || v.trim().isEmpty
-                            ? AppStrings.tr('check_out_time_required')
-                            : _parseTimeOfDay(v) == null
-                            ? AppStrings.tr('invalid_time_format')
-                            : null,
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextFormField(
-                              controller: annualLeaveCtrl,
-                              onChanged: (_) => setDialogState(() {}),
-                              keyboardType: TextInputType.number,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.digitsOnly,
-                              ],
-                              decoration: InputDecoration(
-                                labelText: AppStrings.tr('annual_leave_limit'),
-                                prefixIcon: const Icon(
-                                  Icons.beach_access_outlined,
-                                ),
-                                prefixIconColor: colorScheme.primary,
-                                suffixIcon: SizedBox(
-                                  width: 84,
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      IconButton(
-                                        tooltip: AppStrings.tr('decrease'),
-                                        icon: const Icon(Icons.remove),
-                                        onPressed: () {
-                                          final current =
-                                              int.tryParse(
-                                                annualLeaveCtrl.text,
-                                              ) ??
-                                              0;
-                                          final next = current > 0
-                                              ? current - 1
-                                              : 0;
-                                          setDialogState(() {
-                                            annualLeaveCtrl.text = next
-                                                .toString();
-                                          });
-                                        },
-                                      ),
-                                      IconButton(
-                                        tooltip: AppStrings.tr('increase'),
-                                        icon: const Icon(Icons.add),
-                                        onPressed: () {
-                                          final current =
-                                              int.tryParse(
-                                                annualLeaveCtrl.text,
-                                              ) ??
-                                              0;
-                                          setDialogState(() {
-                                            annualLeaveCtrl.text = (current + 1)
-                                                .toString();
-                                          });
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                filled: true,
-                                fillColor: modernFillColor,
-                                border: defaultOutlineBorder,
-                                enabledBorder: defaultOutlineBorder,
-                                focusedBorder: focusedOutlineBorder,
-                                errorBorder: errorOutlineBorder,
-                                focusedErrorBorder: errorOutlineBorder,
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 18,
-                                ),
+                        if (isCustomLateBufferSelected) ...[
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            controller: customLateBufferCtrl,
+                            onChanged: (_) => setDialogState(() {}),
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
+                            decoration: InputDecoration(
+                              labelText: AppStrings.tr(
+                                'late_consider_custom_label',
                               ),
-                              validator: (v) {
-                                final raw = v?.trim() ?? '';
-                                if (raw.isEmpty) {
-                                  return AppStrings.tr('annual_leave_required');
-                                }
-                                final value = int.tryParse(raw);
-                                if (value == null || value < 0) {
-                                  return AppStrings.tr(
-                                    'annual_leave_must_number',
-                                  );
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: TextFormField(
-                              controller: sickLeaveCtrl,
-                              onChanged: (_) => setDialogState(() {}),
-                              keyboardType: TextInputType.number,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.digitsOnly,
-                              ],
-                              decoration: InputDecoration(
-                                labelText: AppStrings.tr('sick_leave_limit'),
-                                prefixIcon: const Icon(
-                                  Icons.local_hospital_outlined,
-                                ),
-                                prefixIconColor: colorScheme.primary,
-                                suffixIcon: SizedBox(
-                                  width: 84,
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      IconButton(
-                                        tooltip: AppStrings.tr('decrease'),
-                                        icon: const Icon(Icons.remove),
-                                        onPressed: () {
-                                          final current =
-                                              int.tryParse(
-                                                sickLeaveCtrl.text,
-                                              ) ??
-                                              0;
-                                          final next = current > 0
-                                              ? current - 1
-                                              : 0;
-                                          setDialogState(() {
-                                            sickLeaveCtrl.text = next
-                                                .toString();
-                                          });
-                                        },
-                                      ),
-                                      IconButton(
-                                        tooltip: AppStrings.tr('increase'),
-                                        icon: const Icon(Icons.add),
-                                        onPressed: () {
-                                          final current =
-                                              int.tryParse(
-                                                sickLeaveCtrl.text,
-                                              ) ??
-                                              0;
-                                          setDialogState(() {
-                                            sickLeaveCtrl.text = (current + 1)
-                                                .toString();
-                                          });
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                filled: true,
-                                fillColor: modernFillColor,
-                                border: defaultOutlineBorder,
-                                enabledBorder: defaultOutlineBorder,
-                                focusedBorder: focusedOutlineBorder,
-                                errorBorder: errorOutlineBorder,
-                                focusedErrorBorder: errorOutlineBorder,
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 18,
-                                ),
+                              hintText: AppStrings.tr(
+                                'late_consider_custom_hint',
                               ),
-                              validator: (v) {
-                                final raw = v?.trim() ?? '';
-                                if (raw.isEmpty) {
-                                  return AppStrings.tr('sick_leave_required');
-                                }
-                                final value = int.tryParse(raw);
-                                if (value == null || value < 0) {
-                                  return AppStrings.tr(
-                                    'sick_leave_must_number',
-                                  );
-                                }
-                                return null;
-                              },
+                              prefixIcon: const Icon(Icons.timelapse_outlined),
+                              prefixIconColor: colorScheme.primary,
+                              filled: true,
+                              fillColor: modernFillColor,
+                              border: defaultOutlineBorder,
+                              enabledBorder: defaultOutlineBorder,
+                              focusedBorder: focusedOutlineBorder,
+                              errorBorder: errorOutlineBorder,
+                              focusedErrorBorder: errorOutlineBorder,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 18,
+                              ),
                             ),
+                            validator: (value) {
+                              if (!isCustomLateBufferSelected) return null;
+
+                              final raw = (value ?? '').trim();
+                              if (raw.isEmpty) {
+                                return AppStrings.tr(
+                                  'late_consider_custom_required',
+                                );
+                              }
+
+                              final minutes = int.tryParse(raw);
+                              if (minutes == null || minutes <= 0) {
+                                return AppStrings.tr(
+                                  'late_consider_custom_invalid',
+                                );
+                              }
+
+                              if (!_isLateBufferWithinWorkingHours(
+                                checkIn: checkInCtrl.text,
+                                checkOut: checkOutCtrl.text,
+                                lateBufferMinutes: minutes,
+                              )) {
+                                return AppStrings.tr(
+                                  'late_consider_must_before_checkout',
+                                );
+                              }
+
+                              return null;
+                            },
                           ),
                         ],
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: botUsernameCtrl,
-                        onChanged: (_) => setDialogState(() {}),
-                        decoration: InputDecoration(
-                          labelText: AppStrings.tr('telegram_bot_username'),
-                          hintText: '@your_bot',
-                          prefixIcon: const Icon(Icons.smart_toy_outlined),
-                          prefixIconColor: colorScheme.primary,
-                          filled: true,
-                          fillColor: modernFillColor,
-                          border: defaultOutlineBorder,
-                          enabledBorder: defaultOutlineBorder,
-                          focusedBorder: focusedOutlineBorder,
-                          errorBorder: errorOutlineBorder,
-                          focusedErrorBorder: errorOutlineBorder,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 18,
-                          ),
-                        ),
-                        validator: (v) => v == null || v.trim().isEmpty
-                            ? AppStrings.tr('telegram_bot_username_required')
-                            : null,
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: botLinkCtrl,
-                        onChanged: (_) => setDialogState(() {}),
-                        decoration: InputDecoration(
-                          labelText: AppStrings.tr('telegram_bot_link'),
-                          hintText: 'https://t.me/your_bot',
-                          prefixIcon: const Icon(Icons.link_outlined),
-                          prefixIconColor: colorScheme.primary,
-                          filled: true,
-                          fillColor: modernFillColor,
-                          border: defaultOutlineBorder,
-                          enabledBorder: defaultOutlineBorder,
-                          focusedBorder: focusedOutlineBorder,
-                          errorBorder: errorOutlineBorder,
-                          focusedErrorBorder: errorOutlineBorder,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 18,
-                          ),
-                        ),
-                        validator: (v) => v == null || v.trim().isEmpty
-                            ? AppStrings.tr('telegram_bot_link_required')
-                            : null,
-                      ),
-                      if (!isEdit) ...[
-                        const SizedBox(height: 24),
-                        InkWell(
-                          onTap: hasAllRequiredData
-                              ? () async {
-                                  final result = await _showMapPicker(
-                                    context,
-                                    selectedLat,
-                                    selectedLng,
-                                    selectedAddress,
-                                  );
-                                  if (result != null) {
-                                    setDialogState(() {
-                                      selectedLat = result['lat'];
-                                      selectedLng = result['lng'];
-                                      selectedAddress = result['address'] ?? '';
-                                    });
-                                  }
-                                }
-                              : null,
-                          borderRadius: BorderRadius.circular(16),
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: hasLocation
-                                  ? colorScheme.primaryContainer.withOpacity(
-                                      0.4,
-                                    )
-                                  : hasAllRequiredData
-                                  ? colorScheme.surfaceContainerHighest
-                                        .withOpacity(0.3)
-                                  : colorScheme.errorContainer.withOpacity(
-                                      0.35,
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.alarm,
+                              size: 14,
+                              color: lateStartPreview == null
+                                  ? colorScheme.error
+                                  : colorScheme.primary,
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                lateStartPreview == null
+                                    ? (isCustomLateBufferSelected &&
+                                              customLateBufferCtrl.text
+                                                  .trim()
+                                                  .isEmpty
+                                          ? AppStrings.tr(
+                                              'late_consider_custom_required',
+                                            )
+                                          : AppStrings.tr(
+                                              'late_consider_must_before_checkout',
+                                            ))
+                                    : '${AppStrings.tr('late_consider_starts_at')}: $lateStartPreview',
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: lateStartPreview == null
+                                          ? colorScheme.error
+                                          : colorScheme.primary,
+                                      fontWeight: FontWeight.w600,
                                     ),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: hasLocation
-                                    ? colorScheme.primary.withOpacity(0.5)
-                                    : hasAllRequiredData
-                                    ? Theme.of(
-                                        context,
-                                      ).dividerColor.withOpacity(0.5)
-                                    : colorScheme.error.withOpacity(0.8),
-                                width: 1.5,
                               ),
                             ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        _PolicyDropdownField(
+                          value: selectedCheckOutScanAllowOption,
+                          labelText: AppStrings.tr('checkout_scan_allow_time'),
+                          prefixIcon: Icons.timer_outlined,
+                          iconColor: colorScheme.primary,
+                          fillColor: modernFillColor,
+                          defaultBorder: defaultOutlineBorder,
+                          focusedBorder: focusedOutlineBorder,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return AppStrings.tr(
+                                'checkout_scan_allow_time_required',
+                              );
+                            }
+
+                            if (value != 'custom') {
+                              final presetMinutes = int.tryParse(value) ?? 0;
+                              if (!_isCheckOutScanAllowBeforeCheckOut(
+                                checkOut: checkOutCtrl.text,
+                                allowMinutes: presetMinutes,
+                              )) {
+                                return AppStrings.tr(
+                                  'checkout_scan_allow_must_before_checkout',
+                                );
+                              }
+                            }
+
+                            return null;
+                          },
+                          items: [
+                            DropdownMenuItem<String>(
+                              value: '15',
+                              child: Text(
+                                AppStrings.tr('checkout_scan_allow_15'),
+                              ),
+                            ),
+                            DropdownMenuItem<String>(
+                              value: '30',
+                              child: Text(
+                                AppStrings.tr('checkout_scan_allow_30'),
+                              ),
+                            ),
+                            DropdownMenuItem<String>(
+                              value: 'custom',
+                              child: Text(
+                                AppStrings.tr('checkout_scan_allow_custom'),
+                              ),
+                            ),
+                          ],
+                          onChanged: (value) {
+                            setDialogState(() {
+                              selectedCheckOutScanAllowOption = value;
+                            });
+                          },
+                        ),
+                        if (isCustomScanAllowSelected) ...[
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            controller: customCheckOutScanAllowCtrl,
+                            onChanged: (_) => setDialogState(() {}),
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
+                            decoration: InputDecoration(
+                              labelText: AppStrings.tr(
+                                'checkout_scan_allow_custom_label',
+                              ),
+                              hintText: AppStrings.tr(
+                                'checkout_scan_allow_custom_hint',
+                              ),
+                              prefixIcon: const Icon(Icons.schedule_rounded),
+                              prefixIconColor: colorScheme.primary,
+                              filled: true,
+                              fillColor: modernFillColor,
+                              border: defaultOutlineBorder,
+                              enabledBorder: defaultOutlineBorder,
+                              focusedBorder: focusedOutlineBorder,
+                              errorBorder: errorOutlineBorder,
+                              focusedErrorBorder: errorOutlineBorder,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 18,
+                              ),
+                            ),
+                            validator: (value) {
+                              if (!isCustomScanAllowSelected) return null;
+
+                              final raw = (value ?? '').trim();
+                              if (raw.isEmpty) {
+                                return AppStrings.tr(
+                                  'checkout_scan_allow_custom_required',
+                                );
+                              }
+
+                              final minutes = int.tryParse(raw);
+                              if (minutes == null || minutes <= 0) {
+                                return AppStrings.tr(
+                                  'checkout_scan_allow_custom_invalid',
+                                );
+                              }
+
+                              if (!_isCheckOutScanAllowBeforeCheckOut(
+                                checkOut: checkOutCtrl.text,
+                                allowMinutes: minutes,
+                              )) {
+                                return AppStrings.tr(
+                                  'checkout_scan_allow_must_before_checkout',
+                                );
+                              }
+
+                              return null;
+                            },
+                          ),
+                        ],
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.schedule_rounded,
+                              size: 14,
+                              color: scanStartPreview == null
+                                  ? colorScheme.error
+                                  : colorScheme.primary,
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                scanStartPreview == null
+                                    ? (isCustomScanAllowSelected &&
+                                              customCheckOutScanAllowCtrl.text
+                                                  .trim()
+                                                  .isEmpty
+                                          ? AppStrings.tr(
+                                              'checkout_scan_allow_custom_required',
+                                            )
+                                          : AppStrings.tr(
+                                              'checkout_scan_allow_must_before_checkout',
+                                            ))
+                                    : '${AppStrings.tr('checkout_scan_start_at')}: $scanStartPreview',
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: scanStartPreview == null
+                                          ? colorScheme.error
+                                          : colorScheme.primary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                controller: annualLeaveCtrl,
+                                onChanged: (_) => setDialogState(() {}),
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                ],
+                                decoration: InputDecoration(
+                                  labelText: AppStrings.tr(
+                                    'annual_leave_limit',
+                                  ),
+                                  prefixIcon: const Icon(
+                                    Icons.beach_access_outlined,
+                                  ),
+                                  prefixIconColor: colorScheme.primary,
+                                  suffixIcon: SizedBox(
+                                    width: 84,
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          tooltip: AppStrings.tr('decrease'),
+                                          icon: const Icon(Icons.remove),
+                                          onPressed: () {
+                                            final current =
+                                                int.tryParse(
+                                                  annualLeaveCtrl.text,
+                                                ) ??
+                                                0;
+                                            final next = current > 0
+                                                ? current - 1
+                                                : 0;
+                                            setDialogState(() {
+                                              annualLeaveCtrl.text = next
+                                                  .toString();
+                                            });
+                                          },
+                                        ),
+                                        IconButton(
+                                          tooltip: AppStrings.tr('increase'),
+                                          icon: const Icon(Icons.add),
+                                          onPressed: () {
+                                            final current =
+                                                int.tryParse(
+                                                  annualLeaveCtrl.text,
+                                                ) ??
+                                                0;
+                                            setDialogState(() {
+                                              annualLeaveCtrl.text =
+                                                  (current + 1).toString();
+                                            });
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  filled: true,
+                                  fillColor: modernFillColor,
+                                  border: defaultOutlineBorder,
+                                  enabledBorder: defaultOutlineBorder,
+                                  focusedBorder: focusedOutlineBorder,
+                                  errorBorder: errorOutlineBorder,
+                                  focusedErrorBorder: errorOutlineBorder,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 18,
+                                  ),
+                                ),
+                                validator: (v) {
+                                  final raw = v?.trim() ?? '';
+                                  if (raw.isEmpty) {
+                                    return AppStrings.tr(
+                                      'annual_leave_required',
+                                    );
+                                  }
+                                  final value = int.tryParse(raw);
+                                  if (value == null || value < 0) {
+                                    return AppStrings.tr(
+                                      'annual_leave_must_number',
+                                    );
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: TextFormField(
+                                controller: sickLeaveCtrl,
+                                onChanged: (_) => setDialogState(() {}),
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                ],
+                                decoration: InputDecoration(
+                                  labelText: AppStrings.tr('sick_leave_limit'),
+                                  prefixIcon: const Icon(
+                                    Icons.local_hospital_outlined,
+                                  ),
+                                  prefixIconColor: colorScheme.primary,
+                                  suffixIcon: SizedBox(
+                                    width: 84,
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          tooltip: AppStrings.tr('decrease'),
+                                          icon: const Icon(Icons.remove),
+                                          onPressed: () {
+                                            final current =
+                                                int.tryParse(
+                                                  sickLeaveCtrl.text,
+                                                ) ??
+                                                0;
+                                            final next = current > 0
+                                                ? current - 1
+                                                : 0;
+                                            setDialogState(() {
+                                              sickLeaveCtrl.text = next
+                                                  .toString();
+                                            });
+                                          },
+                                        ),
+                                        IconButton(
+                                          tooltip: AppStrings.tr('increase'),
+                                          icon: const Icon(Icons.add),
+                                          onPressed: () {
+                                            final current =
+                                                int.tryParse(
+                                                  sickLeaveCtrl.text,
+                                                ) ??
+                                                0;
+                                            setDialogState(() {
+                                              sickLeaveCtrl.text = (current + 1)
+                                                  .toString();
+                                            });
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  filled: true,
+                                  fillColor: modernFillColor,
+                                  border: defaultOutlineBorder,
+                                  enabledBorder: defaultOutlineBorder,
+                                  focusedBorder: focusedOutlineBorder,
+                                  errorBorder: errorOutlineBorder,
+                                  focusedErrorBorder: errorOutlineBorder,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 18,
+                                  ),
+                                ),
+                                validator: (v) {
+                                  final raw = v?.trim() ?? '';
+                                  if (raw.isEmpty) {
+                                    return AppStrings.tr('sick_leave_required');
+                                  }
+                                  final value = int.tryParse(raw);
+                                  if (value == null || value < 0) {
+                                    return AppStrings.tr(
+                                      'sick_leave_must_number',
+                                    );
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: botUsernameCtrl,
+                          onChanged: (_) => setDialogState(() {}),
+                          decoration: InputDecoration(
+                            labelText: AppStrings.tr('telegram_bot_username'),
+                            hintText: '@your_bot',
+                            prefixIcon: const Icon(Icons.smart_toy_outlined),
+                            prefixIconColor: colorScheme.primary,
+                            filled: true,
+                            fillColor: modernFillColor,
+                            border: defaultOutlineBorder,
+                            enabledBorder: defaultOutlineBorder,
+                            focusedBorder: focusedOutlineBorder,
+                            errorBorder: errorOutlineBorder,
+                            focusedErrorBorder: errorOutlineBorder,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 18,
+                            ),
+                          ),
+                          validator: (v) => v == null || v.trim().isEmpty
+                              ? AppStrings.tr('telegram_bot_username_required')
+                              : null,
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: botLinkCtrl,
+                          onChanged: (_) => setDialogState(() {}),
+                          decoration: InputDecoration(
+                            labelText: AppStrings.tr('telegram_bot_link'),
+                            hintText: 'https://t.me/your_bot',
+                            prefixIcon: const Icon(Icons.link_outlined),
+                            prefixIconColor: colorScheme.primary,
+                            filled: true,
+                            fillColor: modernFillColor,
+                            border: defaultOutlineBorder,
+                            enabledBorder: defaultOutlineBorder,
+                            focusedBorder: focusedOutlineBorder,
+                            errorBorder: errorOutlineBorder,
+                            focusedErrorBorder: errorOutlineBorder,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 18,
+                            ),
+                          ),
+                          validator: (v) => v == null || v.trim().isEmpty
+                              ? AppStrings.tr('telegram_bot_link_required')
+                              : null,
+                        ),
+                        if (!isEdit) ...[
+                          const SizedBox(height: 24),
+                          InkWell(
+                            onTap: hasAllRequiredData
+                                ? () async {
+                                    final result = await _showMapPicker(
+                                      context,
+                                      selectedLat,
+                                      selectedLng,
+                                      selectedAddress,
+                                    );
+                                    if (result != null) {
+                                      setDialogState(() {
+                                        selectedLat = result['lat'];
+                                        selectedLng = result['lng'];
+                                        selectedAddress =
+                                            result['address'] ?? '';
+                                      });
+                                    }
+                                  }
+                                : null,
+                            borderRadius: BorderRadius.circular(16),
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: hasLocation
+                                    ? colorScheme.primaryContainer.withOpacity(
+                                        0.4,
+                                      )
+                                    : hasAllRequiredData
+                                    ? colorScheme.surfaceContainerHighest
+                                          .withOpacity(0.3)
+                                    : colorScheme.errorContainer.withOpacity(
+                                        0.35,
+                                      ),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: hasLocation
+                                      ? colorScheme.primary.withOpacity(0.5)
+                                      : hasAllRequiredData
+                                      ? Theme.of(
+                                          context,
+                                        ).dividerColor.withOpacity(0.5)
+                                      : colorScheme.error.withOpacity(0.8),
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: hasLocation
+                                          ? colorScheme.primary
+                                          : hasAllRequiredData
+                                          ? colorScheme.surfaceContainerHighest
+                                          : colorScheme.error.withOpacity(0.15),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      hasLocation
+                                          ? Icons.location_on
+                                          : Icons.map_outlined,
+                                      color: hasLocation
+                                          ? colorScheme.onPrimary
+                                          : hasAllRequiredData
+                                          ? colorScheme.onSurfaceVariant
+                                          : colorScheme.error,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          hasLocation
+                                              ? AppStrings.tr(
+                                                  'location_selected',
+                                                )
+                                              : AppStrings.tr(
+                                                  'set_office_location',
+                                                ),
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                            color:
+                                                !hasAllRequiredData &&
+                                                    !hasLocation
+                                                ? colorScheme.error
+                                                : null,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          hasLocation
+                                              ? (selectedAddress.isEmpty
+                                                    ? '${AppStrings.tr('latitude')}: ${selectedLat!.toStringAsFixed(4)}, ${AppStrings.tr('longitude')}: ${selectedLng!.toStringAsFixed(4)}'
+                                                    : selectedAddress)
+                                              : hasAllRequiredData
+                                              ? AppStrings.tr('tap_open_map')
+                                              : AppStrings.tr(
+                                                  'complete_required_fields_first',
+                                                ),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.copyWith(
+                                                color:
+                                                    !hasAllRequiredData &&
+                                                        !hasLocation
+                                                    ? colorScheme.error
+                                                    : colorScheme
+                                                          .onSurfaceVariant,
+                                              ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Icon(
+                                    hasLocation
+                                        ? Icons.edit_location_alt_outlined
+                                        : Icons.chevron_right_rounded,
                                     color: hasLocation
                                         ? colorScheme.primary
-                                        : hasAllRequiredData
-                                        ? colorScheme.surfaceContainerHighest
-                                        : colorScheme.error.withOpacity(0.15),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    hasLocation
-                                        ? Icons.location_on
-                                        : Icons.map_outlined,
-                                    color: hasLocation
-                                        ? colorScheme.onPrimary
                                         : hasAllRequiredData
                                         ? colorScheme.onSurfaceVariant
                                         : colorScheme.error,
                                   ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        hasLocation
-                                            ? AppStrings.tr('location_selected')
-                                            : AppStrings.tr(
-                                                'set_office_location',
-                                              ),
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14,
-                                          color:
-                                              !hasAllRequiredData &&
-                                                  !hasLocation
-                                              ? colorScheme.error
-                                              : null,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        hasLocation
-                                            ? (selectedAddress.isEmpty
-                                                  ? '${AppStrings.tr('latitude')}: ${selectedLat!.toStringAsFixed(4)}, ${AppStrings.tr('longitude')}: ${selectedLng!.toStringAsFixed(4)}'
-                                                  : selectedAddress)
-                                            : hasAllRequiredData
-                                            ? AppStrings.tr('tap_open_map')
-                                            : AppStrings.tr(
-                                                'complete_required_fields_first',
-                                              ),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall
-                                            ?.copyWith(
-                                              color:
-                                                  !hasAllRequiredData &&
-                                                      !hasLocation
-                                                  ? colorScheme.error
-                                                  : colorScheme
-                                                        .onSurfaceVariant,
-                                            ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Icon(
-                                  hasLocation
-                                      ? Icons.edit_location_alt_outlined
-                                      : Icons.chevron_right_rounded,
-                                  color: hasLocation
-                                      ? colorScheme.primary
-                                      : hasAllRequiredData
-                                      ? colorScheme.onSurfaceVariant
-                                      : colorScheme.error,
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
-                        ),
+                        ],
                       ],
                     ],
                   ),
@@ -1327,13 +2128,22 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
                 onPressed:
                     hasLocation && formKey.currentState?.validate() == true
                     ? () async {
+                        final resolvedCheckOutScanAllowMinutes =
+                            resolveCheckOutScanAllowMinutes();
+                        final resolvedLateBufferMinutes =
+                            resolveLateBufferMinutes();
+
                         if (isEdit) {
                           await _controller.updateOfficeDetails(
                             officeId: officeId!,
                             newName: nameCtrl.text,
                             newGroup: groupCtrl.text,
+                            oldDepartmentName: selectedDepartmentForEdit,
                             checkInStart: checkInCtrl.text.trim(),
                             checkOutEnd: checkOutCtrl.text.trim(),
+                            lateBufferMinutes: resolvedLateBufferMinutes,
+                            checkOutScanAllowMinutes:
+                                resolvedCheckOutScanAllowMinutes,
                             annualLeaveLimit: int.parse(
                               annualLeaveCtrl.text.trim(),
                             ),
@@ -1342,6 +2152,11 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
                             ),
                             botUsername: botUsernameCtrl.text.trim(),
                             botLink: botLinkCtrl.text.trim(),
+                          );
+                        } else if (isAddingDepartmentToExistingOffice) {
+                          await _controller.addDepartmentToOffice(
+                            officeId: matchedExistingOffice.officeId,
+                            departmentName: groupCtrl.text.trim(),
                           );
                         } else {
                           final fallbackAddress =
@@ -1357,6 +2172,9 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
                                 : fallbackAddress,
                             checkInStart: checkInCtrl.text.trim(),
                             checkOutEnd: checkOutCtrl.text.trim(),
+                            lateBufferMinutes: resolvedLateBufferMinutes,
+                            checkOutScanAllowMinutes:
+                                resolvedCheckOutScanAllowMinutes,
                             annualLeaveLimit: int.parse(
                               annualLeaveCtrl.text.trim(),
                             ),
@@ -1377,6 +2195,8 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
                             content: Text(
                               isEdit
                                   ? AppStrings.tr('office_updated_success')
+                                  : isAddingDepartmentToExistingOffice
+                                  ? AppStrings.tr('office_updated_success')
                                   : AppStrings.tr('office_created_success'),
                               style: const TextStyle(color: Colors.white),
                             ),
@@ -1386,6 +2206,8 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
                     : null,
                 child: Text(
                   isEdit
+                      ? AppStrings.tr('save_changes')
+                      : isAddingDepartmentToExistingOffice
                       ? AppStrings.tr('save_changes')
                       : AppStrings.tr('create_office'),
                 ),
@@ -1435,6 +2257,71 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
     );
   }
 
+  void _showDeleteDepartmentConfirmation(
+    BuildContext context,
+    OfficeConfig office,
+    String departmentName,
+  ) {
+    final departments = _officeDepartments(office);
+    if (departments.length <= 1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Theme.of(context).colorScheme.error,
+          content: Text(
+            AppStrings.tr('cannot_delete_last_department'),
+            style: const TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(AppStrings.tr('delete_department')),
+        content: Text(
+          '${AppStrings.tr('confirm_delete_department_msg')} $departmentName?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(AppStrings.tr('cancel')),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            onPressed: () async {
+              final isDeleted = await _controller.deleteDepartmentFromOffice(
+                officeId: office.officeId,
+                departmentName: departmentName,
+              );
+
+              if (!context.mounted) return;
+              Navigator.pop(ctx);
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  backgroundColor: isDeleted
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.error,
+                  content: Text(
+                    isDeleted
+                        ? AppStrings.tr('department_deleted_success')
+                        : AppStrings.tr('cannot_delete_last_department'),
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+              );
+            },
+            child: Text(AppStrings.tr('delete')),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<Map<String, dynamic>?> _showMapPicker(
     BuildContext context,
     double? initialLat,
@@ -1456,9 +2343,9 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
     required BuildContext context,
     required TextEditingController controller,
     required void Function(void Function()) setDialogState,
+    TimeOfDay fallbackTime = const TimeOfDay(hour: 8, minute: 0),
   }) async {
-    final initial =
-        _parseTimeOfDay(controller.text) ?? const TimeOfDay(hour: 9, minute: 0);
+    final initial = _parseTimeOfDay(controller.text) ?? fallbackTime;
     final picked = await showTimePicker(
       context: context,
       initialTime: initial,
@@ -1550,6 +2437,99 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
     return null;
   }
 
+  bool _isCheckOutAfterCheckIn({
+    required String checkIn,
+    required String checkOut,
+  }) {
+    final checkInTime = _parseTimeOfDay(checkIn);
+    final checkOutTime = _parseTimeOfDay(checkOut);
+    if (checkInTime == null || checkOutTime == null) {
+      return false;
+    }
+
+    final checkInMinutes = checkInTime.hour * 60 + checkInTime.minute;
+    final checkOutMinutes = checkOutTime.hour * 60 + checkOutTime.minute;
+    return checkOutMinutes > checkInMinutes;
+  }
+
+  bool _isCheckOutScanAllowBeforeCheckOut({
+    required String checkOut,
+    required int allowMinutes,
+  }) {
+    final checkOutTime = _parseTimeOfDay(checkOut);
+    if (checkOutTime == null) {
+      return false;
+    }
+
+    final checkOutMinutes = checkOutTime.hour * 60 + checkOutTime.minute;
+    return (checkOutMinutes - allowMinutes) >= 0;
+  }
+
+  bool _isLateBufferWithinWorkingHours({
+    required String checkIn,
+    required String checkOut,
+    required int lateBufferMinutes,
+  }) {
+    final checkInTime = _parseTimeOfDay(checkIn);
+    final checkOutTime = _parseTimeOfDay(checkOut);
+    if (checkInTime == null || checkOutTime == null) {
+      return false;
+    }
+
+    final checkInMinutes = checkInTime.hour * 60 + checkInTime.minute;
+    final checkOutMinutes = checkOutTime.hour * 60 + checkOutTime.minute;
+    return (checkInMinutes + lateBufferMinutes) <= checkOutMinutes;
+  }
+
+  String? _getCheckOutScanStartPreview({
+    required String checkOut,
+    required int allowMinutes,
+  }) {
+    final checkOutTime = _parseTimeOfDay(checkOut);
+    if (checkOutTime == null) {
+      return null;
+    }
+
+    final totalMinutes =
+        (checkOutTime.hour * 60 + checkOutTime.minute) - allowMinutes;
+    if (totalMinutes < 0) {
+      return null;
+    }
+
+    final previewTime = TimeOfDay(
+      hour: totalMinutes ~/ 60,
+      minute: totalMinutes % 60,
+    );
+    return _formatTimeOfDay12Hour(previewTime);
+  }
+
+  String? _getLateStartPreview({
+    required String checkIn,
+    required String checkOut,
+    required int lateBufferMinutes,
+  }) {
+    if (!_isLateBufferWithinWorkingHours(
+      checkIn: checkIn,
+      checkOut: checkOut,
+      lateBufferMinutes: lateBufferMinutes,
+    )) {
+      return null;
+    }
+
+    final checkInTime = _parseTimeOfDay(checkIn);
+    if (checkInTime == null) {
+      return null;
+    }
+
+    final totalMinutes =
+        (checkInTime.hour * 60 + checkInTime.minute) + lateBufferMinutes;
+    final previewTime = TimeOfDay(
+      hour: totalMinutes ~/ 60,
+      minute: totalMinutes % 60,
+    );
+    return _formatTimeOfDay12Hour(previewTime);
+  }
+
   Widget _buildOfficeMetaInfo(OfficeConfig office) {
     final policy = office.policy;
     final telegram = office.telegramConfig;
@@ -1593,6 +2573,14 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
               infoChip(
                 Icons.logout,
                 '${AppStrings.tr('check_out_label')} ${policy.checkOutEnd}',
+              ),
+              infoChip(
+                Icons.alarm_on_outlined,
+                '${AppStrings.tr('late_consider_label')} ${policy.lateBufferMinutes}m',
+              ),
+              infoChip(
+                Icons.timer_outlined,
+                '${AppStrings.tr('checkout_scan_allow_time')} ${policy.checkOutScanAllowMinutes}m',
               ),
               infoChip(
                 Icons.beach_access_outlined,
@@ -1661,6 +2649,59 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _PolicyDropdownField extends StatelessWidget {
+  const _PolicyDropdownField({
+    required this.value,
+    required this.labelText,
+    required this.prefixIcon,
+    required this.iconColor,
+    required this.fillColor,
+    required this.defaultBorder,
+    required this.focusedBorder,
+    required this.items,
+    required this.validator,
+    required this.onChanged,
+  });
+
+  final String value;
+  final String labelText;
+  final IconData prefixIcon;
+  final Color iconColor;
+  final Color fillColor;
+  final InputBorder defaultBorder;
+  final InputBorder focusedBorder;
+  final List<DropdownMenuItem<String>> items;
+  final FormFieldValidator<String> validator;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<String>(
+      value: value,
+      decoration: InputDecoration(
+        labelText: labelText,
+        prefixIcon: Icon(prefixIcon),
+        prefixIconColor: iconColor,
+        filled: true,
+        fillColor: fillColor,
+        border: defaultBorder,
+        enabledBorder: defaultBorder,
+        focusedBorder: focusedBorder,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 18,
+        ),
+      ),
+      validator: validator,
+      items: items,
+      onChanged: (value) {
+        if (value == null) return;
+        onChanged(value);
+      },
     );
   }
 }

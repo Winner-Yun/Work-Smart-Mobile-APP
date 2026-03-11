@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_admin_route.dart';
@@ -51,6 +52,8 @@ class _AdminSystemSettingsScreenState extends State<AdminSystemSettingsScreen> {
   }
 
   Future<void> _handleLogout() async {
+    await FirebaseAuth.instance.signOut();
+
     final dbHelper = DatabaseHelper();
     await dbHelper.clearCachedLogin();
 

@@ -2,7 +2,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
-import 'package:flutter_worksmart_mobile_app/core/util/mock_data/userFinalData.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/database/user_data.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/logic/leave_request_logic.dart';
 import 'package:flutter_worksmart_mobile_app/shared/model/user_model/user_profile.dart';
 import 'package:intl/intl.dart';
 
@@ -27,7 +28,20 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
   PlatformFile? _pickedFile;
   DateTime? _selectedDate;
   bool _showValidationErrors = false;
+  bool _isSubmitting = false;
   final DateFormat _dateFormatter = DateFormat('dd MMM yyyy');
+
+  bool get _hasSickLeaveQuota => _sickLeaveRemaining > 0;
+
+  void _showNoQuotaSnackBar() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(AppStrings.tr('sick_leave_no_remaining_days')),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -39,7 +53,7 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
   void _loadData() {
     final currentUserData = usersFinalData.firstWhere(
       (user) => user['uid'] == (loggedInUserId ?? "user_winner_777"),
-      orElse: () => usersFinalData[0],
+      orElse: () => defaultUserRecord,
     );
     _currentUser = UserProfile.fromJson(currentUserData);
 
@@ -51,7 +65,7 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
       0,
       (sum, leave) => sum + leave.durationInDays,
     );
-    _sickLeaveRemaining = _sickLeaveTotal - _sickLeaveUsed;
+    _sickLeaveRemaining = (_sickLeaveTotal - _sickLeaveUsed).clamp(0, 9999);
   }
 
   Future<void> _pickFile() async {
@@ -72,6 +86,11 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
   }
 
   Future<void> _pickDate(BuildContext context) async {
+    if (!_hasSickLeaveQuota) {
+      _showNoQuotaSnackBar();
+      return;
+    }
+
     final DateTime now = DateTime.now();
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -87,7 +106,14 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
     }
   }
 
-  void _submitRequest() {
+  Future<void> _submitRequest() async {
+    if (_isSubmitting) return;
+
+    if (!_hasSickLeaveQuota) {
+      _showNoQuotaSnackBar();
+      return;
+    }
+
     setState(() {
       _showValidationErrors = true;
     });
@@ -97,6 +123,38 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
     final isFileValid = _pickedFile != null;
 
     if (!isReasonValid || !isDateValid || !isFileValid) {
+      return;
+    }
+
+    final String userId = _currentUser.uid.trim();
+    if (userId.isEmpty) return;
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    final bool submitted = await LeaveRequestLogic.submitLeaveRequest(
+      userId: userId,
+      type: 'sick_leave',
+      startDate: _selectedDate!,
+      endDate: _selectedDate!,
+      reason: _reasonController.text,
+      attachmentUrl: _pickedFile?.name,
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      _isSubmitting = false;
+    });
+
+    if (!submitted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppStrings.tr('leave_request_submit_failed')),
+          backgroundColor: Colors.red,
+        ),
+      );
       return;
     }
 
@@ -503,7 +561,9 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
         ],
       ),
       child: ElevatedButton(
-        onPressed: _submitRequest,
+        onPressed: (_isSubmitting || !_hasSickLeaveQuota)
+            ? null
+            : _submitRequest,
         style: ElevatedButton.styleFrom(
           backgroundColor: Theme.of(context).colorScheme.primary,
           shape: RoundedRectangleBorder(
@@ -511,14 +571,23 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
           ),
           elevation: 0,
         ),
-        child: Text(
-          AppStrings.tr('submit_official_request'),
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
-        ),
+        child: _isSubmitting
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            : Text(
+                AppStrings.tr('submit_official_request'),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
       ),
     );
   }

@@ -1,0 +1,22 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "worksmart-ai-project",
+          "appId": "1:231376984746:android:00c7d391130669037c8ed3",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/config/firebase_options.dart": {
+          "projectId": "worksmart-ai-project",
+          "configurations": {
+            "android": "1:231376984746:android:00c7d391130669037c8ed3",
+            "web": "1:231376984746:web:86fd5d93bbff34ff7c8ed3"
+          }
+        }
+      }
+    }
+  }
+}

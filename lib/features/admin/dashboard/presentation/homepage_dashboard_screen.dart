@@ -32,12 +32,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   String _attendanceSearchQuery = '';
   String _sortBy = 'name';
   int _attendancePage = 0;
+  String? _selectedOfficeId;
 
   // Map Specifics
-  late final OfficeConfig _officeConfig;
-  late final gmaps.LatLng _officeLocation;
   gmaps.GoogleMapController? _mapController;
   gmaps.BitmapDescriptor? _officeMarkerIcon;
+  String _lastMapViewportSignature = '';
 
   // Hover State
   final bool _isProfileHovering = false;
@@ -46,11 +46,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   void initState() {
     super.initState();
     _controller = DashboardController();
-    _officeConfig = getOfficeConfig();
-    _officeLocation = gmaps.LatLng(
-      _officeConfig.geofence.lat,
-      _officeConfig.geofence.lng,
-    );
+    initializeDashboardRealtimeData();
     _loadOfficeMarkerIcon();
   }
 
@@ -89,8 +85,104 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     _mapController!.setMapStyle(isDark ? MapStyles.dark : null);
   }
 
+  void _fitMapToOffices(List<OfficeConfig> offices) {
+    final controller = _mapController;
+    if (controller == null || offices.isEmpty) return;
+
+    if (offices.length == 1) {
+      final office = offices.first;
+      controller.animateCamera(
+        gmaps.CameraUpdate.newCameraPosition(
+          gmaps.CameraPosition(
+            target: gmaps.LatLng(office.geofence.lat, office.geofence.lng),
+            zoom: 15.5,
+          ),
+        ),
+      );
+      return;
+    }
+
+    double minLat = offices.first.geofence.lat;
+    double maxLat = offices.first.geofence.lat;
+    double minLng = offices.first.geofence.lng;
+    double maxLng = offices.first.geofence.lng;
+
+    for (final office in offices.skip(1)) {
+      minLat = math.min(minLat, office.geofence.lat);
+      maxLat = math.max(maxLat, office.geofence.lat);
+      minLng = math.min(minLng, office.geofence.lng);
+      maxLng = math.max(maxLng, office.geofence.lng);
+    }
+
+    final hasSinglePoint =
+        (maxLat - minLat).abs() < 0.0001 && (maxLng - minLng).abs() < 0.0001;
+    if (hasSinglePoint) {
+      controller.animateCamera(
+        gmaps.CameraUpdate.newCameraPosition(
+          gmaps.CameraPosition(
+            target: gmaps.LatLng(minLat, minLng),
+            zoom: 14.5,
+          ),
+        ),
+      );
+      return;
+    }
+
+    controller.animateCamera(
+      gmaps.CameraUpdate.newLatLngBounds(
+        gmaps.LatLngBounds(
+          southwest: gmaps.LatLng(minLat, minLng),
+          northeast: gmaps.LatLng(maxLat, maxLng),
+        ),
+        64,
+      ),
+    );
+  }
+
+  void _scheduleMapViewportUpdate(List<OfficeConfig> offices) {
+    final signature = offices
+        .map(
+          (office) =>
+              '${office.officeId}:${office.geofence.lat.toStringAsFixed(5)}:${office.geofence.lng.toStringAsFixed(5)}:${office.geofence.radiusMeters}',
+        )
+        .join('|');
+
+    if (_lastMapViewportSignature == signature) return;
+    _lastMapViewportSignature = signature;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _fitMapToOffices(offices);
+    });
+  }
+
+  OfficeConfig? _resolveSelectedOffice(List<OfficeConfig> offices) {
+    if (offices.isEmpty) return null;
+
+    final selectedId = _selectedOfficeId?.trim();
+    if (selectedId == null || selectedId.isEmpty) {
+      return offices.first;
+    }
+
+    final matched = offices.where((office) => office.officeId == selectedId);
+    if (matched.isNotEmpty) {
+      return matched.first;
+    }
+
+    return offices.first;
+  }
+
+  String _officeDisplayName(OfficeConfig office) {
+    final trimmedName = office.officeName.trim();
+    if (trimmedName.isNotEmpty) {
+      return trimmedName;
+    }
+    return office.officeId;
+  }
+
   @override
   void dispose() {
+    disposeDashboardRealtimeData();
     _controller.dispose();
     _mapController?.dispose();
     super.dispose();
@@ -106,6 +198,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         ThemeManager(),
         LanguageManager(),
         _controller,
+        dashboardDataVersion,
       ]),
       builder: (context, _) {
         return LayoutBuilder(
@@ -977,6 +1070,48 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   Widget _buildGeofenceCard() {
     final primary = Theme.of(context).colorScheme.primary;
+    final offices = getAllOfficeConfigs();
+    final hasOffices = offices.isNotEmpty;
+    final selectedOffice = _resolveSelectedOffice(offices);
+    final displayedOffices = selectedOffice == null
+        ? offices
+        : <OfficeConfig>[selectedOffice];
+
+    _scheduleMapViewportUpdate(displayedOffices);
+
+    final initialTarget = selectedOffice != null
+        ? gmaps.LatLng(selectedOffice.geofence.lat, selectedOffice.geofence.lng)
+        : hasOffices
+        ? gmaps.LatLng(offices.first.geofence.lat, offices.first.geofence.lng)
+        : const gmaps.LatLng(11.5564, 104.9282);
+
+    final markers = displayedOffices
+        .map(
+          (office) => gmaps.Marker(
+            markerId: gmaps.MarkerId('office_${office.officeId}'),
+            position: gmaps.LatLng(office.geofence.lat, office.geofence.lng),
+            icon: _officeMarkerIcon ?? gmaps.BitmapDescriptor.defaultMarker,
+            anchor: const Offset(0.5, 0.5),
+            infoWindow: gmaps.InfoWindow(
+              title: office.officeName,
+              snippet: office.geofence.addressLabel,
+            ),
+          ),
+        )
+        .toSet();
+
+    final circles = displayedOffices
+        .map(
+          (office) => gmaps.Circle(
+            circleId: gmaps.CircleId('radius_${office.officeId}'),
+            center: gmaps.LatLng(office.geofence.lat, office.geofence.lng),
+            radius: office.geofence.radiusMeters.toDouble(),
+            strokeWidth: 2,
+            strokeColor: primary.withOpacity(0.9),
+            fillColor: primary.withOpacity(0.16),
+          ),
+        )
+        .toSet();
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -988,6 +1123,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         ),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -997,7 +1133,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   Icon(Icons.map_outlined, color: primary, size: 18),
                   const SizedBox(width: 8),
                   Text(
-                    _officeConfig.officeName,
+                    selectedOffice == null
+                        ? AppStrings.tr('total_locations')
+                        : _officeDisplayName(selectedOffice),
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
@@ -1006,34 +1144,107 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   ),
                 ],
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppColors.success.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  AppStrings.tr('active'),
-                  style: const TextStyle(
-                    color: AppColors.success,
-                    fontSize: 8,
-                    fontWeight: FontWeight.bold,
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      selectedOffice == null
+                          ? '${offices.length}'
+                          : '1 / ${offices.length}',
+                      style: TextStyle(
+                        color: AppColors.success,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 8),
+                  Tooltip(
+                    message: AppStrings.tr('geofencing_management'),
+                    child: IconButton(
+                      visualDensity: VisualDensity.compact,
+                      constraints: const BoxConstraints(),
+                      splashRadius: 18,
+                      icon: Icon(
+                        Icons.settings_outlined,
+                        size: 18,
+                        color: primary,
+                      ),
+                      onPressed: () => _navigateTo(AppAdminRoute.geofencing),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
           const SizedBox(height: 16),
+          if (hasOffices)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: Theme.of(
+                  context,
+                ).colorScheme.surfaceVariant.withOpacity(0.35),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Theme.of(context).dividerColor.withOpacity(0.4),
+                ),
+              ),
+              child: DropdownButton<String>(
+                value: selectedOffice?.officeId,
+                isExpanded: true,
+                underline: const SizedBox(),
+                icon: const Icon(Icons.keyboard_arrow_down_rounded),
+                onChanged: (officeId) {
+                  if (officeId == null) return;
+                  setState(() {
+                    _selectedOfficeId = officeId;
+                  });
+                },
+                items: offices
+                    .map(
+                      (office) => DropdownMenuItem<String>(
+                        value: office.officeId,
+                        child: Text(
+                          _officeDisplayName(office),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
+          if (hasOffices) const SizedBox(height: 16),
+          _buildInfoRow(
+            Icons.domain_outlined,
+            AppStrings.tr('total_locations'),
+            '${offices.length}',
+          ),
+          const SizedBox(height: 8),
           _buildInfoRow(
             Icons.location_city,
             AppStrings.tr('office_address'),
-            _officeConfig.geofence.addressLabel,
+            selectedOffice == null ? '-' : selectedOffice.geofence.addressLabel,
           ),
           const SizedBox(height: 8),
           _buildInfoRow(
             Icons.radar,
             AppStrings.tr('geofence_radius'),
-            '${_officeConfig.geofence.radiusMeters}m',
+            selectedOffice == null
+                ? '-'
+                : '${selectedOffice.geofence.radiusMeters}m',
           ),
           const SizedBox(height: 8),
           _buildInfoRow(
@@ -1048,45 +1259,67 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               borderRadius: BorderRadius.circular(16),
               child: gmaps.GoogleMap(
                 initialCameraPosition: gmaps.CameraPosition(
-                  target: _officeLocation,
-                  zoom: 15.5,
+                  target: initialTarget,
+                  zoom: hasOffices ? 13.0 : 3.0,
                 ),
                 onMapCreated: (c) {
                   _mapController = c;
                   _applyMapStyle();
+                  _fitMapToOffices(displayedOffices);
                 },
-                markers: {
-                  gmaps.Marker(
-                    markerId: const gmaps.MarkerId('office'),
-                    position: _officeLocation,
-                    icon:
-                        _officeMarkerIcon ??
-                        gmaps.BitmapDescriptor.defaultMarker,
-                    anchor: const Offset(0.5, 0.5),
-                  ),
-                },
-                circles: {
-                  gmaps.Circle(
-                    circleId: const gmaps.CircleId('radius'),
-                    center: _officeLocation,
-                    radius: _officeConfig.geofence.radiusMeters.toDouble(),
-                    strokeWidth: 2,
-                    strokeColor: primary,
-                    fillColor: primary.withOpacity(0.18),
-                  ),
-                },
+                markers: markers,
+                circles: circles,
                 myLocationButtonEnabled: false,
                 zoomControlsEnabled: false,
               ),
             ),
           ),
+          if (!hasOffices)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Text(
+                'No office locations available.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.6),
+                ),
+              ),
+            ),
         ],
       ),
     );
   }
 
   Widget _buildTopPerformers() {
-    final performers = buildTopPerformers();
+    final performers = buildTopPerformers(limit: 3);
+    final TopPerformerData? first = performers.isNotEmpty
+        ? performers[0]
+        : null;
+    final TopPerformerData? second = performers.length > 1
+        ? performers[1]
+        : null;
+    final TopPerformerData? third = performers.length > 2
+        ? performers[2]
+        : null;
+
+    final podiumOrder = <TopPerformerData?>[second, first, third];
+    final podiumGradients = <List<Color>>[
+      const <Color>[Color(0xFFE5E7EB), Color(0xFFF3F4F6)],
+      const <Color>[Color(0xFFF5E58B), Color(0xFFF3EFCF)],
+      const <Color>[Color(0xFFE8D1BC), Color(0xFFF3E7DB)],
+    ];
+    final podiumRingColors = <Color>[
+      const Color(0xFFB7BCC6),
+      const Color(0xFFF2C500),
+      const Color(0xFFC87A2A),
+    ];
+    final podiumScoreColors = <Color>[
+      const Color(0xFFA8ADB5),
+      const Color(0xFFF2C500),
+      const Color(0xFFC87A2A),
+    ];
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -1098,6 +1331,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         ),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
@@ -1117,89 +1351,52 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          ...performers.asMap().entries.map((entry) {
-            final p = entry.value;
-            final rank = entry.key + 1;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 16.0),
-              child: Row(
-                children: [
-                  Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      _buildProfileAvatar(name: p.name, imageUrl: p.profileUrl),
-                      Positioned(
-                        bottom: -2,
-                        right: -2,
-                        child: CircleAvatar(
-                          radius: 8,
-                          backgroundColor: rank == 1
-                              ? Colors.amber
-                              : (rank == 2 ? Colors.grey : Colors.brown),
-                          child: Text(
-                            '$rank',
-                            style: const TextStyle(
-                              fontSize: 8,
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+          const SizedBox(height: 18),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isNarrow = constraints.maxWidth < 420;
+              final sideHeight = isNarrow ? 160.0 : 188.0;
+              final centerHeight = isNarrow ? 200.0 : 232.0;
+              final sideAvatarRadius = isNarrow ? 22.0 : 28.0;
+              final centerAvatarRadius = isNarrow ? 27.0 : 34.0;
+              final podiumHeights = <double>[
+                sideHeight,
+                centerHeight,
+                sideHeight,
+              ];
+              final podiumAvatarRadii = <double>[
+                sideAvatarRadius,
+                centerAvatarRadius,
+                sideAvatarRadius,
+              ];
+
+              return SizedBox(
+                height: centerHeight + 4,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: List.generate(3, (index) {
+                    return Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                          left: index == 0 ? 0 : 6,
+                          right: index == 2 ? 0 : 6,
+                        ),
+                        child: _buildTopPerformerPodiumCard(
+                          performer: podiumOrder[index],
+                          height: podiumHeights[index],
+                          avatarRadius: podiumAvatarRadii[index],
+                          gradientColors: podiumGradients[index],
+                          ringColor: podiumRingColors[index],
+                          scoreColor: podiumScoreColors[index],
+                          isChampion: index == 1,
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          p.name,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                          ),
-                        ),
-                        Text(
-                          p.dept,
-                          style: TextStyle(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withOpacity(0.6),
-                            fontSize: 10,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        p.score,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 14,
-                        ),
-                      ),
-                      Text(
-                        AppStrings.tr('points_label'),
-                        style: TextStyle(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withOpacity(0.6),
-                          fontSize: 8,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            );
-          }),
+                    );
+                  }),
+                ),
+              );
+            },
+          ).animate().fadeIn(duration: 450.ms).slideY(begin: 0.08, end: 0),
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
@@ -1219,6 +1416,112 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildTopPerformerPodiumCard({
+    required TopPerformerData? performer,
+    required double height,
+    required double avatarRadius,
+    required List<Color> gradientColors,
+    required Color ringColor,
+    required Color scoreColor,
+    required bool isChampion,
+  }) {
+    final hasPerformer = performer != null;
+    final performerName = hasPerformer ? performer.name : '--';
+    final performerImage = hasPerformer ? performer.profileUrl : '';
+    final performerScore = hasPerformer
+        ? _formatPodiumScore(performer.score)
+        : '--';
+
+    return Container(
+      height: height,
+      padding: const EdgeInsets.fromLTRB(12, 14, 12, 16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: gradientColors,
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isChampion ? 0.11 : 0.07),
+            blurRadius: isChampion ? 16 : 10,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: ringColor, width: 3),
+            ),
+            child: _buildProfileAvatar(
+              name: performerName,
+              imageUrl: performerImage,
+              radius: avatarRadius,
+            ),
+          ),
+          SizedBox(height: isChampion ? 14 : 12),
+          Text(
+            performerName,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: isChampion ? 20 : 17,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF252A33),
+              letterSpacing: 0.1,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            performerScore,
+            style: TextStyle(
+              fontSize: isChampion ? 20 : 15,
+              fontWeight: FontWeight.w900,
+              color: scoreColor,
+              height: 1,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            AppStrings.tr('points_label'),
+            style: TextStyle(
+              fontSize: isChampion ? 9 : 8,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF252A33).withOpacity(0.65),
+              letterSpacing: 0.3,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatPodiumScore(String raw) {
+    final value = raw.trim();
+    if (value.isEmpty) return '--';
+
+    final normalized = value.replaceAll('%', '').trim();
+    if (normalized.isEmpty) return '--';
+
+    final asNumber = num.tryParse(normalized);
+    if (asNumber == null) {
+      return normalized;
+    }
+
+    if (asNumber % 1 == 0) {
+      return '${asNumber.toInt()}';
+    }
+
+    return asNumber.toStringAsFixed(1);
   }
 
   // ==========================================

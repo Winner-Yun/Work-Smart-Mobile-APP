@@ -1,3 +1,4 @@
+import 'package:flutter_worksmart_mobile_app/core/constants/default_profile_urls.dart';
 import 'package:flutter_worksmart_mobile_app/shared/model/activity_models/leave_record.dart';
 
 import 'achievements.dart';
@@ -39,16 +40,22 @@ class UserProfile {
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
+    final gender = (json['gender'] ?? 'male').toString();
+    final resolvedProfileUrl = DefaultProfileUrls.resolve(
+      gender: gender,
+      providedUrl: json['profile_url']?.toString(),
+    );
+
     return UserProfile(
       uid: json['uid'] ?? '',
       displayName: json['display_name'] ?? '',
       roleTitle: json['role_title'] ?? '',
-      profileUrl: json['profile_url'] ?? '',
+      profileUrl: resolvedProfileUrl,
       phone: json['phone'] ?? '',
       email: json['email'] ?? '',
       officeId: json['office_id'] ?? '',
       departmentId: json['department_id'] ?? '',
-      gender: json['gender'] ?? 'male',
+      gender: gender,
       biometrics: Biometrics.fromJson(json['biometrics'] ?? {}),
       telegram: TelegramAccount.fromJson(json['telegram'] ?? {}),
       leaveRecords:

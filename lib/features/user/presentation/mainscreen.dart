@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/database/database_helper.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/database/realtime_data_controller.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/presentation/activity_screens/activity_feed_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/presentation/attendence_screens/attendance_stats_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/presentation/attendence_screens/leave_attendance_screen.dart';
@@ -20,11 +24,62 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   late int _currentIndex;
+  final RealtimeDataController _realtimeDataController =
+      RealtimeDataController();
+  StreamSubscription<Map<String, dynamic>?>? _userRecordSubscription;
+  bool _isHandlingSuspendedAccount = false;
 
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
+    _listenForSuspendedAccount();
+  }
+
+  @override
+  void dispose() {
+    _userRecordSubscription?.cancel();
+    super.dispose();
+  }
+
+  void _listenForSuspendedAccount() {
+    final uid = (widget.loginData?['uid'] ?? '').toString().trim();
+    if (uid.isEmpty) {
+      return;
+    }
+
+    _userRecordSubscription?.cancel();
+    _userRecordSubscription = _realtimeDataController
+        .watchUserRecord(uid)
+        .listen((userRecord) {
+          final accountStatus = (userRecord?['status'] ?? '')
+              .toString()
+              .trim()
+              .toLowerCase();
+          if (accountStatus == 'suspended') {
+            _forceLogoutForSuspendedAccount();
+          }
+        });
+  }
+
+  Future<void> _forceLogoutForSuspendedAccount() async {
+    if (_isHandlingSuspendedAccount) {
+      return;
+    }
+
+    _isHandlingSuspendedAccount = true;
+    await _userRecordSubscription?.cancel();
+    await DatabaseHelper().clearCachedLogin();
+
+    if (!mounted) {
+      return;
+    }
+
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      AppRoute.authScreen,
+      (route) => false,
+      arguments: {'showSuspendedDialog': true},
+    );
   }
 
   // ──────────────── EMPLOYEE APP NAVIGATION ────────────────

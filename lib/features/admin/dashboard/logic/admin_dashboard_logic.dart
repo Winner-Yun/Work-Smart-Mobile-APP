@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_worksmart_mobile_app/core/util/mock_data/attendance_record.dart';
-import 'package:flutter_worksmart_mobile_app/core/util/mock_data/officeMasterData.dart';
-import 'package:flutter_worksmart_mobile_app/core/util/mock_data/userFinalData.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/database/attendance_data.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/database/office_data.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/database/realtime_data_controller.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/database/user_data.dart';
 import 'package:flutter_worksmart_mobile_app/shared/model/activity_models/attendance_record.dart';
 import 'package:flutter_worksmart_mobile_app/shared/model/admin_models/dashboard_model.dart';
 import 'package:flutter_worksmart_mobile_app/shared/model/office_model/office_config.dart';
@@ -33,15 +36,152 @@ class DashboardController extends ChangeNotifier {
 // ==========================================
 // 3. LOGIC & DATA MAPPING
 // ==========================================
-final OfficeConfig _officeConfig = OfficeConfig.fromJson(officeMasterData);
-final List<AttendanceRecord> _attendanceRecords = attendanceRecords
+final RealtimeDataController _realtimeDataController = RealtimeDataController();
+final ValueNotifier<int> dashboardDataVersion = ValueNotifier<int>(0);
+
+StreamSubscription<List<Map<String, dynamic>>>? _dashboardUsersSubscription;
+StreamSubscription<List<Map<String, dynamic>>>? _dashboardOfficesSubscription;
+StreamSubscription<List<Map<String, dynamic>>>?
+_dashboardAttendanceSubscription;
+
+OfficeConfig _officeConfig = OfficeConfig.fromJson(officeMasterData);
+List<OfficeConfig> _officeConfigs = _officeConfig.officeId.isEmpty
+    ? <OfficeConfig>[]
+    : <OfficeConfig>[_officeConfig];
+List<AttendanceRecord> _attendanceRecords = attendanceRecords
     .map(AttendanceRecord.fromJson)
     .toList();
-final Map<String, UserProfile> _usersById = {
-  for (final user in usersFinalProfiles) user.uid: user,
+List<UserProfile> _usersProfiles = List<UserProfile>.from(usersFinalProfiles);
+Map<String, UserProfile> _usersById = {
+  for (final user in _usersProfiles) user.uid: user,
 };
 
+Future<void> initializeDashboardRealtimeData() async {
+  if (_dashboardUsersSubscription != null ||
+      _dashboardOfficesSubscription != null ||
+      _dashboardAttendanceSubscription != null) {
+    return;
+  }
+
+  try {
+    final users = await _realtimeDataController.fetchUserRecords();
+    _updateDashboardUsers(users);
+
+    final attendance = await _realtimeDataController.fetchAttendanceRecords();
+    _updateDashboardAttendance(attendance);
+
+    final offices = await _realtimeDataController.fetchOfficeConnections();
+    if (offices.isNotEmpty) {
+      _updateDashboardOffices(offices);
+    } else {
+      final office = await _realtimeDataController.fetchOfficeConnection();
+      if (office != null) {
+        _updateDashboardOffice(office);
+      }
+    }
+
+    _dashboardUsersSubscription = _realtimeDataController
+        .watchUserRecords()
+        .listen(_updateDashboardUsers);
+
+    _dashboardAttendanceSubscription = _realtimeDataController
+        .watchAttendanceRecords()
+        .listen(_updateDashboardAttendance);
+
+    _dashboardOfficesSubscription = _realtimeDataController
+        .watchOfficeConnections()
+        .listen((offices) {
+          if (offices.isEmpty) return;
+          _updateDashboardOffices(offices);
+        });
+  } catch (_) {
+    return;
+  }
+}
+
+void disposeDashboardRealtimeData() {
+  _dashboardUsersSubscription?.cancel();
+  _dashboardOfficesSubscription?.cancel();
+  _dashboardAttendanceSubscription?.cancel();
+  _dashboardUsersSubscription = null;
+  _dashboardOfficesSubscription = null;
+  _dashboardAttendanceSubscription = null;
+}
+
+void _updateDashboardUsers(List<Map<String, dynamic>> users) {
+  if (users.isEmpty) {
+    _usersProfiles = List<UserProfile>.from(usersFinalProfiles);
+  } else {
+    _usersProfiles = users.map(UserProfile.fromJson).toList();
+  }
+
+  _usersById = {for (final user in _usersProfiles) user.uid: user};
+  _notifyDashboardDataChanged();
+}
+
+void _updateDashboardOffice(Map<String, dynamic> office) {
+  final updatedOffice = OfficeConfig.fromJson(office);
+  _officeConfig = updatedOffice;
+
+  final index = _officeConfigs.indexWhere(
+    (officeConfig) => officeConfig.officeId == updatedOffice.officeId,
+  );
+  if (index == -1) {
+    _officeConfigs = <OfficeConfig>[..._officeConfigs, updatedOffice];
+  } else {
+    _officeConfigs[index] = updatedOffice;
+  }
+
+  _notifyDashboardDataChanged();
+}
+
+void _updateDashboardOffices(List<Map<String, dynamic>> offices) {
+  if (offices.isEmpty) return;
+
+  final parsedOffices = offices.map(OfficeConfig.fromJson).toList()
+    ..sort(
+      (a, b) =>
+          a.officeName.toLowerCase().compareTo(b.officeName.toLowerCase()),
+    );
+
+  _officeConfigs = parsedOffices;
+
+  if (_officeConfig.officeId.isNotEmpty) {
+    final matchedOffice = parsedOffices.where(
+      (officeConfig) => officeConfig.officeId == _officeConfig.officeId,
+    );
+    _officeConfig = matchedOffice.isNotEmpty
+        ? matchedOffice.first
+        : parsedOffices.first;
+  } else {
+    _officeConfig = parsedOffices.first;
+  }
+
+  _notifyDashboardDataChanged();
+}
+
+void _updateDashboardAttendance(List<Map<String, dynamic>> records) {
+  _attendanceRecords = records.map(AttendanceRecord.fromJson).toList();
+  _notifyDashboardDataChanged();
+}
+
+void _notifyDashboardDataChanged() {
+  dashboardDataVersion.value = dashboardDataVersion.value + 1;
+}
+
 OfficeConfig getOfficeConfig() => _officeConfig;
+
+List<OfficeConfig> getAllOfficeConfigs() {
+  if (_officeConfigs.isNotEmpty) {
+    return List<OfficeConfig>.unmodifiable(_officeConfigs);
+  }
+
+  if (_officeConfig.officeId.isEmpty && _officeConfig.officeName.isEmpty) {
+    return const <OfficeConfig>[];
+  }
+
+  return List<OfficeConfig>.unmodifiable(<OfficeConfig>[_officeConfig]);
+}
 
 String getInitials(String name) {
   final parts = name.trim().split(RegExp(r'\s+'));
@@ -55,7 +195,7 @@ String getInitials(String name) {
 }
 
 DashboardStatsData buildDashboardStats({bool useToday = true}) {
-  final totalEmployees = usersFinalProfiles.length;
+  final totalEmployees = _usersProfiles.length;
 
   final todayKey = _formatDateKey(DateTime.now());
   final records = useToday
@@ -73,7 +213,7 @@ DashboardStatsData buildDashboardStats({bool useToday = true}) {
       ? 0.0
       : onTimeCount / (onTimeCount + lateCount).toDouble();
 
-  final pendingRequests = usersFinalProfiles
+  final pendingRequests = _usersProfiles
       .expand((u) => u.leaveRecords)
       .where((r) => r.status == 'pending')
       .length;
@@ -130,7 +270,7 @@ List<AttendanceRowData> buildAttendanceRows({
 
 /// Prepares data for the top performers list.
 List<TopPerformerData> buildTopPerformers({int limit = 3}) {
-  final sorted = [...usersFinalProfiles]
+  final sorted = [..._usersProfiles]
     ..sort(
       (a, b) => b.achievements.performanceScore.compareTo(
         a.achievements.performanceScore,

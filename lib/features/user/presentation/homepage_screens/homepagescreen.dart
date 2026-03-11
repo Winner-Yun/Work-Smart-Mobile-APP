@@ -120,7 +120,7 @@ class _HomePageScreenState extends HomePageLogic {
                   ),
                   child: GoogleMap(
                     initialCameraPosition: CameraPosition(
-                      target: officeLocation, // Use dynamic variable
+                      target: officeLocation,
                       zoom: 16,
                     ),
                     onMapCreated: (c) {
@@ -334,10 +334,17 @@ class _HomePageScreenState extends HomePageLogic {
                               arguments: {
                                 ...?widget.loginData,
                                 'scanType': selectedAttendanceScanType,
+                                'lat_lng': {
+                                  'lat': lastKnownPosition?.latitude ?? 0.0,
+                                  'lng': lastKnownPosition?.longitude ?? 0.0,
+                                },
                               },
                             );
-                            if (result == true) {
-                              applyMockAttendanceScan();
+                            if (result is Map) {
+                              applyDatabaseAttendanceScan(
+                                Map<String, dynamic>.from(result),
+                              );
+                            } else if (result == true) {
                               markMockScanSuccess();
                             }
                           }
@@ -486,7 +493,7 @@ class _HomePageScreenState extends HomePageLogic {
                   displayName: currentUserDisplayName,
                   imageUrl: currentUser.profileUrl,
                   radius: 20,
-                  backgroundColor: Colors.grey.shade300,
+                  backgroundColor: Theme.of(context).cardTheme.color,
                   textColor: Theme.of(context).colorScheme.onSurface,
                 ),
                 Positioned(
@@ -571,39 +578,65 @@ class _HomePageScreenState extends HomePageLogic {
   }
 
   Widget _buildDateAndStatusRow() {
+    final String lateStart = lateStartTimeLabel;
+    final bool hasLateStart = lateStart != '--:--';
+
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          currentAttendance['date'] ?? AppStrings.tr('mock_date'),
-          style: const TextStyle(color: AppColors.textGrey, fontSize: 14),
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(20),
+        Expanded(
+          child: Text(
+            currentAttendance['date'] ?? AppStrings.tr('mock_date'),
+            style: const TextStyle(color: AppColors.textGrey, fontSize: 14),
           ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.shield_outlined,
-                size: 14,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                AppStrings.tr('safety'),
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
+        ),
+        const SizedBox(width: 10),
+        Flexible(
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: Wrap(
+              alignment: WrapAlignment.end,
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                _buildPolicyInfoChip(
+                  icon: hasLateStart
+                      ? Icons.alarm_outlined
+                      : Icons.shield_outlined,
+                  label: hasLateStart
+                      ? '${AppStrings.tr('late')} ${AppStrings.tr('at')} $lateStart'
+                      : AppStrings.tr('safety'),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildPolicyInfoChip({required IconData icon, required String label}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: Theme.of(context).colorScheme.primary),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.primary,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -944,9 +977,10 @@ class _HomePageScreenState extends HomePageLogic {
                   final result = await Navigator.pushNamed(
                     context,
                     AppRoute.registerFace,
+                    arguments: widget.loginData,
                   );
-                  if (result != null) {
-                    handleFaceRegistrationComplete();
+                  if (result == true && mounted) {
+                    setState(() {});
                   }
                 },
                 style: ElevatedButton.styleFrom(

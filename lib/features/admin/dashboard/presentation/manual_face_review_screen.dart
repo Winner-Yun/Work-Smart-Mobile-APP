@@ -3,7 +3,7 @@ import 'package:flutter_worksmart_mobile_app/app/routes/app_admin_route.dart';
 import 'package:flutter_worksmart_mobile_app/config/language_manager.dart';
 import 'package:flutter_worksmart_mobile_app/config/theme_manager.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
-import 'package:flutter_worksmart_mobile_app/core/util/mock_data/userFinalData.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/database/user_data.dart';
 import 'package:flutter_worksmart_mobile_app/shared/model/admin_models/dashboard_model.dart';
 import 'package:flutter_worksmart_mobile_app/shared/widget/admin/admin_header_bar.dart';
 import 'package:flutter_worksmart_mobile_app/shared/widget/admin/admin_side_bar.dart';
@@ -114,6 +114,22 @@ class _ManualFaceReviewScreenState extends State<ManualFaceReviewScreen> {
 
   String _faceStatusLabel(String status) {
     switch (status.toLowerCase()) {
+      case 'approved':
+        return AppStrings.tr('face_status_approved');
+      case 'rejected':
+        return AppStrings.tr('face_status_rejected');
+      case 'uninitialized':
+        return AppStrings.tr('face_status_uninitialized');
+      case 'pending':
+      default:
+        return AppStrings.tr('face_status_pending');
+    }
+  }
+
+  String _statusFilterLabel(String status) {
+    switch (status.toLowerCase()) {
+      case 'all':
+        return AppStrings.tr('all');
       case 'approved':
         return AppStrings.tr('face_status_approved');
       case 'rejected':
@@ -329,7 +345,7 @@ class _ManualFaceReviewScreenState extends State<ManualFaceReviewScreen> {
               final status = statuses[index];
               final isSelected = status == _statusFilter;
               return ChoiceChip(
-                label: Text(status.toUpperCase()),
+                label: Text(_statusFilterLabel(status)),
                 selected: isSelected,
                 onSelected: (_) => setState(() => _statusFilter = status),
               );
@@ -536,9 +552,9 @@ class _ManualFaceReviewScreenState extends State<ManualFaceReviewScreen> {
         width: 440,
         height: 110,
         padding: const EdgeInsets.all(8),
-        color: Theme.of(
-          context,
-        ).colorScheme.surfaceContainerHighest.withOpacity(0.35),
+        color: Theme.of(context).brightness == Brightness.dark
+            ? Colors.grey.shade800
+            : Colors.grey.shade100,
         child: GestureDetector(
           behavior: HitTestBehavior.translucent,
           onHorizontalDragUpdate: (details) {

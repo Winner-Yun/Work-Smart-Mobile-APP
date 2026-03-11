@@ -1,28 +1,21 @@
 # WorkSmart Mobile App (Demo)
 
-This project is a Flutter demo app with **Employee** and **Admin** flows.
+WorkSmart is a Flutter app with both **Employee** and **Admin** experiences.
 
 ## Demo Accounts
 
-### Employee demo (your account)
+### Employee demo
 
-- Name: **Yun Winner**
-- User ID: `user_winner_777`
-- Password: `password123`
+- Name: **Check out the demo employee account in Admin Dashboard!**
+- User ID: `Check out the demo employee account in Admin Dashboard!`
+- Password: `worksmart123`
 
-You can log in using either:
-
-- `user_winner_777`, or
-- a name that matches `Yun Winner`
-
-### Admin demo accounts
+### Admin demo
 
 - Admin ID: `admin`
 - Password: `admin123`
 
----
-
-## How to Run
+## Quick Start
 
 ### 1) Install dependencies
 
@@ -30,31 +23,35 @@ You can log in using either:
 flutter pub get
 ```
 
-### 2) Create `.env` in project root
+### 2) Create your `.env` file
 
-At minimum:
+Use the template in the project root:
 
-```env
-GOOGLE_MAPS_API_KEY=your_google_maps_key
+```powershell
+Copy-Item .env.example .env
 ```
 
-### 3) Run app (normal)
+```bash
+cp .env.example .env
+```
+
+Then fill in your values.
+
+### 3) Run app
 
 ```bash
 flutter run
 ```
 
----
+## Run Admin Flow
 
-## How to Run Admin
-
-### Option A: Web (opens Admin login by default)
+### Option A: Web (defaults to admin auth)
 
 ```bash
 flutter run -d chrome
 ```
 
-On web, initial route is admin auth (`/admin-auth`).
+On web, startup route resolves to `/admin-auth`.
 
 ### Option B: Force admin route on any platform
 
@@ -62,11 +59,26 @@ On web, initial route is admin auth (`/admin-auth`).
 flutter run --route=/admin-auth
 ```
 
-Then log in with one of the admin demo accounts above.
+## Environment Variables
 
----
+See [.env.example](.env.example) for the full template.
+
+Required for common app flows:
+
+- `GOOGLE_MAPS_API_KEY`: Google Maps SDK key.
+- `PASSWORD_PEPPER`: App password pepper used by user password hashing. Keep this stable between deployments.
+
+Optional (feature-specific):
+
+- `CLOUDINARY_API_KEY`: Needed for Cloudinary profile image upload/delete.
+- `CLOUDINARY_API_SECRET`: Needed for Cloudinary profile image upload/delete.
+- `CLOUDINARY_CLOUD_NAME`: Cloudinary cloud name (defaults in code if omitted).
+- `DEFAULT_USER_PASSWORD`: Default password fallback used when creating users from admin side.
+- `API_BASE_URL`: Reserved for external API integration.
+- `AUTH_API_KEY`: Reserved for external API integration.
 
 ## Notes
 
-- Employee credentials are from `lib/core/util/mock_data/userFinalData.dart`.
-- Admin credentials are from `lib/features/admin/auth/logic/auth_admin_logic.dart`.
+- Environment is loaded from `.env` during bootstrap in [lib/core/bootstrap.dart](lib/core/bootstrap.dart).
+- Employee authentication/data uses Firestore through [lib/core/util/database/realtime_data_controller.dart](lib/core/util/database/realtime_data_controller.dart).
+- Admin authentication is handled via Firebase Auth through [lib/features/admin/auth/controller/admin_auth_controller.dart](lib/features/admin/auth/controller/admin_auth_controller.dart).

@@ -21,6 +21,7 @@ class _AuthscreenState extends State<Authscreen> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool obscurePassword = true;
+  bool _handledSuspendedRouteAlert = false;
   late AuthLogic authLogic;
 
   // ─────────── SCREEN INITIALIZATION ───────────
@@ -42,6 +43,28 @@ class _AuthscreenState extends State<Authscreen> {
     authLogic.checkCachedLogin((username, userId, userType) {
       authLogic.autoLoginNavigation(username, userId, userType);
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (_handledSuspendedRouteAlert) {
+      return;
+    }
+
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is! Map<String, dynamic>) {
+      return;
+    }
+
+    if (args['showSuspendedDialog'] == true) {
+      _handledSuspendedRouteAlert = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        authLogic.showSuspendedAlert();
+      });
+    }
   }
 
   @override

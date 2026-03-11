@@ -4,8 +4,7 @@ import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
 import 'package:flutter_worksmart_mobile_app/config/language_manager.dart';
 import 'package:flutter_worksmart_mobile_app/config/theme_manager.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
-import 'package:flutter_worksmart_mobile_app/core/util/mock_data/userFinalData.dart';
-import 'package:flutter_worksmart_mobile_app/shared/model/user_model/user_profile.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/logic/setting_logic.dart';
 
 class SettingsScreen extends StatefulWidget {
   final Map<String, dynamic>? loginData;
@@ -16,67 +15,7 @@ class SettingsScreen extends StatefulWidget {
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
-  late UserProfile _currentUser;
-  late String? loggedInUserId;
-  bool isNotification = true;
-
-  @override
-  void initState() {
-    super.initState();
-    loggedInUserId = widget.loginData?['uid'];
-    _loadData();
-  }
-
-  void _loadData() {
-    final currentUserData = usersFinalData.firstWhere(
-      (user) => user['uid'] == (loggedInUserId ?? "user_winner_777"),
-      orElse: () => usersFinalData[0],
-    );
-    _currentUser = UserProfile.fromJson(currentUserData);
-    isNotification = _currentUser.appSettings.notificationsEnabled;
-  }
-
-  Future<void> _handleLanguageChange(
-    BuildContext context,
-    String langCode,
-  ) async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => Center(
-        child: Container(
-          padding: const EdgeInsets.all(30),
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardTheme.color,
-            borderRadius: BorderRadius.circular(25),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.15),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: const CircularProgressIndicator(),
-        ),
-      ).animate().scale(duration: 200.ms, curve: Curves.easeOutBack),
-    );
-
-    await LanguageManager().changeLanguage(langCode);
-    await Future.delayed(const Duration(milliseconds: 250));
-
-    if (context.mounted) {
-      Navigator.of(context, rootNavigator: true).pop();
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        AppRoute.appmain,
-        (route) => false,
-        arguments: widget.loginData,
-      );
-    }
-  }
-
+class _SettingsScreenState extends SettingLogic {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -111,7 +50,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   AppStrings.tr('notification_label'),
                   Colors.orange,
                   isNotification,
-                  (v) => setState(() => isNotification = v),
+                  isSavingNotification ? null : handleNotificationChange,
                 ),
               ]),
               const SizedBox(height: 24),
@@ -251,15 +190,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _premiumLangBtn('ខ្មែរ', context),
-            _premiumLangBtn('EN', context),
+            _buildLangBtn('ខ្មែរ', context),
+            _buildLangBtn('EN', context),
           ],
         ),
       ),
     );
   }
 
-  Widget _premiumLangBtn(String text, BuildContext context) {
+  Widget _buildLangBtn(String text, BuildContext context) {
     final String codeToCheck = (text == 'ខ្មែរ') ? 'km' : 'en';
     bool active = LanguageManager().locale == codeToCheck;
     bool isDark = Theme.of(context).brightness == Brightness.dark;
@@ -267,7 +206,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return GestureDetector(
       onTap: () {
         if (!active) {
-          _handleLanguageChange(context, codeToCheck);
+          handleLanguageChange(context, codeToCheck);
         }
       },
       child: AnimatedContainer(
@@ -299,11 +238,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
     String title,
     Color color,
     bool value,
-    Function(bool) onChanged,
+    ValueChanged<bool>? onChanged,
   ) {
     return _buildAnimatedTileContainer(
       context: context,
-      onTap: () => onChanged(!value),
+      onTap: () {
+        if (onChanged != null) {
+          onChanged(!value);
+        }
+      },
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
         leading: _buildSoftIcon(context, icon, color),

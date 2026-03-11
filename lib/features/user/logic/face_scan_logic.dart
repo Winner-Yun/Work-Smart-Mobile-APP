@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/database/realtime_data_controller.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/presentation/homepage_screens/face_scan_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -17,6 +18,8 @@ abstract class FaceScanLogic extends State<FaceScanScreen>
   bool isScanning = false;
   double scanProgress = 0;
   Timer? _scanTimer;
+  final RealtimeDataController _realtimeDataController =
+      RealtimeDataController();
 
   @override
   void initState() {
@@ -114,7 +117,7 @@ abstract class FaceScanLogic extends State<FaceScanScreen>
     }
   }
 
-  // Mock scanning flow for 5 seconds, then show success dialog and return result
+  // Run scan animation for 5 seconds, persist attendance, then return success
   Future<void> takePicture() async {
     if (isScanning || controller == null || !controller!.value.isInitialized) {
       return;
@@ -150,6 +153,16 @@ abstract class FaceScanLogic extends State<FaceScanScreen>
           isScanning = false;
           scanProgress = 1;
         });
+
+        final Map<String, dynamic>? savedRecord = await _saveAttendanceRecord();
+        if (savedRecord == null) {
+          if (mounted) {
+            setState(() {
+              scanProgress = 0;
+            });
+          }
+          return;
+        }
 
         await showDialog<void>(
           context: context,
@@ -213,9 +226,52 @@ abstract class FaceScanLogic extends State<FaceScanScreen>
         );
 
         if (mounted) {
-          Navigator.pop(context, true);
+          Navigator.pop(context, savedRecord);
         }
       }
     });
+  }
+
+  Future<Map<String, dynamic>?> _saveAttendanceRecord() async {
+    final String userId = (widget.loginData?['uid'] ?? '').toString().trim();
+    if (userId.isEmpty) {
+      if (!mounted) return null;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppStrings.tr('unable_to_resolve_user_id'))),
+      );
+      return null;
+    }
+
+    final String rawScanType = (widget.loginData?['scanType'] ?? 'check_in')
+        .toString()
+        .trim();
+    final String scanType = rawScanType.toLowerCase() == 'check_out'
+        ? 'check_out'
+        : 'check_in';
+
+    Map<String, dynamic>? latLng;
+    final dynamic rawLatLng = widget.loginData?['lat_lng'];
+    if (rawLatLng is Map) {
+      latLng = Map<String, dynamic>.from(rawLatLng);
+    }
+
+    try {
+      final savedRecord = await _realtimeDataController.saveAttendanceScan(
+        uid: userId,
+        scanType: scanType,
+        scannedAt: DateTime.now(),
+        latLng: latLng,
+      );
+      return savedRecord;
+    } catch (e) {
+      if (!mounted) return null;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${AppStrings.tr('attendance_scan_save_failed')}: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return null;
+    }
   }
 }

@@ -4,21 +4,35 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_img.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/auth/logic/change_password_logic.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   final bool isFromProfile;
+  final String? userId;
+  final String? resetEmail;
 
-  const ChangePasswordScreen({super.key, this.isFromProfile = false});
+  const ChangePasswordScreen({
+    super.key,
+    this.isFromProfile = false,
+    this.userId,
+    this.resetEmail,
+  });
 
   @override
   State<ChangePasswordScreen> createState() => _ChangePasswordScreenState();
 }
 
 class ResetPasswordScreen extends ChangePasswordScreen {
-  const ResetPasswordScreen({super.key, super.isFromProfile});
+  const ResetPasswordScreen({
+    super.key,
+    super.isFromProfile,
+    super.userId,
+    super.resetEmail,
+  });
 }
 
 class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
+  final ChangePasswordLogic _changePasswordLogic = ChangePasswordLogic();
   final _formKey = GlobalKey<FormState>();
   final _oldPassController = TextEditingController();
   final _passController = TextEditingController();
@@ -26,6 +40,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   bool _obscureOld = true;
   bool _obscurePass = true;
   bool _obscureConfirm = true;
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -35,10 +50,36 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     super.dispose();
   }
 
-  void _handleReset() {
-    if (_formKey.currentState!.validate()) {
-      _showSuccessDialog();
+  Future<void> _handleReset() async {
+    if (_isSubmitting) return;
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isSubmitting = true);
+
+    final result = await _changePasswordLogic.changePassword(
+      newPassword: _passController.text,
+      oldPassword: widget.isFromProfile ? _oldPassController.text : null,
+      isFromProfile: widget.isFromProfile,
+      userId: widget.userId,
+      resetEmail: widget.resetEmail,
+    );
+
+    if (!mounted) return;
+    setState(() => _isSubmitting = false);
+
+    if (!result.isSuccess) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppStrings.tr(result.errorKey ?? 'password_change_failed'),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
     }
+
+    _showSuccessDialog();
   }
 
   void _showSuccessDialog() {
@@ -338,11 +379,23 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             borderRadius: BorderRadius.circular(15),
           ),
         ),
-        onPressed: _handleReset,
-        child: Text(
-          AppStrings.tr('change_password_button'),
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
+        onPressed: _isSubmitting ? null : _handleReset,
+        child: _isSubmitting
+            ? SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.2,
+                  color: theme.colorScheme.onPrimary,
+                ),
+              )
+            : Text(
+                AppStrings.tr('change_password_button'),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
       ),
     );
   }

@@ -1,47 +1,50 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_admin_route.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
-import 'package:flutter_worksmart_mobile_app/core/util/database/database_helper.dart';
+import 'package:flutter_worksmart_mobile_app/features/admin/auth/controller/admin_auth_controller.dart';
 
 class AuthAdminLogic {
   final BuildContext context;
   final TextEditingController usernameController;
   final TextEditingController passwordController;
   final GlobalKey<FormState> formKey;
-
-  // Hardcoded for demo/MVP purposes
-  static const Map<String, String> _adminUsers = {
-    'admin': 'admin123',
-    'manager': 'manager123',
-  };
+  final AdminAuthController _adminAuthController;
 
   AuthAdminLogic({
     required this.context,
     required this.usernameController,
     required this.passwordController,
     required this.formKey,
-  });
+    AdminAuthController? adminAuthController,
+  }) : _adminAuthController = adminAuthController ?? AdminAuthController();
 
-  /// Checks the local database for a saved session
+  /// Automatically trigger the creation of the default admin in Firebase
+  Future<void> seedDatabase() async {
+    await _adminAuthController.seedDefaultAdmin();
+  }
+
+  /// Uses Firebase persisted auth state for admin auto-login.
   Future<void> checkCachedLogin(Function(String, String) onAutoLogin) async {
     try {
-      final dbHelper = DatabaseHelper();
-      final cachedLogin = await dbHelper.getCachedLogin();
-
-      if (cachedLogin != null) {
-        final username = cachedLogin['username'] as String?;
-        final userType = cachedLogin['user_type'] as String?;
-        final password = cachedLogin['password'] as String?;
-
-        if (username != null && userType == 'admin' && password != null) {
-          // Verify if credentials are still valid in our "database"
-          if (_adminUsers[username] == password) {
-            onAutoLogin(username, userType!);
-          }
-        }
+      if (!_adminAuthController.hasAuthenticatedSession) {
+        return;
       }
-    } catch (e) {
-      debugPrint("Error checking cached login: $e");
+
+      if (_adminAuthController.isAuthenticatedSessionExpired(
+        maxSessionAge: const Duration(days: 1),
+      )) {
+        await _adminAuthController.signOut();
+        return;
+      }
+
+      final username = _adminAuthController.getPersistedAdminUsername();
+      if (username == null || username.trim().isEmpty) {
+        return;
+      }
+
+      onAutoLogin(username, 'admin');
+    } catch (_) {
+      return;
     }
   }
 
@@ -54,10 +57,17 @@ class AuthAdminLogic {
 
     final username = usernameController.text.trim();
     final password = passwordController.text.trim();
+    final usernameForStorage = username.toLowerCase() == 'admin'
+        ? 'Admin'
+        : username;
 
-    // 2. Credential Verification
-    if (!_adminUsers.containsKey(username) ||
-        _adminUsers[username] != password) {
+    // 2. Credential Verification (Talk to Firebase)
+    final isValid = await _adminAuthController.verifyAdminCredentials(
+      username: username,
+      password: password,
+    );
+
+    if (!isValid) {
       _showSnackBar(
         message: AppStrings.tr('invalid_credentials'),
         isError: true,
@@ -65,13 +75,21 @@ class AuthAdminLogic {
       return false;
     }
 
-    //. Success - Cache Session
+    // 3. Success - Update history
     try {
-      final dbHelper = DatabaseHelper();
-      await dbHelper.saveCachedLogin(username, password, username, 'admin');
+      var isFirebaseSynced = true;
+      try {
+        await _adminAuthController.storeAdminLoginAccount(
+          username: usernameForStorage,
+        );
+      } catch (_) {
+        isFirebaseSynced = false;
+      }
 
       _showSnackBar(
-        message: "${AppStrings.tr('logging_in_admin')}...",
+        message: isFirebaseSynced
+            ? "${AppStrings.tr('logging_in_admin')}..."
+            : 'Login successful, Firebase sync pending.',
         isError: false,
       );
 
@@ -90,7 +108,6 @@ class AuthAdminLogic {
   void autoLoginNavigation(String username, String userType) {
     if (!context.mounted) return;
 
-    // Slight delay to ensure context is ready and UI has rendered
     Future.delayed(const Duration(milliseconds: 500), () {
       if (context.mounted) {
         _showSnackBar(message: "Welcome back, $username", isError: false);
@@ -119,8 +136,6 @@ class AuthAdminLogic {
     }
     return null;
   }
-
-  // ─── Private UI Helpers ───
 
   void _showSnackBar({required String message, required bool isError}) {
     if (!context.mounted) return;

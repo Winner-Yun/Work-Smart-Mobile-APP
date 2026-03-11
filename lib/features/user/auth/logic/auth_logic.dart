@@ -2,25 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/util/database/database_helper.dart';
-import 'package:flutter_worksmart_mobile_app/core/util/mock_data/userFinalData.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/database/realtime_data_controller.dart';
 
-/// AuthLogic: Core authentication business logic
-/// Handles employee login validation, cached credentials, and navigation
 class AuthLogic {
   final BuildContext context;
   final TextEditingController usernameController;
   final TextEditingController passwordController;
   final GlobalKey<FormState> formKey;
+  final RealtimeDataController _realtimeDataController;
+
+  Map<String, dynamic>? _lastAuthenticatedUser;
 
   AuthLogic({
     required this.context,
     required this.usernameController,
     required this.passwordController,
     required this.formKey,
-  });
+    RealtimeDataController? realtimeDataController,
+  }) : _realtimeDataController =
+           realtimeDataController ?? RealtimeDataController();
 
-  // ─────────── CACHED LOGIN RETRIEVAL ───────────
-  // Checks database for stored credentials and triggers auto-login flow
   Future<void> checkCachedLogin(
     Function(String, String, String) onAutoLogin,
   ) async {
@@ -32,61 +33,69 @@ class AuthLogic {
       final userType = cachedLogin['user_type'] as String;
       final userId = cachedLogin['user_id'] as String;
 
-      // Auto-login with cached credentials
+      // Verify account is not suspended before auto-login.
+      final status = await _realtimeDataController.fetchUserAccountStatus(
+        userId,
+      );
+      if (status == 'suspended') {
+        await dbHelper.clearCachedLogin();
+        _showSuspendedAlert();
+        return;
+      }
+
       onAutoLogin(username, userId, userType);
     }
   }
 
-  // ─────────── EMPLOYEE LOGIN VALIDATION ───────────
-  // Validates username/password against employee database and caches credentials
   Future<bool> handleLogin() async {
     final username = usernameController.text.trim();
     final password = passwordController.text.trim();
 
     if (formKey.currentState != null && formKey.currentState!.validate()) {
-      // Check employee credentials from userFinalData
-      final user = usersFinalData.firstWhere(
-        (u) =>
-            (u['uid'] == username ||
-                u['display_name'].toLowerCase().contains(
-                  username.toLowerCase(),
-                )) &&
-            u['password'] == password,
-        orElse: () => {},
+      final user = await _realtimeDataController.authenticateUser(
+        username: username,
+        password: password,
       );
 
-      if (user.isEmpty) {
+      if (user == null) {
         _showErrorSnackBar(AppStrings.tr('invalid_credentials'));
         return false;
       }
 
-      // Success - show success message and return user data
+      final accountStatus = (user['status'] ?? '').toString();
+      if (accountStatus == 'suspended') {
+        _showSuspendedAlert();
+        return false;
+      }
+
+      _lastAuthenticatedUser = user;
+
       _showSuccessSnackBar(AppStrings.tr('logging_in_employee'));
 
-      // Save login credentials to cache
       final dbHelper = DatabaseHelper();
-      dbHelper.saveCachedLogin(username, password, user['uid'], 'employee');
+      await dbHelper.saveCachedLogin(
+        (user['display_name'] ?? username).toString(),
+        password,
+        user['uid'].toString(),
+        'employee',
+      );
 
       return true;
     }
     return false;
   }
 
-  // ─────────── NAVIGATION & UI HELPERS ───────────
-  // Manages screen navigation, form clearing, and user feedback
   Map<String, dynamic> getLoginData() {
     final username = usernameController.text.trim();
-    final user = usersFinalData.firstWhere(
-      (u) =>
-          (u['uid'] == username ||
-          u['display_name'].toLowerCase().contains(username.toLowerCase())),
-      orElse: () => {},
-    );
+    final user = _lastAuthenticatedUser;
 
-    return {'uid': user['uid'], 'username': username, 'userType': 'employee'};
+    return {
+      'uid': (user?['uid'] ?? username).toString(),
+      'username': (user?['display_name'] ?? username).toString(),
+      'userType': 'employee',
+    };
   }
 
-  /// Navigate to main app
   void navigateToMainApp(Map<String, dynamic> loginData) {
     Navigator.pushReplacementNamed(
       context,
@@ -95,13 +104,194 @@ class AuthLogic {
     );
   }
 
-  /// Clear form fields
   void clearForm() {
     usernameController.clear();
     passwordController.clear();
   }
 
-  /// Show error snack bar
+  void showSuspendedAlert() {
+    _showSuspendedAlert();
+  }
+
+  void _showSuspendedAlert() {
+    if (!context.mounted) return;
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        final theme = Theme.of(ctx);
+        final colorScheme = theme.colorScheme;
+        final textTheme = theme.textTheme;
+        final isDark = theme.brightness == Brightness.dark;
+        final dialogSurface = colorScheme.surface;
+
+        final mutedTextColor = colorScheme.onSurface.withValues(alpha: 0.68);
+        final subtleBorderColor = colorScheme.outline.withValues(
+          alpha: isDark ? 0.45 : 0.18,
+        );
+        final closeButtonBackground = colorScheme.onSurface.withValues(
+          alpha: isDark ? 0.10 : 0.06,
+        );
+        final warningAccentColor = colorScheme.error;
+        final warningBodyTextColor = colorScheme.error.withValues(
+          alpha: isDark ? 0.92 : 0.82,
+        );
+        final warningHeroBackground = warningAccentColor.withValues(
+          alpha: isDark ? 0.18 : 0.14,
+        );
+        final warningPanelBackground = warningAccentColor.withValues(
+          alpha: isDark ? 0.16 : 0.12,
+        );
+        final warningPanelIconBackground = warningAccentColor.withValues(
+          alpha: isDark ? 0.22 : 0.18,
+        );
+
+        return Dialog(
+          backgroundColor: dialogSurface,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+            side: BorderSide(color: subtleBorderColor),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(22, 18, 22, 22),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Align(
+                  alignment: Alignment.topRight,
+                  child: Material(
+                    color: closeButtonBackground,
+                    shape: const CircleBorder(),
+                    child: IconButton(
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      visualDensity: VisualDensity.compact,
+                      icon: Icon(Icons.close_rounded, color: mutedTextColor),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  width: 76,
+                  height: 76,
+                  decoration: BoxDecoration(
+                    color: warningHeroBackground,
+                    borderRadius: BorderRadius.circular(22),
+                  ),
+                  child: Icon(
+                    Icons.warning_amber_rounded,
+                    size: 40,
+                    color: warningAccentColor,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  AppStrings.tr('account_suspended_title'),
+                  textAlign: TextAlign.center,
+                  style: textTheme.titleLarge?.copyWith(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: warningAccentColor,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  AppStrings.tr('account_suspended_description'),
+                  textAlign: TextAlign.center,
+                  style: textTheme.bodyMedium?.copyWith(
+                    fontSize: 14,
+                    color: mutedTextColor,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: warningPanelBackground,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: warningAccentColor.withValues(alpha: 0.28),
+                    ),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 30,
+                        height: 30,
+                        decoration: BoxDecoration(
+                          color: warningPanelIconBackground,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          Icons.priority_high_rounded,
+                          size: 18,
+                          color: warningAccentColor,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              AppStrings.tr('warning_label'),
+                              style: textTheme.labelLarge?.copyWith(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: warningAccentColor,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              AppStrings.tr('account_suspended_message'),
+                              style: textTheme.bodySmall?.copyWith(
+                                fontSize: 13,
+                                color: warningBodyTextColor,
+                                height: 1.45,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 22),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: colorScheme.error,
+                      foregroundColor: colorScheme.onError,
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      AppStrings.tr('account_suspended_ok'),
+                      style: textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                        color: colorScheme.onError,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void _showErrorSnackBar(String message) {
     if (!context.mounted) return;
 
@@ -114,7 +304,6 @@ class AuthLogic {
     );
   }
 
-  /// Show success snack bar
   void _showSuccessSnackBar(String message) {
     if (!context.mounted) return;
 
@@ -127,7 +316,6 @@ class AuthLogic {
     );
   }
 
-  /// Navigate with auto-login flow
   void autoLoginNavigation(String username, String userId, String userType) {
     if (!context.mounted) return;
 

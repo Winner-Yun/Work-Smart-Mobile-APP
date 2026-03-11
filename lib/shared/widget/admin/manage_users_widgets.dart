@@ -138,7 +138,7 @@ Widget buildSectionLabelCreate(
       Text(
         label.toUpperCase(),
         style: TextStyle(
-          fontSize: 11,
+          fontSize: 18,
           fontWeight: FontWeight.w700,
           color: Theme.of(context).colorScheme.primary,
         ),
@@ -153,6 +153,7 @@ Widget buildTextField(
   required TextEditingController controller,
   required String hint,
   required IconData icon,
+  bool obscureText = false,
   bool readOnly = false,
   bool isSystemGenerated = false,
   String? Function(String?)? validator,
@@ -174,6 +175,7 @@ Widget buildTextField(
       const SizedBox(height: 8),
       TextFormField(
         controller: controller,
+        obscureText: obscureText,
         readOnly: readOnly,
         validator: validator,
         onChanged: onChanged,
@@ -224,11 +226,13 @@ Widget buildTextField(
 Widget buildDropdown(
   BuildContext context, {
   required String label,
-  required String value,
+  required String? value,
   required List<String> items,
   required void Function(String?) onChanged,
   bool isStatus = false,
   String Function(String)? statusLabel,
+  String? hintText,
+  String? Function(String?)? validator,
 }) {
   final colorScheme = Theme.of(context).colorScheme;
 
@@ -238,6 +242,9 @@ Widget buildDropdown(
     if (status.toLowerCase() == 'suspended') return Colors.red;
     return colorScheme.outline;
   }
+
+  final normalizedValue = value?.trim() ?? '';
+  final hasValue = normalizedValue.isNotEmpty;
 
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -254,21 +261,28 @@ Widget buildDropdown(
       DropdownButtonFormField<String>(
         value: value,
         onChanged: onChanged,
+        validator: validator,
+        isExpanded: true,
+        hint: hintText == null
+            ? null
+            : Text(hintText, maxLines: 1, overflow: TextOverflow.ellipsis),
         icon: const Icon(Icons.keyboard_arrow_down_rounded),
         decoration: InputDecoration(
           prefixIcon: Icon(
-            isStatus && value.isNotEmpty
-                ? getStatusColor(value) == Colors.green
+            isStatus && hasValue
+                ? getStatusColor(normalizedValue) == Colors.green
                       ? Icons.check_circle
                       : Icons.circle_outlined
                 : label == AppStrings.tr('gender_label')
-                ? value == 'male'
+                ? normalizedValue == 'male'
                       ? Icons.male_rounded
-                      : Icons.female_rounded
+                      : normalizedValue == 'female'
+                      ? Icons.female_rounded
+                      : Icons.person_outline_rounded
                 : Icons.business_sharp,
             size: 20,
-            color: isStatus && value.isNotEmpty
-                ? getStatusColor(value)
+            color: isStatus && hasValue
+                ? getStatusColor(normalizedValue)
                 : colorScheme.outline,
           ),
           filled: true,
@@ -288,7 +302,7 @@ Widget buildDropdown(
         ),
         items: items.map((item) {
           String display;
-          if (isStatus && statusLabel != null) {
+          if (statusLabel != null) {
             display = statusLabel(item);
           } else {
             display = item.length > 1
@@ -296,8 +310,28 @@ Widget buildDropdown(
                 : item;
           }
 
-          return DropdownMenuItem(value: item, child: Text(display));
+          return DropdownMenuItem(
+            value: item,
+            child: Text(display, maxLines: 1, overflow: TextOverflow.ellipsis),
+          );
         }).toList(),
+        selectedItemBuilder: (context) {
+          return items.map((item) {
+            final display = statusLabel != null
+                ? statusLabel(item)
+                : (item.length > 1
+                      ? item[0].toUpperCase() + item.substring(1)
+                      : item);
+            return Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                display,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            );
+          }).toList();
+        },
       ),
     ],
   );

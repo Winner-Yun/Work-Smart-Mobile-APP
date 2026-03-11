@@ -13,6 +13,7 @@ class AdminSideBar extends StatelessWidget {
       leaverequestsSelected,
       analyticsSelected,
       faceReviewSelected,
+      attendentRecordSelected,
       settingsSelected;
   final VoidCallback? onDashboardTap,
       onStaffTap,
@@ -21,6 +22,7 @@ class AdminSideBar extends StatelessWidget {
       onLeaveRequestsTap,
       onAnalyticsTap,
       onFaceReviewTap,
+      onAttendentRecordTap,
       onSettingsTap;
 
   const AdminSideBar({
@@ -33,6 +35,7 @@ class AdminSideBar extends StatelessWidget {
     this.leaverequestsSelected = false,
     this.analyticsSelected = false,
     this.faceReviewSelected = false,
+    this.attendentRecordSelected = false,
     this.settingsSelected = false,
     this.onDashboardTap,
     this.onStaffTap,
@@ -41,6 +44,7 @@ class AdminSideBar extends StatelessWidget {
     this.onLeaveRequestsTap,
     this.onAnalyticsTap,
     this.onFaceReviewTap,
+    this.onAttendentRecordTap,
     this.onSettingsTap,
   });
 
@@ -126,6 +130,14 @@ class AdminSideBar extends StatelessWidget {
             AppStrings.tr('leaverequests'),
             leaverequestsSelected,
             onLeaveRequestsTap,
+          ),
+          _buildNavItem(
+            context,
+            Icons.fact_check_rounded,
+            AppStrings.tr('attendent_record'),
+            attendentRecordSelected,
+            onAttendentRecordTap,
+            fallbackRouteName: AppAdminRoute.attendentRecord,
           ),
           _buildNavItem(
             context,

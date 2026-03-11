@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
-import 'package:flutter_worksmart_mobile_app/core/util/mock_data/userFinalData.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/database/user_data.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/logic/leave_request_logic.dart';
 import 'package:flutter_worksmart_mobile_app/shared/model/user_model/user_profile.dart';
 import 'package:intl/intl.dart';
 
@@ -27,7 +28,37 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
   DateTime? _startDate;
   DateTime? _endDate;
   bool _showValidationErrors = false;
+  bool _isSubmitting = false;
   final DateFormat _dateFormatter = DateFormat('dd MMM yyyy');
+
+  bool get _hasAnnualLeaveQuota => _annualLeaveRemaining > 0;
+
+  int get _selectedDurationDays {
+    if (_startDate == null || _endDate == null) return 0;
+    return _endDate!.difference(_startDate!).inDays + 1;
+  }
+
+  void _showNoQuotaSnackBar() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(AppStrings.tr('annual_leave_no_remaining_days')),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
+  void _showDurationExceedsRemainingSnackBar(int requestedDays) {
+    if (!mounted) return;
+    final String message =
+        AppStrings.tr('annual_leave_duration_exceeds_remaining')
+            .replaceAll('{requestedDays}', requestedDays.toString())
+            .replaceAll('{remainingDays}', _annualLeaveRemaining.toString());
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
+  }
 
   @override
   void initState() {
@@ -39,7 +70,7 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
   void _loadData() {
     final currentUserData = usersFinalData.firstWhere(
       (user) => user['uid'] == (loggedInUserId ?? "user_winner_777"),
-      orElse: () => usersFinalData[0],
+      orElse: () => defaultUserRecord,
     );
     _currentUser = UserProfile.fromJson(currentUserData);
 
@@ -55,18 +86,65 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
       0,
       (sum, leave) => sum + leave.durationInDays,
     );
-    _annualLeaveRemaining = _annualLeaveTotal - _annualLeaveUsed;
+    _annualLeaveRemaining = (_annualLeaveTotal - _annualLeaveUsed).clamp(
+      0,
+      9999,
+    );
   }
 
-  void _submitRequest() {
+  Future<void> _submitRequest() async {
+    if (_isSubmitting) return;
+
+    if (!_hasAnnualLeaveQuota) {
+      _showNoQuotaSnackBar();
+      return;
+    }
+
     setState(() {
       _showValidationErrors = true;
     });
 
     final isReasonValid = _formKey.currentState?.validate() ?? false;
     final hasValidDateRange = _startDate != null && _endDate != null;
+    final requestedDays = _selectedDurationDays;
 
     if (!isReasonValid || !hasValidDateRange) {
+      return;
+    }
+
+    if (requestedDays <= 0 || requestedDays > _annualLeaveRemaining) {
+      _showDurationExceedsRemainingSnackBar(requestedDays);
+      return;
+    }
+
+    final String userId = _currentUser.uid.trim();
+    if (userId.isEmpty) return;
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    final bool submitted = await LeaveRequestLogic.submitLeaveRequest(
+      userId: userId,
+      type: 'annual_leave',
+      startDate: _startDate!,
+      endDate: _endDate!,
+      reason: _reasonController.text,
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      _isSubmitting = false;
+    });
+
+    if (!submitted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppStrings.tr('leave_request_submit_failed')),
+          backgroundColor: Colors.red,
+        ),
+      );
       return;
     }
 
@@ -317,6 +395,11 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
   }
 
   Future<void> _pickStartDate(BuildContext context) async {
+    if (!_hasAnnualLeaveQuota) {
+      _showNoQuotaSnackBar();
+      return;
+    }
+
     final DateTime now = DateTime.now();
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -329,7 +412,11 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
 
     setState(() {
       _startDate = picked;
-      if (_endDate != null && !_endDate!.isAfter(_startDate!)) {
+      if (_endDate != null && _endDate!.isBefore(_startDate!)) {
+        _endDate = null;
+      }
+
+      if (_endDate != null && _selectedDurationDays > _annualLeaveRemaining) {
         _endDate = null;
       }
     });
@@ -337,16 +424,32 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
 
   Future<void> _pickEndDate(BuildContext context) async {
     if (_startDate == null) return;
+    if (!_hasAnnualLeaveQuota) {
+      _showNoQuotaSnackBar();
+      return;
+    }
 
-    final DateTime initial =
-        _endDate ?? _startDate!.add(const Duration(days: 1));
-    final DateTime firstDate = _startDate!.add(const Duration(days: 1));
+    final DateTime maxByQuota = _startDate!.add(
+      Duration(days: _annualLeaveRemaining - 1),
+    );
+    final DateTime maxByPolicy = DateTime(_startDate!.year + 2);
+    final DateTime lastDate = maxByQuota.isBefore(maxByPolicy)
+        ? maxByQuota
+        : maxByPolicy;
+
+    if (lastDate.isBefore(_startDate!)) {
+      _showNoQuotaSnackBar();
+      return;
+    }
+
+    final DateTime initial = _endDate ?? _startDate!;
+    final DateTime firstDate = _startDate!;
 
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: initial.isAfter(firstDate) ? initial : firstDate,
       firstDate: firstDate,
-      lastDate: DateTime(_startDate!.year + 2),
+      lastDate: lastDate,
     );
 
     if (picked == null) return;
@@ -420,20 +523,31 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
       width: double.infinity,
       height: 55,
       child: ElevatedButton(
-        onPressed: _submitRequest,
+        onPressed: (_isSubmitting || !_hasAnnualLeaveQuota)
+            ? null
+            : _submitRequest,
         style: ElevatedButton.styleFrom(
           backgroundColor: Theme.of(context).colorScheme.primary,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
           ),
         ),
-        child: Text(
-          AppStrings.tr('submit_request'),
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        child: _isSubmitting
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            : Text(
+                AppStrings.tr('submit_request'),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
       ),
     );
   }

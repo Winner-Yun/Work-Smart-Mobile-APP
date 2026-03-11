@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_worksmart_mobile_app/config/language_manager.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/cloudinary/cloudinary_profile_image_service.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/database/realtime_data_controller.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/presentation/homepage_screens/assign_user_face_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -21,6 +24,17 @@ abstract class RegisterFaceLogic extends State<RegisterFaceScanScreen>
   int countdown = 0;
   Timer? timer;
   late AnimationController laserController;
+  bool isUploadingFaceSample = false;
+  bool isApprovingFace = false;
+
+  final RealtimeDataController _realtimeDataController =
+      RealtimeDataController();
+  final CloudinaryProfileImageService _cloudinaryProfileImageService =
+      CloudinaryProfileImageService();
+  final List<String> _capturedFaceImageUrls = <String>[];
+
+  bool get isCaptureBusy =>
+      countdown > 0 || isUploadingFaceSample || isApprovingFace;
 
   @override
   void initState() {
@@ -102,7 +116,7 @@ abstract class RegisterFaceLogic extends State<RegisterFaceScanScreen>
   }
 
   void startCaptureProcess() {
-    if (countdown > 0 || currentPhotoCount >= totalRequired) return;
+    if (isCaptureBusy || currentPhotoCount >= totalRequired) return;
     setState(() => countdown = 3);
     timer = Timer.periodic(const Duration(seconds: 1), (t) {
       if (countdown > 1) {
@@ -116,32 +130,137 @@ abstract class RegisterFaceLogic extends State<RegisterFaceScanScreen>
   }
 
   Future<void> takePhoto() async {
-    if (controller == null || !controller!.value.isInitialized) return;
+    if (controller == null ||
+        !controller!.value.isInitialized ||
+        isCaptureBusy) {
+      return;
+    }
+
+    final String userId = _resolveUserId();
+    if (userId.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppStrings.tr('unable_to_resolve_user_id'))),
+      );
+      return;
+    }
+
+    setState(() => isUploadingFaceSample = true);
+
     try {
-      await controller!.takePicture();
+      final XFile captured = await controller!.takePicture();
+
+      final String imageUrl = await _cloudinaryProfileImageService
+          .uploadFaceSampleImage(
+            imageFile: File(captured.path),
+            userId: userId,
+            sampleIndex: currentPhotoCount + 1,
+          );
+
+      _capturedFaceImageUrls.add(imageUrl);
+
+      await _realtimeDataController.updateUserRecord(userId, {
+        'biometrics': {
+          'face_status': 'pending',
+          'face_count': _capturedFaceImageUrls.length,
+          'face_image_urls': _capturedFaceImageUrls,
+          'registered_date': DateTime.now().toIso8601String(),
+        },
+      });
+
+      if (!mounted) return;
+
       setState(() {
         if (currentPhotoCount < totalRequired) currentPhotoCount++;
       });
-      if (currentPhotoCount == totalRequired) onComplete();
+
+      if (currentPhotoCount == totalRequired) {
+        await onComplete();
+      }
     } catch (e) {
-      debugPrint(e.toString());
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${AppStrings.tr('face_sample_upload_failed')}: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => isUploadingFaceSample = false);
+      }
     }
   }
 
-  void onComplete() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          AppStrings.tr('face_registered_success'),
-          style: const TextStyle(color: Colors.white),
+  Future<void> onComplete() async {
+    final String userId = _resolveUserId();
+    if (userId.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppStrings.tr('unable_to_resolve_user_id'))),
+      );
+      return;
+    }
+
+    if (_capturedFaceImageUrls.isEmpty) {
+      return;
+    }
+
+    if (mounted) {
+      setState(() => isApprovingFace = true);
+    }
+
+    try {
+      await _realtimeDataController.updateUserRecord(userId, {
+        'biometrics': {
+          'face_status': 'pending',
+          'face_count': _capturedFaceImageUrls.length,
+          'face_image_urls': _capturedFaceImageUrls,
+          'registered_date': DateTime.now().toIso8601String(),
+        },
+      });
+
+      await Future.delayed(const Duration(seconds: 5));
+
+      await _realtimeDataController.updateUserRecord(userId, {
+        'biometrics': {
+          'face_status': 'approved',
+          'face_count': _capturedFaceImageUrls.length,
+          'face_image_urls': _capturedFaceImageUrls,
+          'registered_date': DateTime.now().toIso8601String(),
+        },
+      });
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppStrings.tr('face_registered_success'),
+            style: const TextStyle(color: Colors.white),
+          ),
+          backgroundColor: AppColors.primary,
+          behavior: SnackBarBehavior.floating,
         ),
-        backgroundColor: AppColors.primary,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-    Future.delayed(
-      const Duration(milliseconds: 800),
-      () => Navigator.pop(context, true),
-    );
+      );
+
+      Navigator.pop(context, true);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${AppStrings.tr('face_sample_upload_failed')}: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => isApprovingFace = false);
+      }
+    }
+  }
+
+  String _resolveUserId() {
+    return (widget.loginData?['uid'] ?? '').toString().trim();
   }
 }

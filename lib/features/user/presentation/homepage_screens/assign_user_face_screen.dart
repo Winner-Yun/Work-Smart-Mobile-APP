@@ -138,7 +138,7 @@ class _RegisterFaceScanScreenState extends RegisterFaceLogic {
   }
 
   Widget _buildActionButtons(Color primary) {
-    bool isProcessing = countdown > 0;
+    bool isProcessing = isCaptureBusy;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 40),
       child: Row(

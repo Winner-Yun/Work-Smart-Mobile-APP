@@ -9,6 +9,7 @@ import 'package:flutter_worksmart_mobile_app/features/admin/dashboard/logic/mang
 import 'package:flutter_worksmart_mobile_app/shared/model/admin_models/dashboard_model.dart';
 import 'package:flutter_worksmart_mobile_app/shared/widget/admin/admin_header_bar.dart';
 import 'package:flutter_worksmart_mobile_app/shared/widget/admin/admin_side_bar.dart';
+import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class MangeLeaveEmpDashboardScreen extends StatefulWidget {
@@ -48,6 +49,55 @@ class _MangeLeaveEmpDashboardScreenState
     return request.leaveType.toLowerCase().contains('sick');
   }
 
+  String _initialsFromName(String name) {
+    final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty);
+    if (parts.isEmpty) {
+      return '?';
+    }
+
+    final list = parts.toList();
+    if (list.length == 1) {
+      return list.first.substring(0, 1).toUpperCase();
+    }
+    return (list.first.substring(0, 1) + list.last.substring(0, 1))
+        .toUpperCase();
+  }
+
+  Widget _buildLeaveProfileAvatar(LeaveRequest request, {double radius = 24}) {
+    final imageUrl = request.profileUrl.trim();
+    final initials = _initialsFromName(request.employeeName);
+    final primary = Theme.of(context).colorScheme.primary;
+
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: primary.withOpacity(0.15),
+      child: ClipOval(
+        child: imageUrl.isNotEmpty
+            ? Image.network(
+                imageUrl,
+                width: radius * 2,
+                height: radius * 2,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Center(
+                  child: Text(
+                    initials,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: primary,
+                    ),
+                  ),
+                ),
+              )
+            : Center(
+                child: Text(
+                  initials,
+                  style: TextStyle(fontWeight: FontWeight.w700, color: primary),
+                ),
+              ),
+      ),
+    );
+  }
+
   Color _statusFilterColor(String status) {
     switch (status) {
       case 'pending':
@@ -59,6 +109,62 @@ class _MangeLeaveEmpDashboardScreenState
       default:
         return Theme.of(context).colorScheme.outline;
     }
+  }
+
+  String _formatDayMonthYear(String rawDate) {
+    final DateTime? parsed = DateTime.tryParse(rawDate);
+    if (parsed == null) {
+      return rawDate;
+    }
+    return DateFormat('dd MMM yyyy').format(parsed.toLocal());
+  }
+
+  bool _isAnnualLeaveType(String leaveType) {
+    return leaveType.toLowerCase().contains('annual');
+  }
+
+  String _formatLeaveDateRange(
+    LeaveRequest request, {
+    bool useNewLine = false,
+  }) {
+    final String start = _formatDayMonthYear(request.startDate);
+    final String end = _formatDayMonthYear(request.endDate);
+    if (start == end) {
+      return start;
+    }
+
+    if (useNewLine && _isAnnualLeaveType(request.leaveType)) {
+      return '$start\n- $end';
+    }
+
+    return '$start - $end';
+  }
+
+  Future<void> _updateLeaveStatusWithFeedback(
+    String requestId,
+    String newStatus,
+  ) async {
+    final bool success = await _controller.updateRequestStatus(
+      requestId,
+      newStatus,
+    );
+
+    if (!mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          success
+              ? 'Leave status updated to ${newStatus.toUpperCase()}.'
+              : 'Failed to update leave status.',
+        ),
+        backgroundColor: success
+            ? Theme.of(context).colorScheme.primary
+            : Theme.of(context).colorScheme.error,
+      ),
+    );
   }
 
   Future<void> _viewAttachment(LeaveRequest request) async {
@@ -968,7 +1074,13 @@ class _MangeLeaveEmpDashboardScreenState
                             // Dates
                             Expanded(
                               child: Text(
-                                '${request.startDate} - ${request.endDate}',
+                                _formatLeaveDateRange(
+                                  request,
+                                  useNewLine: true,
+                                ),
+                                maxLines: _isAnnualLeaveType(request.leaveType)
+                                    ? 2
+                                    : 1,
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w500,
@@ -1086,11 +1198,12 @@ class _MangeLeaveEmpDashboardScreenState
                                               .withOpacity(0.2),
                                           padding: const EdgeInsets.all(8),
                                         ),
-                                        onPressed: () =>
-                                            _controller.updateRequestStatus(
-                                              request.id,
-                                              'approved',
-                                            ),
+                                        onPressed: () async {
+                                          await _updateLeaveStatusWithFeedback(
+                                            request.id,
+                                            'approved',
+                                          );
+                                        },
                                       ),
                                     ),
                                     const SizedBox(width: 8),
@@ -1109,11 +1222,12 @@ class _MangeLeaveEmpDashboardScreenState
                                               .withOpacity(0.2),
                                           padding: const EdgeInsets.all(8),
                                         ),
-                                        onPressed: () =>
-                                            _controller.updateRequestStatus(
-                                              request.id,
-                                              'rejected',
-                                            ),
+                                        onPressed: () async {
+                                          await _updateLeaveStatusWithFeedback(
+                                            request.id,
+                                            'rejected',
+                                          );
+                                        },
                                       ),
                                     ),
                                     const SizedBox(width: 8),
@@ -1301,20 +1415,7 @@ class _MangeLeaveEmpDashboardScreenState
                           ),
                           child: Row(
                             children: [
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.primary.withOpacity(0.12),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Icon(
-                                  Icons.person_rounded,
-                                  size: 20,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                              ),
+                              _buildLeaveProfileAvatar(request, radius: 22),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
@@ -1359,13 +1460,13 @@ class _MangeLeaveEmpDashboardScreenState
                         _buildDetailRow(
                           Icons.date_range_rounded,
                           'Start Date',
-                          request.startDate,
+                          _formatDayMonthYear(request.startDate),
                         ),
                         const SizedBox(height: 16),
                         _buildDetailRow(
                           Icons.event_available_rounded,
                           'End Date',
-                          request.endDate,
+                          _formatDayMonthYear(request.endDate),
                         ),
                         const SizedBox(height: 16),
                         _buildDetailRow(
@@ -1438,9 +1539,9 @@ class _MangeLeaveEmpDashboardScreenState
           actions: [
             if (request.status == 'pending')
               FilledButton.icon(
-                onPressed: () {
+                onPressed: () async {
                   Navigator.pop(context);
-                  _controller.updateRequestStatus(request.id, 'rejected');
+                  await _updateLeaveStatusWithFeedback(request.id, 'rejected');
                 },
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
@@ -1455,9 +1556,9 @@ class _MangeLeaveEmpDashboardScreenState
               ),
             if (request.status == 'pending')
               FilledButton.icon(
-                onPressed: () {
+                onPressed: () async {
                   Navigator.pop(context);
-                  _controller.updateRequestStatus(request.id, 'approved');
+                  await _updateLeaveStatusWithFeedback(request.id, 'approved');
                 },
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
@@ -1782,7 +1883,16 @@ class _MangeLeaveEmpDashboardScreenState
                                           ),
                                           const SizedBox(height: 4),
                                           Text(
-                                            '${request.startDate} - ${request.endDate}',
+                                            _formatLeaveDateRange(
+                                              request,
+                                              useNewLine: true,
+                                            ),
+                                            maxLines:
+                                                _isAnnualLeaveType(
+                                                  request.leaveType,
+                                                )
+                                                ? 2
+                                                : 1,
                                             style: TextStyle(
                                               fontSize: 13,
                                               fontWeight: FontWeight.w600,
@@ -2004,13 +2114,14 @@ class _MangeLeaveEmpDashboardScreenState
                   ),
                 ),
                 ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     if (selectedStatus != request.status) {
-                      _controller.updateRequestStatus(
+                      await _updateLeaveStatusWithFeedback(
                         request.id,
                         selectedStatus,
                       );
                     }
+                    if (!context.mounted) return;
                     Navigator.pop(context);
                   },
                   style: ElevatedButton.styleFrom(

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
-import 'package:flutter_worksmart_mobile_app/core/util/mock_data/userFinalData.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/database/user_data.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/logic/leave_request_logic.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/presentation/attendence_screens/leave_detail_view_screen.dart';
 import 'package:flutter_worksmart_mobile_app/shared/model/activity_models/leave_record.dart';
@@ -45,7 +45,7 @@ class _LeaveAttendanceScreenState extends State<LeaveAttendanceScreen> {
   void _loadData() {
     final currentUserData = usersFinalData.firstWhere(
       (user) => user['uid'] == (widget.loginData?['uid'] ?? "user_winner_777"),
-      orElse: () => usersFinalData[0],
+      orElse: () => defaultUserRecord,
     );
     _currentUser = UserProfile.fromJson(currentUserData);
     _leaveRecords = _currentUser.leaveRecords;
@@ -130,6 +130,17 @@ class _LeaveAttendanceScreenState extends State<LeaveAttendanceScreen> {
       userId: _currentUser.uid,
     );
     if (!removed) return;
+
+    setState(() {
+      _selectedForRemoveRequestId = null;
+      _isRemoveMode = false;
+      _loadData();
+    });
+  }
+
+  Future<void> _openLeaveRequest(String routeName) async {
+    await Navigator.pushNamed(context, routeName, arguments: loginData);
+    if (!mounted) return;
 
     setState(() {
       _selectedForRemoveRequestId = null;
@@ -325,13 +336,7 @@ class _LeaveAttendanceScreenState extends State<LeaveAttendanceScreen> {
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () {
-                    Navigator.pushNamed(
-                      context,
-                      AppRoute.sickleaveScreen,
-                      arguments: loginData,
-                    );
-                  },
+                  onPressed: () => _openLeaveRequest(AppRoute.sickleaveScreen),
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size(0, 55),
                     side: BorderSide(
@@ -355,13 +360,8 @@ class _LeaveAttendanceScreenState extends State<LeaveAttendanceScreen> {
               const SizedBox(width: 15),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushNamed(
-                      context,
-                      AppRoute.annualleaveScreen,
-                      arguments: loginData,
-                    );
-                  },
+                  onPressed: () =>
+                      _openLeaveRequest(AppRoute.annualleaveScreen),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.primary,
                     minimumSize: const Size(0, 55),

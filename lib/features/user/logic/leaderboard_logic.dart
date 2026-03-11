@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_worksmart_mobile_app/core/util/mock_data/userFinalData.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/database/user_data.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/presentation/achievement_screens/empleaderboard_screen.dart';
 import 'package:flutter_worksmart_mobile_app/shared/model/user_model/user_profile.dart';
 
@@ -44,7 +44,6 @@ abstract class LeaderboardLogic extends State<LeaderboardScreen> {
           (normalizedLoginName?.isNotEmpty == true &&
               normalizedDisplayName == normalizedLoginName);
 
-      // Determine trend (optional - can be extended with historical data if available)
       int trend = user.achievements.rankTrend;
 
       return {

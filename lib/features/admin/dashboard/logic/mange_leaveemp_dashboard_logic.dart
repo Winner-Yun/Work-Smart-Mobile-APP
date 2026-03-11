@@ -1,26 +1,46 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_worksmart_mobile_app/core/util/mock_data/userFinalData.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/database/realtime_data_controller.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/database/user_data.dart';
 import 'package:flutter_worksmart_mobile_app/shared/model/admin_models/dashboard_model.dart';
 
-// Helper function to convert leave records from usersFinalData to LeaveRequest
-List<LeaveRequest> _getLeaveRequestsFromMockData() {
+List<LeaveRequest> _getLeaveRequestsFromUserData() {
   final List<LeaveRequest> requests = [];
 
   for (var user in usersFinalData) {
     final leaveRecords = user['leave_records'] as List<dynamic>?;
     if (leaveRecords != null) {
       for (var record in leaveRecords) {
+        final dynamic statusUpdatedAtRaw =
+            record['status_updated_at_utc'] ??
+            record['status_updated_at'] ??
+            record['updated_at_utc'] ??
+            record['updated_at'];
+        final dynamic statusUpdatedAtUnixRaw =
+            record['status_updated_at_unix'] ??
+            record['status_updated_at_ts'] ??
+            record['updated_at_unix'] ??
+            record['updated_at_ts'];
+
+        final String? statusUpdatedAtUtc = _toUtcIsoString(statusUpdatedAtRaw);
+        final int? statusUpdatedAtUnix =
+            _toUnixMillis(statusUpdatedAtUnixRaw) ??
+            _toUnixMillis(statusUpdatedAtUtc);
+
         requests.add(
           LeaveRequest(
-            id: record['request_id'] as String,
-            employeeId: user['uid'] as String,
-            employeeName: user['display_name'] as String,
-            leaveType: _mapLeaveType(record['type'] as String),
-            startDate: record['start_date'] as String,
-            endDate: record['end_date'] as String,
-            reason: record['reason'] as String,
+            id: (record['request_id'] ?? '').toString(),
+            employeeId: (user['uid'] ?? '').toString(),
+            employeeName: (user['display_name'] ?? '').toString(),
+            profileUrl: (user['profile_url'] ?? '').toString(),
+            leaveType: _mapLeaveType((record['type'] ?? '').toString()),
+            startDate: _normalizeDateString(record['start_date']),
+            endDate: _normalizeDateString(record['end_date']),
+            reason: (record['reason'] ?? '').toString(),
             attachmentUrl: record['attachment_url'] as String?,
-            status: record['status'] as String,
+            status: (record['status'] ?? 'pending').toString().toLowerCase(),
+            statusUpdatedAtUtc: statusUpdatedAtUtc,
+            statusUpdatedAtUnix: statusUpdatedAtUnix,
           ),
         );
       }
@@ -41,9 +61,101 @@ String _mapLeaveType(String type) {
   return typeMap[type] ?? type;
 }
 
+String _normalizeDateString(dynamic value) {
+  final String? maybeIso = _toUtcIsoString(value);
+  if (maybeIso == null || maybeIso.isEmpty) {
+    return DateTime.now().toUtc().toIso8601String();
+  }
+  return maybeIso;
+}
+
+String? _toUtcIsoString(dynamic value) {
+  if (value == null) return null;
+
+  if (value is Timestamp) {
+    return value.toDate().toUtc().toIso8601String();
+  }
+
+  if (value is DateTime) {
+    return value.toUtc().toIso8601String();
+  }
+
+  if (value is int) {
+    return DateTime.fromMillisecondsSinceEpoch(
+      value,
+      isUtc: true,
+    ).toIso8601String();
+  }
+
+  if (value is num) {
+    return DateTime.fromMillisecondsSinceEpoch(
+      value.toInt(),
+      isUtc: true,
+    ).toIso8601String();
+  }
+
+  final String text = value.toString().trim();
+  if (text.isEmpty) return null;
+
+  final DateTime? parsedDate = DateTime.tryParse(text);
+  if (parsedDate != null) {
+    return parsedDate.toUtc().toIso8601String();
+  }
+
+  return text;
+}
+
+int? _toUnixMillis(dynamic value) {
+  if (value == null) return null;
+
+  if (value is Timestamp) {
+    return value.toDate().toUtc().millisecondsSinceEpoch;
+  }
+
+  if (value is DateTime) {
+    return value.toUtc().millisecondsSinceEpoch;
+  }
+
+  if (value is int) {
+    return value;
+  }
+
+  if (value is num) {
+    return value.toInt();
+  }
+
+  final String text = value.toString().trim();
+  if (text.isEmpty) return null;
+
+  final int? asInt = int.tryParse(text);
+  if (asInt != null) {
+    return asInt;
+  }
+
+  final DateTime? parsedDate = DateTime.tryParse(text);
+  if (parsedDate != null) {
+    return parsedDate.toUtc().millisecondsSinceEpoch;
+  }
+
+  return null;
+}
+
+List<Map<String, dynamic>> _copyLeaveRecords(dynamic value) {
+  if (value is! List) {
+    return <Map<String, dynamic>>[];
+  }
+
+  return value
+      .whereType<Map>()
+      .map((item) => Map<String, dynamic>.from(item))
+      .toList();
+}
+
 class LeaveRequestsController extends ChangeNotifier {
-  late final List<LeaveRequest> _allRequests;
-  late List<LeaveRequest> _filteredRequests;
+  final RealtimeDataController _realtimeDataController;
+
+  List<LeaveRequest> _allRequests = <LeaveRequest>[];
+  List<LeaveRequest> _filteredRequests = <LeaveRequest>[];
   String _searchQuery = '';
   String _leaveTypeFilter = 'all';
   String _statusFilter = 'all';
@@ -51,9 +163,10 @@ class LeaveRequestsController extends ChangeNotifier {
   DateTime? _endDate;
   bool _isLoading = false;
 
-  LeaveRequestsController() {
-    _allRequests = _getLeaveRequestsFromMockData();
-    _filteredRequests = List.from(_allRequests);
+  LeaveRequestsController({RealtimeDataController? realtimeDataController})
+    : _realtimeDataController =
+          realtimeDataController ?? RealtimeDataController() {
+    _reloadRequestsFromSource(notify: false);
   }
 
   List<LeaveRequest> get filteredRequests => _filteredRequests;
@@ -67,6 +180,14 @@ class LeaveRequestsController extends ChangeNotifier {
   void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();
+  }
+
+  void _reloadRequestsFromSource({bool notify = true}) {
+    _allRequests = _getLeaveRequestsFromUserData();
+    _applyFilters();
+    if (notify) {
+      notifyListeners();
+    }
   }
 
   void filterRequests(String query) {
@@ -133,8 +254,12 @@ class LeaveRequestsController extends ChangeNotifier {
 
       // Date range filter
       if (_startDate != null || _endDate != null) {
-        final requestStart = DateTime.parse(request.startDate);
-        final requestEnd = DateTime.parse(request.endDate);
+        final DateTime? requestStart = DateTime.tryParse(request.startDate);
+        final DateTime? requestEnd = DateTime.tryParse(request.endDate);
+
+        if (requestStart == null || requestEnd == null) {
+          return false;
+        }
 
         if (_startDate != null && requestEnd.isBefore(_startDate!)) {
           return false;
@@ -157,23 +282,63 @@ class LeaveRequestsController extends ChangeNotifier {
     };
   }
 
-  void updateRequestStatus(String requestId, String newStatus) {
-    final index = _allRequests.indexWhere((r) => r.id == requestId);
-    if (index != -1) {
-      final oldRequest = _allRequests[index];
-      _allRequests[index] = LeaveRequest(
-        id: oldRequest.id,
-        employeeId: oldRequest.employeeId,
-        employeeName: oldRequest.employeeName,
-        leaveType: oldRequest.leaveType,
-        startDate: oldRequest.startDate,
-        endDate: oldRequest.endDate,
-        reason: oldRequest.reason,
-        attachmentUrl: oldRequest.attachmentUrl,
-        status: newStatus,
-      );
-      _applyFilters();
-      notifyListeners();
+  Future<bool> updateRequestStatus(String requestId, String newStatus) async {
+    final String normalizedStatus = newStatus.trim().toLowerCase();
+    if (normalizedStatus != 'pending' &&
+        normalizedStatus != 'approved' &&
+        normalizedStatus != 'rejected') {
+      return false;
     }
+
+    bool didUpdate = false;
+    _setLoading(true);
+
+    try {
+      final int userIndex = usersFinalData.indexWhere((user) {
+        final List<Map<String, dynamic>> leaveRecords = _copyLeaveRecords(
+          user['leave_records'],
+        );
+        return leaveRecords.any(
+          (record) => record['request_id']?.toString() == requestId,
+        );
+      });
+
+      if (userIndex < 0) {
+        return false;
+      }
+
+      final String uid =
+          usersFinalData[userIndex]['uid']?.toString().trim() ?? '';
+      if (uid.isEmpty) {
+        return false;
+      }
+
+      final List<Map<String, dynamic>> leaveRecords = _copyLeaveRecords(
+        usersFinalData[userIndex]['leave_records'],
+      );
+
+      final int leaveIndex = leaveRecords.indexWhere(
+        (record) => record['request_id']?.toString() == requestId,
+      );
+      if (leaveIndex < 0) {
+        return false;
+      }
+
+      leaveRecords[leaveIndex]['status'] = normalizedStatus;
+
+      await _realtimeDataController.updateUserRecord(uid, {
+        'leave_records': leaveRecords,
+      });
+
+      usersFinalData[userIndex]['leave_records'] = leaveRecords;
+      _reloadRequestsFromSource(notify: false);
+      didUpdate = true;
+    } catch (_) {
+      didUpdate = false;
+    } finally {
+      _setLoading(false);
+    }
+
+    return didUpdate;
   }
 }

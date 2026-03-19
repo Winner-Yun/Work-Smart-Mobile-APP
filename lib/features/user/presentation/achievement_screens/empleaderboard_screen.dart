@@ -280,9 +280,15 @@ class _LeaderboardScreenState extends LeaderboardLogic {
           ],
         ).animate().scale(delay: delay),
         const SizedBox(height: 8),
-        Text(
-          emp['name'],
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+        SizedBox(
+          width: 90,
+          child: Text(
+            emp['name'],
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+          ),
         ),
         if (isCurrentUser) ...[
           const SizedBox(height: 4),

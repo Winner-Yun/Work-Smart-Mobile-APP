@@ -87,9 +87,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
 
       setState(() => _resolvedOfficeName = officeName);
-    } catch (_) {
-      // Keep office id fallback when office name cannot be resolved.
-    }
+    } catch (_) {}
   }
 
   Future<void> _pickImage(ImageSource source) async {
@@ -468,7 +466,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildTelegramStatus(BuildContext context) {
     final bool isConnected = _currentUser.telegram.isConnected;
     final String telegramLabel = isConnected
-        ? _currentUser.telegram.telegramUsername
+        ? AppStrings.tr('connected')
         : AppStrings.tr('not_connected');
     return Row(
       children: [
@@ -505,11 +503,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         if (!isConnected)
           TextButton(
-            onPressed: () => Navigator.pushNamed(
-              context,
-              AppRoute.telegramConfig,
-              arguments: widget.loginData,
-            ),
+            onPressed: () async {
+              await Navigator.pushNamed(
+                context,
+                AppRoute.telegramConfig,
+                arguments: widget.loginData,
+              );
+
+              if (!mounted) return;
+              setState(_loadData);
+            },
             style: TextButton.styleFrom(
               backgroundColor: Theme.of(
                 context,

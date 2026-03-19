@@ -246,6 +246,83 @@ class LeaveRequestLogic {
     }).toList();
   }
 
+  static DateTime normalizeDate(DateTime date) {
+    return DateTime(date.year, date.month, date.day);
+  }
+
+  static bool isDateRangeOverlappingExisting({
+    required DateTime startDate,
+    required DateTime endDate,
+    required List<LeaveRecord> existingRecords,
+  }) {
+    final DateTime normalizedStart = normalizeDate(startDate);
+    final DateTime normalizedEnd = normalizeDate(endDate);
+
+    final DateTime rangeStart = normalizedStart.isBefore(normalizedEnd)
+        ? normalizedStart
+        : normalizedEnd;
+    final DateTime rangeEnd = normalizedStart.isAfter(normalizedEnd)
+        ? normalizedStart
+        : normalizedEnd;
+
+    for (final record in existingRecords) {
+      final DateTime recordStart = normalizeDate(record.startDate);
+      final DateTime recordEnd = normalizeDate(record.endDate);
+
+      final bool isOverlapping =
+          !rangeEnd.isBefore(recordStart) && !rangeStart.isAfter(recordEnd);
+      if (isOverlapping) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  static DateTime? findInitialSelectableDate({
+    required DateTime preferredDate,
+    required DateTime firstDate,
+    required DateTime lastDate,
+    required bool Function(DateTime date) selectableDayPredicate,
+  }) {
+    final DateTime normalizedFirst = normalizeDate(firstDate);
+    final DateTime normalizedLast = normalizeDate(lastDate);
+
+    if (normalizedLast.isBefore(normalizedFirst)) {
+      return null;
+    }
+
+    DateTime candidate = normalizeDate(preferredDate);
+    if (candidate.isBefore(normalizedFirst)) {
+      candidate = normalizedFirst;
+    }
+    if (candidate.isAfter(normalizedLast)) {
+      candidate = normalizedLast;
+    }
+
+    for (
+      DateTime date = candidate;
+      !date.isAfter(normalizedLast);
+      date = date.add(const Duration(days: 1))
+    ) {
+      if (selectableDayPredicate(date)) {
+        return date;
+      }
+    }
+
+    for (
+      DateTime date = normalizedFirst;
+      date.isBefore(candidate);
+      date = date.add(const Duration(days: 1))
+    ) {
+      if (selectableDayPredicate(date)) {
+        return date;
+      }
+    }
+
+    return null;
+  }
+
   static String formatDateRange(LeaveRecord record) {
     final DateTime startDate = record.startDate;
     final DateTime endDate = record.endDate;

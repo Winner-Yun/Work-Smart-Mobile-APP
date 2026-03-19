@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_admin_route.dart';
@@ -23,6 +25,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
   late final ManageUsersController _controller;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late TextEditingController _searchController;
+  final Random _random = Random.secure();
   static const int _minNameLength = 2;
   static const int _maxNameLength = 60;
   static const int _minRoleLength = 2;
@@ -203,9 +206,32 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
         .join('_');
   }
 
-  String _buildUserId(String name) {
+  String _buildUserId(String name, {String? preferredSuffix}) {
     final slug = _slugFromName(name);
-    return slug.isEmpty ? '' : 'user_${slug}_001';
+    if (slug.isEmpty) {
+      return '';
+    }
+
+    final normalizedPreferredSuffix = (preferredSuffix ?? '')
+        .replaceAll(RegExp(r'[^0-9]'), '')
+        .trim();
+    String candidate = normalizedPreferredSuffix.isEmpty
+        ? 'user_${slug}_${_generateRandomId()}'
+        : 'user_${slug}_$normalizedPreferredSuffix';
+
+    while (_controller.isUidTaken(candidate)) {
+      candidate = 'user_${slug}_${_generateRandomId()}';
+    }
+
+    return candidate;
+  }
+
+  String _generateRandomId({int length = 3}) {
+    const chars = '0123456789';
+    return List.generate(
+      length,
+      (_) => chars[_random.nextInt(chars.length)],
+    ).join();
   }
 
   String _buildEmail(String name) {
@@ -564,29 +590,6 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                         ),
                       ],
                     ),
-                    if (_controller.selectedStatus != 'all' ||
-                        _controller.selectedDepartment != 'all' ||
-                        _searchController.text.isNotEmpty)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          '${(_controller.selectedStatus != 'all' ? 1 : 0) + (_controller.selectedDepartment != 'all' ? 1 : 0) + (_searchController.text.isNotEmpty ? 1 : 0)} ${AppStrings.tr('active_filters')}',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                        ),
-                      ),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -1280,6 +1283,16 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
     String? selectedDepartment = user.departmentId.trim().isEmpty
         ? null
         : user.departmentId.trim();
+    if (selectedOffice != null && selectedDepartment != null) {
+      final initialOfficeDepartments = _controller.getDepartmentsForOffice(
+        selectedOffice,
+      );
+      if (!initialOfficeDepartments.contains(selectedDepartment)) {
+        selectedDepartment = _controller.getPreferredDepartmentForOffice(
+          selectedOffice,
+        );
+      }
+    }
     bool isSaving = false;
     final TextEditingController roleController = TextEditingController(
       text: user.roleTitle,
@@ -1306,12 +1319,16 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
               safeOfficeOptions.insert(0, selectedOffice!);
             }
 
-            final departmentOptions = _controller.getAllDepartments();
+            final departmentOptions = selectedOffice == null
+                ? const <String>[]
+                : _controller.getDepartmentsForOffice(selectedOffice!);
             final safeDepartmentOptions = departmentOptions.toSet().toList()
               ..sort();
             if (selectedDepartment != null &&
                 !safeDepartmentOptions.contains(selectedDepartment)) {
-              safeDepartmentOptions.insert(0, selectedDepartment!);
+              selectedDepartment = _controller.getPreferredDepartmentForOffice(
+                selectedOffice ?? '',
+              );
             }
 
             final statusColor = selectedStatus == 'active'
@@ -1542,13 +1559,24 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                             onChanged: (value) {
                               setState(() {
                                 selectedOffice = value;
-                                if (value != null) {
-                                  final preferredDepartment = _controller
-                                      .getPreferredDepartmentForOffice(value);
-                                  if (preferredDepartment != null &&
-                                      preferredDepartment.trim().isNotEmpty) {
-                                    selectedDepartment = preferredDepartment;
-                                  }
+                                if (value == null) {
+                                  selectedDepartment = null;
+                                  return;
+                                }
+
+                                final officeDepartments = _controller
+                                    .getDepartmentsForOffice(value);
+                                final preferredDepartment = _controller
+                                    .getPreferredDepartmentForOffice(value);
+
+                                if (preferredDepartment != null &&
+                                    preferredDepartment.trim().isNotEmpty) {
+                                  selectedDepartment = preferredDepartment;
+                                } else if (selectedDepartment != null &&
+                                    !officeDepartments.contains(
+                                      selectedDepartment,
+                                    )) {
+                                  selectedDepartment = null;
                                 }
                               });
                             },
@@ -2380,10 +2408,26 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
     String? selectedDepartment;
     String selectedGender = 'male';
     String selectedStatus = 'active';
+    String generatedSuffix = _generateRandomId();
 
     void updateAutoFields(String name) {
-      if (name.trim().isEmpty) return;
-      if (!uidEdited) uidController.text = _buildUserId(name);
+      if (name.trim().isEmpty) {
+        if (!uidEdited) {
+          uidController.clear();
+        }
+        return;
+      }
+      if (!uidEdited) {
+        final generatedUid = _buildUserId(
+          name,
+          preferredSuffix: generatedSuffix,
+        );
+        uidController.text = generatedUid;
+        final separatorIndex = generatedUid.lastIndexOf('_');
+        if (separatorIndex != -1 && separatorIndex < generatedUid.length - 1) {
+          generatedSuffix = generatedUid.substring(separatorIndex + 1);
+        }
+      }
       if (!emailEdited) emailController.text = _buildEmail(name);
     }
 

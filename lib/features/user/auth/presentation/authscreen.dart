@@ -22,6 +22,7 @@ class _AuthscreenState extends State<Authscreen> {
   final _passwordController = TextEditingController();
   bool obscurePassword = true;
   bool _handledSuspendedRouteAlert = false;
+  bool _handledDeletedRouteAlert = false;
   late AuthLogic authLogic;
 
   // ─────────── SCREEN INITIALIZATION ───────────
@@ -49,20 +50,24 @@ class _AuthscreenState extends State<Authscreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    if (_handledSuspendedRouteAlert) {
-      return;
-    }
-
     final args = ModalRoute.of(context)?.settings.arguments;
     if (args is! Map<String, dynamic>) {
       return;
     }
 
-    if (args['showSuspendedDialog'] == true) {
+    if (!_handledSuspendedRouteAlert && args['showSuspendedDialog'] == true) {
       _handledSuspendedRouteAlert = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         authLogic.showSuspendedAlert();
+      });
+    }
+
+    if (!_handledDeletedRouteAlert && args['showDeletedDialog'] == true) {
+      _handledDeletedRouteAlert = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        authLogic.showDeletedAccountAlert();
       });
     }
   }

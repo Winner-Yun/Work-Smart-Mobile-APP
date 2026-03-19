@@ -37,9 +37,46 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(AppStrings.tr('sick_leave_no_remaining_days')),
+        content: Text(
+          AppStrings.tr('sick_leave_no_remaining_days'),
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: Colors.red,
       ),
+    );
+  }
+
+  void _showDateAlreadyRequestedSnackBar() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          AppStrings.tr('leave_date_already_requested'),
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
+  void _showNoAvailableDatesSnackBar() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          AppStrings.tr('leave_no_available_dates'),
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
+  bool _isDateAlreadyRequested(DateTime date) {
+    return LeaveRequestLogic.isDateRangeOverlappingExisting(
+      startDate: date,
+      endDate: date,
+      existingRecords: _currentUser.leaveRecords,
     );
   }
 
@@ -92,14 +129,34 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
     }
 
     final DateTime now = DateTime.now();
+    final DateTime firstDate = DateTime(now.year, now.month, now.day);
+    final DateTime lastDate = DateTime(now.year + 1, now.month, now.day);
+    final DateTime? initialDate = LeaveRequestLogic.findInitialSelectableDate(
+      preferredDate: _selectedDate ?? firstDate,
+      firstDate: firstDate,
+      lastDate: lastDate,
+      selectableDayPredicate: (date) => !_isDateAlreadyRequested(date),
+    );
+
+    if (initialDate == null) {
+      _showNoAvailableDatesSnackBar();
+      return;
+    }
+
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _selectedDate ?? now,
-      firstDate: now,
-      lastDate: DateTime(now.year + 1),
+      initialDate: initialDate,
+      firstDate: firstDate,
+      lastDate: lastDate,
+      selectableDayPredicate: (date) => !_isDateAlreadyRequested(date),
     );
 
     if (picked != null) {
+      if (_isDateAlreadyRequested(picked)) {
+        _showDateAlreadyRequestedSnackBar();
+        return;
+      }
+
       setState(() {
         _selectedDate = picked;
       });
@@ -123,6 +180,15 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
     final isFileValid = _pickedFile != null;
 
     if (!isReasonValid || !isDateValid || !isFileValid) {
+      return;
+    }
+
+    if (LeaveRequestLogic.isDateRangeOverlappingExisting(
+      startDate: _selectedDate!,
+      endDate: _selectedDate!,
+      existingRecords: _currentUser.leaveRecords,
+    )) {
+      _showDateAlreadyRequestedSnackBar();
       return;
     }
 
@@ -151,7 +217,10 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
     if (!submitted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppStrings.tr('leave_request_submit_failed')),
+          content: Text(
+            AppStrings.tr('leave_request_submit_failed'),
+            style: TextStyle(color: Colors.white),
+          ),
           backgroundColor: Colors.red,
         ),
       );
@@ -160,7 +229,10 @@ class _SickLeaveRequestScreenState extends State<SickLeaveRequestScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(AppStrings.tr('sick_request_submitted')),
+        content: Text(
+          AppStrings.tr('sick_request_submitted'),
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: Theme.of(context).colorScheme.primary,
       ),
     );

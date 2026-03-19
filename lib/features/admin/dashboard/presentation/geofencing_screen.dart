@@ -929,6 +929,10 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
       initialSickLeave: office.policy.sickLeaveLimit,
       initialBotUsername: office.telegramConfig.botUsername,
       initialBotLink: office.telegramConfig.botLink,
+      initialLat: office.geofence.lat,
+      initialLng: office.geofence.lng,
+      initialRadiusMeters: office.geofence.radiusMeters,
+      initialAddress: office.geofence.addressLabel,
     );
   }
 
@@ -947,6 +951,10 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
     int? initialSickLeave,
     String? initialBotUsername,
     String? initialBotLink,
+    double? initialLat,
+    double? initialLng,
+    int? initialRadiusMeters,
+    String? initialAddress,
   }) {
     final formKey = GlobalKey<FormState>();
     final nameCtrl = TextEditingController(text: initialName);
@@ -1013,9 +1021,12 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
 
     final botUsernameCtrl = TextEditingController(text: initialBotUsername);
     final botLinkCtrl = TextEditingController(text: initialBotLink);
-    double? selectedLat;
-    double? selectedLng;
-    String selectedAddress = "";
+    double? selectedLat = initialLat;
+    double? selectedLng = initialLng;
+    String selectedAddress = (initialAddress ?? '').trim();
+    int selectedRadiusMeters = (initialRadiusMeters ?? 200) > 0
+        ? (initialRadiusMeters ?? 200)
+        : 200;
 
     showDialog(
       context: context,
@@ -1049,7 +1060,6 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
           }
 
           final hasLocation =
-              isEdit ||
               isAddingDepartmentToExistingOffice ||
               (selectedLat != null && selectedLng != null);
           final bool isCustomScanAllowSelected =
@@ -1976,7 +1986,7 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
                               ? AppStrings.tr('telegram_bot_link_required')
                               : null,
                         ),
-                        if (!isEdit) ...[
+                        if (!isAddingDepartmentToExistingOffice) ...[
                           const SizedBox(height: 24),
                           InkWell(
                             onTap: hasAllRequiredData
@@ -2134,11 +2144,19 @@ class _GeofencingScreenState extends State<GeofencingScreen> {
                             resolveLateBufferMinutes();
 
                         if (isEdit) {
+                          final fallbackAddress =
+                              '${AppStrings.tr('latitude')}: ${selectedLat!.toStringAsFixed(4)}, ${AppStrings.tr('longitude')}: ${selectedLng!.toStringAsFixed(4)}';
                           await _controller.updateOfficeDetails(
                             officeId: officeId!,
                             newName: nameCtrl.text,
                             newGroup: groupCtrl.text,
                             oldDepartmentName: selectedDepartmentForEdit,
+                            lat: selectedLat,
+                            lng: selectedLng,
+                            radiusMeters: selectedRadiusMeters,
+                            addressLabel: selectedAddress.isNotEmpty
+                                ? selectedAddress
+                                : fallbackAddress,
                             checkInStart: checkInCtrl.text.trim(),
                             checkOutEnd: checkOutCtrl.text.trim(),
                             lateBufferMinutes: resolvedLateBufferMinutes,

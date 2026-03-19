@@ -5,6 +5,7 @@ import 'package:flutter_worksmart_mobile_app/shared/model/user_model/user_profil
 class PerformanceLeaderboardController extends ChangeNotifier {
   List<UserProfile> _allEmployees = [];
   List<UserProfile> _filteredEmployees = [];
+  final Map<String, String> _searchIndexByUid = <String, String>{};
   String _searchQuery = '';
   String _selectedDepartment = 'all';
   String _selectedPeriod = 'month'; // month, quarter, year
@@ -27,6 +28,7 @@ class PerformanceLeaderboardController extends ChangeNotifier {
       _allEmployees = usersFinalData
           .map((json) => UserProfile.fromJson(json))
           .toList();
+      _buildSearchIndex();
       _applyFiltersAndSort();
     } catch (e) {
       if (kDebugMode) {
@@ -35,46 +37,101 @@ class PerformanceLeaderboardController extends ChangeNotifier {
     }
   }
 
+  void _buildSearchIndex() {
+    _searchIndexByUid
+      ..clear()
+      ..addEntries(
+        _allEmployees.map((employee) {
+          final searchableContent = [
+            employee.displayName,
+            employee.uid,
+            employee.email,
+            employee.departmentId,
+            employee.roleTitle,
+          ].join(' ');
+
+          return MapEntry(
+            employee.uid,
+            _normalizeSearchText(searchableContent),
+          );
+        }),
+      );
+  }
+
+  String _normalizeSearchText(String value) {
+    return value
+        .toLowerCase()
+        .replaceAll(RegExp(r'[_\-]+'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+  }
+
+  List<String> _tokenizeSearchQuery(String value) {
+    final normalized = _normalizeSearchText(value);
+    if (normalized.isEmpty) {
+      return const <String>[];
+    }
+
+    return normalized.split(' ').where((part) => part.isNotEmpty).toList();
+  }
+
   void _applyFiltersAndSort() {
     _filteredEmployees = List.from(_allEmployees);
 
     // Filter by search query
-    if (_searchQuery.isNotEmpty) {
+    final searchTerms = _tokenizeSearchQuery(_searchQuery);
+    if (searchTerms.isNotEmpty) {
       _filteredEmployees = _filteredEmployees.where((emp) {
-        return emp.displayName.toLowerCase().contains(
-              _searchQuery.toLowerCase(),
-            ) ||
-            emp.uid.toLowerCase().contains(_searchQuery.toLowerCase());
+        final searchableText =
+            _searchIndexByUid[emp.uid] ??
+            _normalizeSearchText(
+              '${emp.displayName} ${emp.uid} ${emp.email} ${emp.departmentId} ${emp.roleTitle}',
+            );
+
+        return searchTerms.every((term) => searchableText.contains(term));
       }).toList();
     }
 
     // Filter by department
     if (_selectedDepartment != 'all') {
+      final selectedDepartmentNormalized = _selectedDepartment.toLowerCase();
       _filteredEmployees = _filteredEmployees.where((emp) {
-        return emp.departmentId == _selectedDepartment;
+        return emp.departmentId.toLowerCase() == selectedDepartmentNormalized;
       }).toList();
     }
 
     // Sort employees
     _filteredEmployees.sort((a, b) {
+      int compareValue;
+
       switch (_sortBy) {
         case 'score':
-          return b.achievements.performanceScore.compareTo(
+          compareValue = b.achievements.performanceScore.compareTo(
             a.achievements.performanceScore,
           );
+          break;
         case 'attendance':
           final attendanceA = _calculateAttendanceRate(a);
           final attendanceB = _calculateAttendanceRate(b);
-          return attendanceB.compareTo(attendanceA);
+          compareValue = attendanceB.compareTo(attendanceA);
+          break;
         case 'medals':
-          return b.achievements.totalMedals.compareTo(
+          compareValue = b.achievements.totalMedals.compareTo(
             a.achievements.totalMedals,
           );
+          break;
         default:
-          return b.achievements.performanceScore.compareTo(
+          compareValue = b.achievements.performanceScore.compareTo(
             a.achievements.performanceScore,
           );
+          break;
       }
+
+      if (compareValue != 0) {
+        return compareValue;
+      }
+
+      return a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase());
     });
 
     notifyListeners();
@@ -86,11 +143,23 @@ class PerformanceLeaderboardController extends ChangeNotifier {
   }
 
   void searchEmployees(String query) {
+    final normalizedCurrentQuery = _normalizeSearchText(_searchQuery);
+    final normalizedIncomingQuery = _normalizeSearchText(query);
+
+    if (normalizedCurrentQuery == normalizedIncomingQuery) {
+      _searchQuery = query;
+      return;
+    }
+
     _searchQuery = query;
     _applyFiltersAndSort();
   }
 
   void _setLoading(bool value) {
+    if (_isLoading == value) {
+      return;
+    }
+
     _isLoading = value;
     notifyListeners();
   }
@@ -132,7 +201,7 @@ class PerformanceLeaderboardController extends ChangeNotifier {
         .map((e) => e.departmentId)
         .toSet()
         .toList();
-    departments.sort();
+    departments.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
     return departments;
   }
 

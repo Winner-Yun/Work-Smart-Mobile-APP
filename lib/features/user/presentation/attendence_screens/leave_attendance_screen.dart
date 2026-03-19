@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
+import 'package:flutter_worksmart_mobile_app/core/constants/app_img.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/util/database/user_data.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/logic/leave_request_logic.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/presentation/attendence_screens/leave_all_requests_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/presentation/attendence_screens/leave_detail_view_screen.dart';
 import 'package:flutter_worksmart_mobile_app/shared/model/activity_models/leave_record.dart';
 import 'package:flutter_worksmart_mobile_app/shared/model/user_model/user_profile.dart';
+import 'package:flutter_worksmart_mobile_app/shared/widget/user/data_empty_state.dart';
 import 'package:intl/intl.dart';
 
 class LeaveAttendanceScreen extends StatefulWidget {
@@ -32,6 +35,7 @@ class _LeaveAttendanceScreenState extends State<LeaveAttendanceScreen> {
   late Map<String, dynamic>? loginData;
   String? _selectedForRemoveRequestId;
   bool _isRemoveMode = false;
+  bool _isOpeningAllRequests = false;
 
   final DateFormat _dateFormatter = DateFormat('dd MMM yyyy');
 
@@ -149,6 +153,47 @@ class _LeaveAttendanceScreenState extends State<LeaveAttendanceScreen> {
     });
   }
 
+  Future<void> _openAllRequests() async {
+    if (_isOpeningAllRequests) return;
+    _isOpeningAllRequests = true;
+
+    try {
+      final Object? result = await Navigator.pushNamed(
+        context,
+        AppRoute.leaveAllRequestsScreen,
+        arguments: loginData,
+      );
+
+      if (!mounted || result != true) return;
+
+      setState(() {
+        _selectedForRemoveRequestId = null;
+        _isRemoveMode = false;
+        _loadData();
+      });
+    } catch (error) {
+      debugPrint('Failed to open leaveAllRequestsScreen: $error');
+      if (!mounted) return;
+
+      final bool? fallbackResult = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (context) => LeaveAllRequestsScreen(loginData: loginData),
+        ),
+      );
+
+      if (!mounted || fallbackResult != true) return;
+
+      setState(() {
+        _selectedForRemoveRequestId = null;
+        _isRemoveMode = false;
+        _loadData();
+      });
+    } finally {
+      _isOpeningAllRequests = false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -173,34 +218,38 @@ class _LeaveAttendanceScreenState extends State<LeaveAttendanceScreen> {
 
           // SCROLLABLE LIST SECTION
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              itemCount: _history.length,
-              physics: const BouncingScrollPhysics(),
-              itemBuilder: (context, index) {
-                final record = _history[index];
-                return _buildRequestListItem(
-                      record: record,
-                      context: context,
-                      title: LeaveRequestLogic.getLeaveTitle(record.type),
-                      subtitle: _formatDateRange(record),
-                      status: LeaveRequestLogic.getStatusText(record.status),
-                      statusColor: LeaveRequestLogic.getStatusColor(
-                        record.status,
-                      ),
-                      icon: LeaveRequestLogic.getLeaveIcon(record.type),
-                      onLongPress: () {
-                        _handleLongPress(record);
-                      },
-                      onTap: () async {
-                        await _handleTap(record);
-                      },
-                    )
-                    .animate()
-                    .fadeIn(delay: (index * 45).ms, duration: 220.ms)
-                    .slideX(begin: 0.06, end: 0);
-              },
-            ),
+            child: _history.isEmpty
+                ? _buildEmptyState(context)
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    itemCount: _history.length,
+                    physics: const BouncingScrollPhysics(),
+                    itemBuilder: (context, index) {
+                      final record = _history[index];
+                      return _buildRequestListItem(
+                            record: record,
+                            context: context,
+                            title: LeaveRequestLogic.getLeaveTitle(record.type),
+                            subtitle: _formatDateRange(record),
+                            status: LeaveRequestLogic.getStatusText(
+                              record.status,
+                            ),
+                            statusColor: LeaveRequestLogic.getStatusColor(
+                              record.status,
+                            ),
+                            icon: LeaveRequestLogic.getLeaveIcon(record.type),
+                            onLongPress: () {
+                              _handleLongPress(record);
+                            },
+                            onTap: () async {
+                              await _handleTap(record);
+                            },
+                          )
+                          .animate()
+                          .fadeIn(delay: (index * 45).ms, duration: 220.ms)
+                          .slideX(begin: 0.06, end: 0);
+                    },
+                  ),
           ),
         ],
       ),
@@ -301,12 +350,8 @@ class _LeaveAttendanceScreenState extends State<LeaveAttendanceScreen> {
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         TextButton(
-          onPressed: () {
-            Navigator.pushNamed(
-              context,
-              AppRoute.leaveAllRequestsScreen,
-              arguments: loginData,
-            );
+          onPressed: () async {
+            await _openAllRequests();
           },
           child: Text(
             AppStrings.tr('view_all'),
@@ -314,6 +359,13 @@ class _LeaveAttendanceScreenState extends State<LeaveAttendanceScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context) {
+    return DataEmptyState(
+      imageAsset: AppImg.emptyState,
+      message: AppStrings.tr('no_records'),
     );
   }
 

@@ -313,6 +313,17 @@ class ManageUsersController extends ChangeNotifier {
     return sorted;
   }
 
+  bool isUidTaken(String uid) {
+    final normalizedUid = uid.trim().toLowerCase();
+    if (normalizedUid.isEmpty) {
+      return false;
+    }
+
+    return _allUsers.any(
+      (user) => user.uid.trim().toLowerCase() == normalizedUid,
+    );
+  }
+
   Future<void> updateUserStatus(String uid, String newStatus) async {
     await _runWithLoading(() async {
       await _realtimeDataController.updateUserRecord(uid, {
@@ -446,6 +457,8 @@ class ManageUsersController extends ChangeNotifier {
       final resolvedPassword = (password == null || password.trim().isEmpty)
           ? Env.defaultUserPassword.trim()
           : password.trim();
+      final isUsingDefaultPassword =
+          resolvedPassword == Env.defaultUserPassword.trim();
       final normalizedEmail = email.trim().toLowerCase();
 
       await _createFirebaseAuthUser(
@@ -466,6 +479,7 @@ class ManageUsersController extends ChangeNotifier {
         'profile_url': resolvedProfileUrl,
         'status': status,
         'password': resolvedPassword,
+        'requires_password_change': isUsingDefaultPassword,
         'join_date': DateTime.now().toIso8601String(),
         'biometrics': {
           'face_status': 'uninitialized',

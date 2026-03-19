@@ -77,6 +77,11 @@ class AppStrings {
       'account_suspended_message':
           'Your account has been suspended. Please contact the administrator.',
       'account_suspended_ok': 'OK',
+      'account_deleted_title': 'Account Removed',
+      'account_deleted_description': 'This account is no longer available.',
+      'account_deleted_message':
+          'Your account has been removed. Please contact the administrator.',
+      'account_deleted_ok': 'OK',
       'warning_label': 'Warning',
       'username_required': 'Username is required',
       'password_required': 'Password is required',
@@ -115,6 +120,11 @@ class AppStrings {
       "password_change_failed": "Failed to change password. Please try again.",
       "password_target_user_not_found":
           "Unable to find your account for password reset.",
+      "default_password_alert_title": "Account Security",
+      "default_password_alert_message":
+          "Your account is still using the default password. Please change it now to protect your account.",
+      "change_now": "Change Now",
+      "later": "Later",
 
       // --- Tutorial ---
       'skip': 'Skip',
@@ -190,10 +200,14 @@ class AppStrings {
       'face_required_desc':
           'Please press the button below to scan your face for attendance check-in',
       'register_now': 'Register Now',
+      'register_again': 'Register Again',
       'waiting_admin': 'Waiting for Admin...',
       'pending_approval_title': 'Scan Under Review',
       'pending_approval_desc':
           'Your identity is being verified. Please wait for admin approval.',
+      'face_rejected_title': 'Face Verification Rejected',
+      'face_rejected_desc':
+          'Your previous face registration was rejected. Please register your face again.',
       'processing': 'Processing...',
       'points_label': 'Pts',
       'punctuality': 'Punctuality',
@@ -269,6 +283,7 @@ class AppStrings {
       'attachments': 'Attachments',
       'medical_report': 'Medical Report',
       'no_attachments': 'No attachments',
+      'submitted_date': 'Submitted Date',
 
       // Annual Leave Request Screen
       'request_annual_leave_title': 'Annual Leave Request',
@@ -310,6 +325,12 @@ class AppStrings {
       'sick_leave_no_remaining_days': 'You have no sick leave days remaining.',
       'annual_leave_duration_exceeds_remaining':
           'Requested {requestedDays} day(s), but only {remainingDays} day(s) remaining.',
+      'leave_date_already_requested':
+          'This date has already been requested. Please choose another date.',
+      'leave_range_already_requested':
+          'Some dates in this range have already been requested. Please choose another range.',
+      'leave_no_available_dates':
+          'No available dates to request in this period.',
       'select_leave_date': 'Select Leave Date',
       'tap_to_select_date': 'Tap to select date',
 
@@ -356,6 +377,7 @@ class AppStrings {
       'badge_collab': 'Good Teamwork',
       'badge_creative': 'Creative Mind',
       'badge_perfect_month': 'Perfect Month',
+      'no_achievement_records': 'No achievement records yet',
 
       // --- Calendar ---
       'no_data': 'No Data',
@@ -396,6 +418,7 @@ class AppStrings {
       'gender_male': 'Male',
       'gender_female': 'Female',
       'not_connected': 'Not Connected',
+      'connected': 'Connected',
       'connect_now': 'Connect Now',
       'change_password_action': 'Change Password',
       'logout_action': 'Logout',
@@ -909,6 +932,11 @@ class AppStrings {
       'account_suspended_message':
           'គណនីរបស់អ្នកត្រូវបានផ្អាក។ សូមទាក់ទងអ្នកគ្រប់គ្រង។',
       'account_suspended_ok': 'យល់ព្រម',
+      'account_deleted_title': 'គណនីត្រូវបានលុប',
+      'account_deleted_description': 'គណនីនេះមិនមានទៀតទេ។',
+      'account_deleted_message':
+          'គណនីរបស់អ្នកត្រូវបានលុប។ សូមទាក់ទងអ្នកគ្រប់គ្រង។',
+      'account_deleted_ok': 'យល់ព្រម',
       'warning_label': 'ការព្រមាន',
       'username_required': 'ឈ្មោះប្រើប្រាស់ត្រូវបាន តម្រូវ',
       'password_required': 'ពាក្យសម្ងាត់ត្រូវបាន តម្រូវ',
@@ -948,6 +976,11 @@ class AppStrings {
           "មិនអាចផ្លាស់ប្តូរលេខសម្ងាត់បានទេ។ សូមព្យាយាមម្តងទៀត។",
       "password_target_user_not_found":
           "មិនអាចស្វែងរកគណនីរបស់អ្នកសម្រាប់ប្តូរលេខសម្ងាត់បានទេ។",
+      "default_password_alert_title": "សុវត្ថិភាពគណនី",
+      "default_password_alert_message":
+          "គណនីរបស់អ្នកកំពុងប្រើពាក្យសម្ងាត់ដើម។ សូមប្តូរពាក្យសម្ងាត់ឥឡូវនេះ ដើម្បីការពារគណនីរបស់អ្នក។",
+      "change_now": "ប្តូរឥឡូវនេះ",
+      "later": "ពេលក្រោយ",
 
       // --- Tutorial ---
       'skip': 'រំលង',
@@ -1023,10 +1056,14 @@ class AppStrings {
       'face_required_desc':
           'សូមចុចប៊ូតុងខាងក្រោម ដើម្បីធ្វើការស្កេនមុខ សម្រាប់ការចុះវត្តមាន',
       'register_now': 'ចុះឈ្មោះឥឡូវនេះ',
+      'register_again': 'ចុះឈ្មោះម្តងទៀត',
       'waiting_admin': 'កំពុងរង់ចាំការអនុម័ត...',
       'pending_approval_title': 'កំពុងត្រួតពិនិត្យ',
       'pending_approval_desc':
           'អត្តសញ្ញាណរបស់អ្នកកំពុងត្រូវបានផ្ទៀងផ្ទាត់។ សូមរង់ចាំការអនុម័ត។',
+      'face_rejected_title': 'ការផ្ទៀងផ្ទាត់មុខត្រូវបានបដិសេធ',
+      'face_rejected_desc':
+          'ការចុះអត្តសញ្ញាណមុខមុនរបស់អ្នកត្រូវបានបដិសេធ។ សូមចុះឈ្មោះមុខម្តងទៀត។',
       'processing': 'កំពុងដំណើរការ...',
       'points_label': 'ពិន្ទុ',
       'punctuality': 'ភាពទាន់ពេល',
@@ -1101,6 +1138,7 @@ class AppStrings {
       'attachments': 'ឯកសារភ្ជាប់',
       'medical_report': 'របាយការណ៍វេជ្ជសាស្ត្រ',
       'no_attachments': 'គ្មានឯកសារភ្ជាប់ទេ',
+      'submitted_date': 'ថ្ងៃដាក់សំណើ',
 
       // Annual Leave Request Screen
       'request_annual_leave_title': 'ពាក្យសុំច្បាប់ប្រចាំឆ្នាំ',
@@ -1143,6 +1181,12 @@ class AppStrings {
       'sick_leave_no_remaining_days': 'អ្នកមិនមានថ្ងៃឈប់សម្រាកឈឺនៅសល់ទេ។',
       'annual_leave_duration_exceeds_remaining':
           'បានស្នើសុំ {requestedDays} ថ្ងៃ ប៉ុន្តែមានសល់ត្រឹម {remainingDays} ថ្ងៃប៉ុណ្ណោះ។',
+      'leave_date_already_requested':
+          'កាលបរិច្ឆេទនេះត្រូវបានស្នើសុំរួចហើយ។ សូមជ្រើសរើសកាលបរិច្ឆេទផ្សេង។',
+      'leave_range_already_requested':
+          'មានកាលបរិច្ឆេទខ្លះក្នុងជួរនេះត្រូវបានស្នើសុំរួចហើយ។ សូមជ្រើសរើសជួរថ្មី។',
+      'leave_no_available_dates':
+          'មិនមានកាលបរិច្ឆេទទំនេរសម្រាប់ស្នើសុំក្នុងរយៈពេលនេះទេ។',
       'select_leave_date': 'ជ្រើសរើសកាលបរិច្ឆេទ',
       'tap_to_select_date': 'ចុចដើម្បីជ្រើសរើសកាលបរិច្ឆេទ',
 
@@ -1188,6 +1232,7 @@ class AppStrings {
       'badge_collab': 'សហការល្អ',
       'badge_creative': 'គំនិតច្នៃប្រឌិត',
       'badge_perfect_month': 'វត្តមានប្រចាំខែឥតខ្ចោះ',
+      'no_achievement_records': 'មិនទាន់មានកំណត់ត្រាសមិទ្ធផលនៅឡើយ',
 
       // --- Calendar ---
       'no_data': 'គ្មានទិន្នន័យ',
@@ -1228,6 +1273,7 @@ class AppStrings {
       'gender_male': 'ប្រុស',
       'gender_female': 'ស្រី',
       'not_connected': 'មិនទាន់ភ្ជាប់',
+      'connected': 'បានភ្ជាប់',
       'connect_now': 'ភ្ជាប់ឥឡូវ',
       'change_password_action': 'ប្តូរលេខសម្ងាត់',
       'logout_action': 'ចាកចេញពីគណនី',

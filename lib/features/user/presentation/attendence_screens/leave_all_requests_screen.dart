@@ -28,6 +28,7 @@ class _LeaveAllRequestsScreenState extends State<LeaveAllRequestsScreen> {
   DateTime? _selectedDate;
   String? _selectedForRemoveRequestId;
   bool _isRemoveMode = false;
+  bool _hasDeletedLeaveRequest = false;
   LeaveSortBy _sortBy = LeaveSortBy.dateNewest;
 
   final DateFormat _dateFormatter = DateFormat('dd MMM yyyy');
@@ -129,6 +130,7 @@ class _LeaveAllRequestsScreenState extends State<LeaveAllRequestsScreen> {
       setState(() {
         _selectedForRemoveRequestId = null;
         _isRemoveMode = false;
+        _hasDeletedLeaveRequest = true;
         _loadData();
       });
     }
@@ -145,43 +147,56 @@ class _LeaveAllRequestsScreenState extends State<LeaveAllRequestsScreen> {
     setState(() {
       _selectedForRemoveRequestId = null;
       _isRemoveMode = false;
+      _hasDeletedLeaveRequest = true;
       _loadData();
     });
   }
 
+  void _popWithResult() {
+    Navigator.pop(context, _hasDeletedLeaveRequest);
+  }
+
+  Future<bool> _onWillPop() async {
+    _popWithResult();
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: _buildAppBar(context),
-      body: Column(
-        children: [
-          _buildFilterAndSort(context),
-          Expanded(
-            child: _filteredHistory.isEmpty
-                ? _buildEmptyState(context)
-                      .animate(key: const ValueKey('leave-empty-state'))
-                      .fadeIn(duration: 260.ms, curve: Curves.easeOut)
-                      .slideY(
-                        begin: 0.06,
-                        end: 0,
-                        duration: 260.ms,
-                        curve: Curves.easeOut,
-                      )
-                : ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-                    physics: const BouncingScrollPhysics(),
-                    itemCount: _filteredHistory.length,
-                    itemBuilder: (context, index) {
-                      final record = _filteredHistory[index];
-                      return _buildRequestListItem(record)
-                          .animate()
-                          .fadeIn(delay: (80 * index).ms)
-                          .slideY(begin: 0.1, end: 0, curve: Curves.easeOut);
-                    },
-                  ),
-          ),
-        ],
+    return WillPopScope(
+      onWillPop: _onWillPop,
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: _buildAppBar(context),
+        body: Column(
+          children: [
+            _buildFilterAndSort(context),
+            Expanded(
+              child: _filteredHistory.isEmpty
+                  ? _buildEmptyState(context)
+                        .animate(key: const ValueKey('leave-empty-state'))
+                        .fadeIn(duration: 260.ms, curve: Curves.easeOut)
+                        .slideY(
+                          begin: 0.06,
+                          end: 0,
+                          duration: 260.ms,
+                          curve: Curves.easeOut,
+                        )
+                  : ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: _filteredHistory.length,
+                      itemBuilder: (context, index) {
+                        final record = _filteredHistory[index];
+                        return _buildRequestListItem(record)
+                            .animate()
+                            .fadeIn(delay: (80 * index).ms)
+                            .slideY(begin: 0.1, end: 0, curve: Curves.easeOut);
+                      },
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -197,7 +212,7 @@ class _LeaveAllRequestsScreenState extends State<LeaveAllRequestsScreen> {
           color: Theme.of(context).iconTheme.color,
           size: 20,
         ),
-        onPressed: () => Navigator.pop(context),
+        onPressed: _popWithResult,
       ),
       title: Text(
         AppStrings.tr('request_history'),

@@ -67,6 +67,7 @@ class ChangePasswordLogic {
     try {
       await _realtimeDataController.updateUserRecord(targetUserId, {
         'password': normalizedNewPassword,
+        'requires_password_change': false,
       });
       await _syncCachedPasswordIfSameUser(
         targetUserId: targetUserId,

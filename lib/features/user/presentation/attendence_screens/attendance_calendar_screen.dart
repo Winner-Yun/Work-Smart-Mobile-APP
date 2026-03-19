@@ -39,7 +39,7 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
 
   void _loadData() {
     final currentUserData = usersFinalData.firstWhere(
-      (user) => user['uid'] == (loggedInUserId ?? "user_winner_777"),
+      (user) => user['uid'] == loggedInUserId,
       orElse: () => defaultUserRecord,
     );
     _currentUser = UserProfile.fromJson(currentUserData);

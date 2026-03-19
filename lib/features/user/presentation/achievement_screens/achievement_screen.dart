@@ -96,6 +96,9 @@ class _AchievementScreenState extends AchievementLogic {
         const SizedBox(height: 12),
         Text(
           "${AppStrings.tr('hello')}, ${profileData['name']}",
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -204,6 +207,8 @@ class _AchievementScreenState extends AchievementLogic {
       };
     }).toList();
 
+    final hasUnlockedBadges = badges.any((badge) => badge['locked'] == false);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -220,30 +225,73 @@ class _AchievementScreenState extends AchievementLogic {
                   color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
               ),
-              Text(
-                AppStrings.tr('view_all'),
-                style: const TextStyle(color: Colors.teal, fontSize: 12),
-              ),
+              if (hasUnlockedBadges)
+                Text(
+                  AppStrings.tr('view_all'),
+                  style: const TextStyle(color: Colors.teal, fontSize: 12),
+                ),
             ],
           ),
         ),
         const SizedBox(height: 20),
         Expanded(
-          child: GridView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              mainAxisSpacing: 20,
-              crossAxisSpacing: 20,
-              childAspectRatio: 0.8,
-            ),
-            itemCount: badges.length,
-            itemBuilder: (context, index) =>
-                _badgeItem(context, badges[index], index),
-          ),
+          child: hasUnlockedBadges
+              ? GridView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    mainAxisSpacing: 20,
+                    crossAxisSpacing: 20,
+                    childAspectRatio: 0.8,
+                  ),
+                  itemCount: badges.length,
+                  itemBuilder: (context, index) =>
+                      _badgeItem(context, badges[index], index),
+                )
+              : _buildNoAchievementState(context),
         ),
       ],
     );
+  }
+
+  Widget _buildNoAchievementState(BuildContext context) {
+    final mutedColor =
+        Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7) ??
+        AppColors.textGrey;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 78,
+              height: 78,
+              decoration: BoxDecoration(
+                color: Theme.of(context).dividerColor.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.emoji_events_outlined,
+                size: 38,
+                color: mutedColor,
+              ),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              AppStrings.tr('no_achievement_records'),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: mutedColor,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ).animate().fadeIn(duration: 300.ms);
   }
 
   Widget _badgeItem(
@@ -274,6 +322,8 @@ class _AchievementScreenState extends AchievementLogic {
         const SizedBox(height: 8),
         Text(
           badge['name'],
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 11,

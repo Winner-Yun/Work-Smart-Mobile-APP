@@ -43,7 +43,7 @@ abstract class HomePageLogic extends State<HomePageScreen> {
 
   late String currentFaceStatus;
 
-  // --- Office Configuration (Loaded from officeMasterData) ---
+  // --- Office Configuration  ---
 
   late LatLng officeLocation;
   late double scanRangeMeters;
@@ -106,7 +106,12 @@ abstract class HomePageLogic extends State<HomePageScreen> {
       orElse: () => safeUserDataSource.first,
     );
     currentUser = UserProfile.fromJson(currentUserData);
-    currentFaceStatus = currentUser.biometrics.faceStatus;
+    final normalizedFaceStatus = currentUser.biometrics.faceStatus
+        .trim()
+        .toLowerCase();
+    currentFaceStatus = normalizedFaceStatus.isEmpty
+        ? 'uninitialized'
+        : normalizedFaceStatus;
 
     allEmployees = safeUserDataSource
         .map((json) => UserProfile.fromJson(json))

@@ -17,7 +17,7 @@ class LeaveRecord {
     this.attachmentUrl,
   });
 
-  // Calculate inclusive days (e.g., 20th to 25th = 6 days)
+  // Calculate inclusive days 
   int get durationInDays => endDate.difference(startDate).inDays + 1;
 
   factory LeaveRecord.fromJson(Map<String, dynamic> json) {

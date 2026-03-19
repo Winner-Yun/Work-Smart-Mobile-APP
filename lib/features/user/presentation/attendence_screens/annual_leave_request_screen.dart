@@ -42,7 +42,10 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(AppStrings.tr('annual_leave_no_remaining_days')),
+        content: Text(
+          AppStrings.tr('annual_leave_no_remaining_days'),
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: Colors.red,
       ),
     );
@@ -57,6 +60,61 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
+  }
+
+  void _showDateAlreadyRequestedSnackBar() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          AppStrings.tr('leave_date_already_requested'),
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
+  void _showDateRangeAlreadyRequestedSnackBar() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          AppStrings.tr('leave_range_already_requested'),
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
+  void _showNoAvailableDatesSnackBar() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          AppStrings.tr('leave_no_available_dates'),
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
+  bool _isDateAlreadyRequested(DateTime date) {
+    return LeaveRequestLogic.isDateRangeOverlappingExisting(
+      startDate: date,
+      endDate: date,
+      existingRecords: _currentUser.leaveRecords,
+    );
+  }
+
+  bool _doesRangeOverlapRequested(DateTime startDate, DateTime endDate) {
+    return LeaveRequestLogic.isDateRangeOverlappingExisting(
+      startDate: startDate,
+      endDate: endDate,
+      existingRecords: _currentUser.leaveRecords,
     );
   }
 
@@ -112,6 +170,11 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
       return;
     }
 
+    if (_doesRangeOverlapRequested(_startDate!, _endDate!)) {
+      _showDateRangeAlreadyRequestedSnackBar();
+      return;
+    }
+
     if (requestedDays <= 0 || requestedDays > _annualLeaveRemaining) {
       _showDurationExceedsRemainingSnackBar(requestedDays);
       return;
@@ -141,7 +204,10 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
     if (!submitted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppStrings.tr('leave_request_submit_failed')),
+          content: Text(
+            AppStrings.tr('leave_request_submit_failed'),
+            style: TextStyle(color: Colors.white),
+          ),
           backgroundColor: Colors.red,
         ),
       );
@@ -150,7 +216,10 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(AppStrings.tr('annual_request_submitted')),
+        content: Text(
+          AppStrings.tr('annual_request_submitted'),
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: Theme.of(context).colorScheme.primary,
       ),
     );
@@ -401,14 +470,34 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
     }
 
     final DateTime now = DateTime.now();
+    final DateTime firstDate = DateTime(now.year, now.month, now.day);
+    final DateTime lastDate = DateTime(now.year + 2, now.month, now.day);
+    final DateTime? initialDate = LeaveRequestLogic.findInitialSelectableDate(
+      preferredDate: _startDate ?? firstDate,
+      firstDate: firstDate,
+      lastDate: lastDate,
+      selectableDayPredicate: (date) => !_isDateAlreadyRequested(date),
+    );
+
+    if (initialDate == null) {
+      _showNoAvailableDatesSnackBar();
+      return;
+    }
+
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _startDate ?? now,
-      firstDate: now,
-      lastDate: DateTime(now.year + 2),
+      initialDate: initialDate,
+      firstDate: firstDate,
+      lastDate: lastDate,
+      selectableDayPredicate: (date) => !_isDateAlreadyRequested(date),
     );
 
     if (picked == null) return;
+
+    if (_isDateAlreadyRequested(picked)) {
+      _showDateAlreadyRequestedSnackBar();
+      return;
+    }
 
     setState(() {
       _startDate = picked;
@@ -417,6 +506,11 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
       }
 
       if (_endDate != null && _selectedDurationDays > _annualLeaveRemaining) {
+        _endDate = null;
+      }
+
+      if (_endDate != null &&
+          _doesRangeOverlapRequested(_startDate!, _endDate!)) {
         _endDate = null;
       }
     });
@@ -444,15 +538,34 @@ class _AnnualLeaveRequestScreenState extends State<AnnualLeaveRequestScreen> {
 
     final DateTime initial = _endDate ?? _startDate!;
     final DateTime firstDate = _startDate!;
+    final DateTime? initialDate = LeaveRequestLogic.findInitialSelectableDate(
+      preferredDate: initial,
+      firstDate: firstDate,
+      lastDate: lastDate,
+      selectableDayPredicate: (date) =>
+          !_doesRangeOverlapRequested(_startDate!, date),
+    );
+
+    if (initialDate == null) {
+      _showDateRangeAlreadyRequestedSnackBar();
+      return;
+    }
 
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: initial.isAfter(firstDate) ? initial : firstDate,
+      initialDate: initialDate,
       firstDate: firstDate,
       lastDate: lastDate,
+      selectableDayPredicate: (date) =>
+          !_doesRangeOverlapRequested(_startDate!, date),
     );
 
     if (picked == null) return;
+
+    if (_doesRangeOverlapRequested(_startDate!, picked)) {
+      _showDateRangeAlreadyRequestedSnackBar();
+      return;
+    }
 
     setState(() {
       _endDate = picked;

@@ -293,26 +293,11 @@ class LeaveDetailViewScreen extends StatelessWidget {
   Widget _buildDetailsGrid(BuildContext context) {
     final dateFormatter = DateFormat('dd MMM yyyy');
 
-    return Row(
-      children: [
-        Expanded(
-          child: _buildDetailBox(
-            context,
-            Icons.calendar_today,
-            AppStrings.tr('request_id'),
-            leave.requestId,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildDetailBox(
-            context,
-            Icons.check_circle,
-            AppStrings.tr('submitted_date'),
-            dateFormatter.format(leave.startDate),
-          ),
-        ),
-      ],
+    return _buildDetailBox(
+      context,
+      Icons.check_circle,
+      AppStrings.tr('submitted_date'),
+      dateFormatter.format(leave.startDate),
     );
   }
 

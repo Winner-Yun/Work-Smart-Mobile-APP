@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
+import 'package:flutter_worksmart_mobile_app/core/constants/app_img.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 import 'package:flutter_worksmart_mobile_app/core/util/database/user_data.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/logic/leave_request_logic.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/presentation/attendence_screens/leave_all_requests_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/presentation/attendence_screens/leave_detail_view_screen.dart';
 import 'package:flutter_worksmart_mobile_app/shared/model/activity_models/leave_record.dart';
 import 'package:flutter_worksmart_mobile_app/shared/model/user_model/user_profile.dart';
+import 'package:flutter_worksmart_mobile_app/shared/widget/user/data_empty_state.dart';
 import 'package:intl/intl.dart';
 
 class LeaveDetailScreen extends StatefulWidget {
@@ -37,6 +40,7 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
   late double _annualRatio;
   late double _sickRatio;
   String? _selectedForRemoveRequestId;
+  bool _isOpeningAllRequests = false;
 
   @override
   void initState() {
@@ -170,15 +174,21 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
             ),
           ),
           Expanded(
-            child: ListView.builder(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
-              itemCount: _history.length,
-              itemBuilder: (context, index) {
-                final record = _history[index];
-                return _buildTimelineItem(record);
-              },
-            ),
+            child: _history.isEmpty
+                ? _buildEmptyState(context)
+                : ListView.builder(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.only(
+                      left: 20,
+                      right: 20,
+                      bottom: 20,
+                    ),
+                    itemCount: _history.length,
+                    itemBuilder: (context, index) {
+                      final record = _history[index];
+                      return _buildTimelineItem(record);
+                    },
+                  ),
           ),
         ],
       ),
@@ -489,6 +499,13 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
     return "$startLabel - $endLabel";
   }
 
+  Widget _buildEmptyState(BuildContext context) {
+    return DataEmptyState(
+      imageAsset: AppImg.emptyState,
+      message: AppStrings.tr('no_records'),
+    );
+  }
+
   Widget _buildSectionHeader(String title, String action) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -504,12 +521,8 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
         if (action.isNotEmpty)
           InkWell(
             borderRadius: BorderRadius.circular(10),
-            onTap: () {
-              Navigator.pushNamed(
-                context,
-                AppRoute.leaveAllRequestsScreen,
-                arguments: widget.loginData,
-              );
+            onTap: () async {
+              await _openAllRequests();
             },
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
@@ -597,5 +610,45 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen>
       _selectedForRemoveRequestId = null;
       _refreshLeaveDataWithAnimation();
     });
+  }
+
+  Future<void> _openAllRequests() async {
+    if (_isOpeningAllRequests) return;
+    _isOpeningAllRequests = true;
+
+    try {
+      final Object? result = await Navigator.pushNamed(
+        context,
+        AppRoute.leaveAllRequestsScreen,
+        arguments: widget.loginData,
+      );
+
+      if (!mounted || result != true) return;
+
+      setState(() {
+        _selectedForRemoveRequestId = null;
+        _refreshLeaveDataWithAnimation();
+      });
+    } catch (error) {
+      debugPrint('Failed to open leaveAllRequestsScreen: $error');
+      if (!mounted) return;
+
+      final bool? fallbackResult = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              LeaveAllRequestsScreen(loginData: widget.loginData),
+        ),
+      );
+
+      if (!mounted || fallbackResult != true) return;
+
+      setState(() {
+        _selectedForRemoveRequestId = null;
+        _refreshLeaveDataWithAnimation();
+      });
+    } finally {
+      _isOpeningAllRequests = false;
+    }
   }
 }

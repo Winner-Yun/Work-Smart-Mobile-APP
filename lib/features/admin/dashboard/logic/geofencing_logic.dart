@@ -460,6 +460,10 @@ class GeofencingController extends ChangeNotifier {
     required String newName,
     required String newGroup,
     String? oldDepartmentName,
+    double? lat,
+    double? lng,
+    int? radiusMeters,
+    String? addressLabel,
     required String checkInStart,
     required String checkOutEnd,
     required int lateBufferMinutes,
@@ -517,13 +521,33 @@ class GeofencingController extends ChangeNotifier {
                   ? deduplicatedDepartments.first
                   : '');
 
+        final existingGeofence = existingOffice.geofence;
+        final resolvedLat = lat ?? existingGeofence.lat;
+        final resolvedLng = lng ?? existingGeofence.lng;
+        final resolvedRadiusMeters = (radiusMeters != null && radiusMeters > 0)
+            ? radiusMeters
+            : existingGeofence.radiusMeters;
+        final normalizedAddress = (addressLabel ?? '').trim();
+        final fallbackAddress =
+            '${resolvedLat.toStringAsFixed(6)}, ${resolvedLng.toStringAsFixed(6)}';
+        final resolvedAddress = normalizedAddress.isNotEmpty
+            ? normalizedAddress
+            : (existingGeofence.addressLabel.trim().isNotEmpty
+                  ? existingGeofence.addressLabel.trim()
+                  : fallbackAddress);
+
         final generatedQrCodeData = _generateQrCodeData(botLink, officeId);
         _allOffices[index] = OfficeConfig(
           officeId: existingOffice.officeId,
           officeName: normalizedOfficeName,
           groupName: resolvedGroupName,
           departments: deduplicatedDepartments,
-          geofence: existingOffice.geofence,
+          geofence: Geofence(
+            lat: resolvedLat,
+            lng: resolvedLng,
+            radiusMeters: resolvedRadiusMeters,
+            addressLabel: resolvedAddress,
+          ),
           policy: Policy(
             checkInStart: checkInStart,
             checkOutEnd: checkOutEnd,

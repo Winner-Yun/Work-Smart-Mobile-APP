@@ -6,8 +6,8 @@ WorkSmart is a Flutter app with both **Employee** and **Admin** experiences.
 
 ### Employee demo
 
-- Name: **Check out the demo employee account in Admin Dashboard!**
-- User ID: `Check out the demo employee account in Admin Dashboard!`
+- Name: **Winner Yun**
+- User ID: `user_winner_yun_859`
 - Password: `worksmart123`
 
 ### Admin demo

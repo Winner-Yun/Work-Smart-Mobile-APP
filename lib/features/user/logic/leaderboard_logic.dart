@@ -24,7 +24,7 @@ abstract class LeaderboardLogic extends State<LeaderboardScreen> {
         .toList();
   }
 
-  /// Get sorted employee data for leaderboard display
+  // Get sorted employee data for leaderboard display
   List<Map<String, dynamic>> getLeaderboardData() {
     // Sort by performance score in descending order
     final sortedEmployees = List<UserProfile>.from(allEmployees)
@@ -59,13 +59,13 @@ abstract class LeaderboardLogic extends State<LeaderboardScreen> {
     });
   }
 
-  /// Get top 3 employees for podium
+  // Get top 3 employees for podium
   List<Map<String, dynamic>> getTopThreeEmployees() {
     final leaderboard = getLeaderboardData();
     return leaderboard.where((e) => e['rank'] <= 3).toList();
   }
 
-  /// Get remaining employees (rank 4 and above)
+  // Get remaining employees (rank 4 and above)
   List<Map<String, dynamic>> getNextRankingsEmployees() {
     final leaderboard = getLeaderboardData();
     return leaderboard.where((e) => e['rank'] > 3).toList();

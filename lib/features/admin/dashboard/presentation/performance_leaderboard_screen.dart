@@ -22,8 +22,6 @@ class _PerformanceLeaderboardScreenState
     extends State<PerformanceLeaderboardScreen> {
   late final PerformanceLeaderboardController _controller;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  final TextEditingController _searchController = TextEditingController();
-
   @override
   void initState() {
     super.initState();
@@ -32,7 +30,6 @@ class _PerformanceLeaderboardScreenState
 
   @override
   void dispose() {
-    _searchController.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -137,7 +134,7 @@ class _PerformanceLeaderboardScreenState
                                   ),
                                   const SizedBox(height: 16),
                                   Text(
-                                    'Loading...',
+                                    AppStrings.tr('loading'),
                                     style: TextStyle(
                                       color: Theme.of(
                                         context,
@@ -551,34 +548,6 @@ class _PerformanceLeaderboardScreenState
   Widget _buildFilters(bool isCompact) {
     return Row(
       children: [
-        Expanded(
-          flex: 4,
-          child: Container(
-            decoration: BoxDecoration(
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
-                  blurRadius: 15,
-                ),
-              ],
-            ),
-            child: TextField(
-              controller: _searchController,
-              onChanged: _controller.searchEmployees,
-              decoration: InputDecoration(
-                hintText: AppStrings.tr('search_employee'),
-                prefixIcon: const Icon(Icons.search),
-                filled: true,
-                fillColor: Theme.of(context).colorScheme.surface,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 16),
         _buildFilterDropdown(
           _controller.selectedDepartment,
           ['all', ..._controller.getAllDepartments()],
@@ -664,9 +633,7 @@ class _PerformanceLeaderboardScreenState
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      _searchController.text.isEmpty
-                          ? 'No employees found in the leaderboard'
-                          : 'Try searching with a different name or department',
+                      'No employees found in the leaderboard',
                       style: TextStyle(
                         fontSize: 13,
                         color: Theme.of(

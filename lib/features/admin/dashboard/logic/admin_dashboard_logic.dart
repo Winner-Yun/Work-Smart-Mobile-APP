@@ -11,7 +11,7 @@ import 'package:flutter_worksmart_mobile_app/shared/model/office_model/office_co
 import 'package:flutter_worksmart_mobile_app/shared/model/user_model/user_profile.dart';
 
 // ==========================================
-// 1. STATE MANAGEMENT
+//  STATE MANAGEMENT
 // ==========================================
 class DashboardController extends ChangeNotifier {
   bool _isSidebarCollapsed = false;
@@ -34,7 +34,7 @@ class DashboardController extends ChangeNotifier {
 }
 
 // ==========================================
-// 3. LOGIC & DATA MAPPING
+//  LOGIC & DATA MAPPING
 // ==========================================
 final RealtimeDataController _realtimeDataController = RealtimeDataController();
 final ValueNotifier<int> dashboardDataVersion = ValueNotifier<int>(0);
@@ -229,7 +229,7 @@ DashboardStatsData buildDashboardStats({bool useToday = true}) {
   );
 }
 
-/// Prepares data for the attendance table rows.
+// Prepares data for the attendance table rows.
 List<AttendanceRowData> buildAttendanceRows({
   int limit = 3,
   bool useToday = true,
@@ -268,7 +268,7 @@ List<AttendanceRowData> buildAttendanceRows({
   return rows;
 }
 
-/// Prepares data for the top performers list.
+// Prepares data for the top performers list.
 List<TopPerformerData> buildTopPerformers({int limit = 3}) {
   final sorted = [..._usersProfiles]
     ..sort(

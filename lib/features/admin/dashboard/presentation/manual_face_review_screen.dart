@@ -1,8 +1,13 @@
+// ignore_for_file: control_flow_in_finally
+
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_admin_route.dart';
 import 'package:flutter_worksmart_mobile_app/config/language_manager.dart';
 import 'package:flutter_worksmart_mobile_app/config/theme_manager.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/database/realtime_data_controller.dart';
 import 'package:flutter_worksmart_mobile_app/core/util/database/user_data.dart';
 import 'package:flutter_worksmart_mobile_app/shared/model/admin_models/dashboard_model.dart';
 import 'package:flutter_worksmart_mobile_app/shared/widget/admin/admin_header_bar.dart';
@@ -19,6 +24,11 @@ class _ManualFaceReviewScreenState extends State<ManualFaceReviewScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final TextEditingController _searchController = TextEditingController();
   final Map<String, ScrollController> _sampleScrollControllers = {};
+  final RealtimeDataController _realtimeDataController =
+      RealtimeDataController();
+  final Set<String> _updatingUserIds = <String>{};
+
+  StreamSubscription<List<Map<String, dynamic>>>? _usersSubscription;
 
   late List<UserEmployee> _users;
   String _searchQuery = '';
@@ -27,18 +37,89 @@ class _ManualFaceReviewScreenState extends State<ManualFaceReviewScreen> {
   @override
   void initState() {
     super.initState();
-    _users = usersFinalData
-        .map((entry) => UserEmployee.fromMap(entry))
-        .toList();
+    _users = _toUserEmployees(usersFinalData);
+    _listenToRealtimeUsers();
   }
 
   @override
   void dispose() {
+    _usersSubscription?.cancel();
     _searchController.dispose();
     for (final controller in _sampleScrollControllers.values) {
       controller.dispose();
     }
     super.dispose();
+  }
+
+  List<UserEmployee> _toUserEmployees(List<Map<String, dynamic>> records) {
+    return records.map((entry) => UserEmployee.fromMap(entry)).toList();
+  }
+
+  void _replaceUsers(List<UserEmployee> nextUsers) {
+    _users = nextUsers;
+
+    final activeUserIds = nextUsers.map((user) => user.uid).toSet();
+    final staleControllerKeys = _sampleScrollControllers.keys
+        .where((uid) => !activeUserIds.contains(uid))
+        .toList();
+
+    for (final key in staleControllerKeys) {
+      _sampleScrollControllers.remove(key)?.dispose();
+    }
+  }
+
+  Future<void> _listenToRealtimeUsers() async {
+    try {
+      final records = await _realtimeDataController.fetchUserRecords();
+      setUsersFinalData(records);
+
+      if (!mounted) return;
+      setState(() {
+        _replaceUsers(_toUserEmployees(records));
+      });
+    } catch (_) {
+      // Keep fallback data when realtime fetch is unavailable.
+    }
+
+    _usersSubscription = _realtimeDataController.watchUserRecords().listen((
+      records,
+    ) {
+      setUsersFinalData(records);
+
+      if (!mounted) return;
+      setState(() {
+        _replaceUsers(_toUserEmployees(records));
+      });
+    });
+  }
+
+  UserEmployee _copyWithFaceStatus(UserEmployee user, String faceStatus) {
+    return UserEmployee(
+      uid: user.uid,
+      displayName: user.displayName,
+      roleTitle: user.roleTitle,
+      gender: user.gender,
+      email: user.email,
+      phone: user.phone,
+      departmentId: user.departmentId,
+      officeId: user.officeId,
+      profileUrl: user.profileUrl,
+      faceImageUrl: user.faceImageUrl,
+      faceImageUrls: user.faceImageUrls,
+      faceCount: user.faceCount,
+      status: user.status,
+      joinDate: user.joinDate,
+      faceStatus: faceStatus,
+    );
+  }
+
+  void _setLocalFaceStatus(String uid, String faceStatus) {
+    _users = _users
+        .map(
+          (item) =>
+              item.uid == uid ? _copyWithFaceStatus(item, faceStatus) : item,
+        )
+        .toList();
   }
 
   void _navigateTo(String routeName) {
@@ -142,7 +223,7 @@ class _ManualFaceReviewScreenState extends State<ManualFaceReviewScreen> {
     }
   }
 
-  void _updateFaceStatus(UserEmployee user, String newStatus) {
+  Future<void> _updateFaceStatus(UserEmployee user, String newStatus) async {
     final currentStatus = (user.faceStatus ?? 'pending').toLowerCase();
     final targetStatus = newStatus.toLowerCase();
 
@@ -151,34 +232,63 @@ class _ManualFaceReviewScreenState extends State<ManualFaceReviewScreen> {
     }
 
     if (targetStatus == 'approved' && !_hasFaceSamples(user)) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppStrings.tr('manual_face_review_cannot_approve_no_samples'),
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (_updatingUserIds.contains(user.uid)) {
       return;
     }
 
     setState(() {
-      _users = _users
-          .map(
-            (item) => item.uid == user.uid
-                ? UserEmployee(
-                    uid: item.uid,
-                    displayName: item.displayName,
-                    roleTitle: item.roleTitle,
-                    gender: item.gender,
-                    email: item.email,
-                    phone: item.phone,
-                    departmentId: item.departmentId,
-                    officeId: item.officeId,
-                    profileUrl: item.profileUrl,
-                    faceImageUrl: item.faceImageUrl,
-                    faceImageUrls: item.faceImageUrls,
-                    faceCount: item.faceCount,
-                    status: item.status,
-                    joinDate: item.joinDate,
-                    faceStatus: newStatus,
-                  )
-                : item,
-          )
-          .toList();
+      _updatingUserIds.add(user.uid);
+      _setLocalFaceStatus(user.uid, targetStatus);
     });
+
+    try {
+      await _realtimeDataController.updateUserRecord(user.uid, {
+        'biometrics': {'face_status': targetStatus},
+      });
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '${AppStrings.tr('manual_face_review_marked_as')} ${_faceStatusLabel(targetStatus)}',
+          ),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _setLocalFaceStatus(user.uid, currentStatus);
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '${AppStrings.tr('retry')}: ${AppStrings.tr('manual_face_review_marked_as')} ${_faceStatusLabel(targetStatus)}',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (!mounted) {
+        _updatingUserIds.remove(user.uid);
+        return;
+      }
+
+      setState(() {
+        _updatingUserIds.remove(user.uid);
+      });
+    }
   }
 
   Color _statusColor(String status) {
@@ -398,6 +508,7 @@ class _ManualFaceReviewScreenState extends State<ManualFaceReviewScreen> {
                 final isUninitialized = faceStatus == 'uninitialized';
                 final canApprove = _canApprove(user);
                 final canReject = _canReject(user);
+                final isUpdating = _updatingUserIds.contains(user.uid);
                 return Padding(
                   padding: const EdgeInsets.all(14),
                   child: Row(
@@ -465,14 +576,14 @@ class _ManualFaceReviewScreenState extends State<ManualFaceReviewScreen> {
                         runSpacing: 8,
                         children: [
                           OutlinedButton.icon(
-                            onPressed: canReject
+                            onPressed: canReject && !isUpdating
                                 ? () => _updateFaceStatus(user, 'rejected')
                                 : null,
                             icon: const Icon(Icons.close_rounded, size: 18),
                             label: Text(AppStrings.tr('reject')),
                           ),
                           FilledButton.icon(
-                            onPressed: canApprove
+                            onPressed: canApprove && !isUpdating
                                 ? () => _updateFaceStatus(user, 'approved')
                                 : null,
                             icon: const Icon(Icons.check_rounded, size: 18),

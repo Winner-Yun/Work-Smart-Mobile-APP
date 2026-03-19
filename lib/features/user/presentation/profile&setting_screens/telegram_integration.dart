@@ -22,14 +22,26 @@ class _TelegramIntegrationState extends State<TelegramIntegration> {
 
   bool _isConnecting = false;
 
+  void _returnToPreviousScreen() {
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.pop(true);
+      return;
+    }
+
+    navigator.pushNamedAndRemoveUntil(
+      AppRoute.appmain,
+      (route) => false,
+      arguments: {...?widget.loginData, 'initialIndex': 4},
+    );
+  }
+
   Future<void> _handleConnect() async {
     if (_isConnecting) return;
     setState(() => _isConnecting = true);
 
     // Get current user ID
-    final String userId = (widget.loginData?['uid'] ?? 'user_winner_777')
-        .toString()
-        .trim();
+    final String userId = (widget.loginData?['uid']).toString().trim();
 
     final int userIndex = usersFinalData.indexWhere(
       (user) => user['uid'] == userId,
@@ -88,12 +100,7 @@ class _TelegramIntegrationState extends State<TelegramIntegration> {
 
       await Future.delayed(const Duration(milliseconds: 500));
       if (mounted) {
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          AppRoute.appmain,
-          (route) => false,
-          arguments: {...?widget.loginData, 'initialIndex': 3},
-        );
+        _returnToPreviousScreen();
       }
     }
   }
@@ -134,7 +141,7 @@ class _TelegramIntegrationState extends State<TelegramIntegration> {
           Icons.arrow_back_ios,
           color: Theme.of(context).iconTheme.color,
         ),
-        onPressed: () => Navigator.pop(context),
+        onPressed: _returnToPreviousScreen,
       ),
       title: Text(
         AppStrings.tr('telegram_setup_title'),

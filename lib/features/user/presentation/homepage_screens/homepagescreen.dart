@@ -21,6 +21,8 @@ class HomePageScreen extends StatefulWidget {
 class _HomePageScreenState extends HomePageLogic {
   @override
   Widget build(BuildContext context) {
+    final bool isFaceApproved = currentFaceStatus == 'approved';
+
     return SafeArea(
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -41,7 +43,7 @@ class _HomePageScreenState extends HomePageLogic {
                     ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2),
                     const SizedBox(height: 20),
 
-                    if (currentFaceStatus == 'approved')
+                    if (isFaceApproved)
                       (hasMockScanSuccess
                               ? _buildScanSuccessCard(context)
                               : _buildLiveMapCard(context))
@@ -921,7 +923,9 @@ class _HomePageScreenState extends HomePageLogic {
   }
 
   Widget _buildFaceRegistrationCard() {
-    bool isPending = currentFaceStatus == 'pending';
+    final String normalizedFaceStatus = currentFaceStatus.trim().toLowerCase();
+    final bool isPending = normalizedFaceStatus == 'pending';
+    final bool isRejected = normalizedFaceStatus == 'rejected';
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -931,6 +935,8 @@ class _HomePageScreenState extends HomePageLogic {
         border: Border.all(
           color: isPending
               ? Theme.of(context).colorScheme.secondary.withOpacity(0.5)
+              : isRejected
+              ? Colors.red.withOpacity(0.45)
               : Theme.of(context).colorScheme.primary.withOpacity(0.5),
           width: 2,
         ),
@@ -940,16 +946,22 @@ class _HomePageScreenState extends HomePageLogic {
           Icon(
             isPending
                 ? Icons.hourglass_empty_rounded
+                : isRejected
+                ? Icons.error_outline_rounded
                 : Icons.face_retouching_natural,
             size: 50,
             color: isPending
                 ? Theme.of(context).colorScheme.secondary
+                : isRejected
+                ? Colors.red
                 : Theme.of(context).colorScheme.primary,
           ),
           const SizedBox(height: 15),
           Text(
             isPending
                 ? AppStrings.tr('pending_approval_title')
+                : isRejected
+                ? AppStrings.tr('face_rejected_title')
                 : AppStrings.tr('face_required_title'),
             style: TextStyle(
               fontSize: 18,
@@ -961,6 +973,8 @@ class _HomePageScreenState extends HomePageLogic {
           Text(
             isPending
                 ? AppStrings.tr('pending_approval_desc')
+                : isRejected
+                ? AppStrings.tr('face_rejected_desc')
                 : AppStrings.tr('face_required_desc'),
             textAlign: TextAlign.center,
             style: TextStyle(
@@ -991,7 +1005,7 @@ class _HomePageScreenState extends HomePageLogic {
                   ),
                 ),
                 child: Text(
-                  AppStrings.tr('register_now'),
+                  AppStrings.tr(isRejected ? 'register_again' : 'register_now'),
                   style: TextStyle(color: Colors.white),
                 ),
               ),

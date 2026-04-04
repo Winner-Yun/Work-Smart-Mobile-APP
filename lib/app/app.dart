@@ -3,7 +3,6 @@ import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
 import 'package:flutter_worksmart_mobile_app/app/theme/theme.dart';
 import 'package:flutter_worksmart_mobile_app/config/language_manager.dart';
 import 'package:flutter_worksmart_mobile_app/config/theme_manager.dart';
-import 'package:flutter_worksmart_mobile_app/shared/widget/admin/updateRouteTitle.dart';
 import 'package:flutter_worksmart_mobile_app/shared/widget/splash/splash_screen.dart';
 
 class MainApp extends StatelessWidget {
@@ -24,7 +23,6 @@ class MainApp extends StatelessWidget {
           themeMode: ThemeManager().themeMode,
           home: SplashScreen(nextRoute: initialRoute),
           routes: AppRoute.routes,
-          navigatorObservers: [PageTitleObserver()],
         );
       },
     );

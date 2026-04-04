@@ -126,6 +126,7 @@ class RealtimeDataController {
     required String scanType,
     DateTime? scannedAt,
     Map<String, dynamic>? latLng,
+    Map<String, dynamic>? verification,
   }) async {
     final String userId = uid.trim();
     if (userId.isEmpty) {
@@ -192,6 +193,8 @@ class RealtimeDataController {
         'total_hours': totalHours,
         'status': status,
         'lat_lng': _normalizeLatLng(latLng),
+        if (verification != null && verification.isNotEmpty)
+          'verification': verification,
       };
 
       transaction.set(docRef, record, SetOptions(merge: true));
@@ -295,6 +298,22 @@ class RealtimeDataController {
 
       return _normalizeUserRecord(doc.id, doc.data()!);
     });
+  }
+
+  Future<Map<String, dynamic>?> fetchUserRecordById(String uid) async {
+    await _migrateLegacyUsersIfNeeded();
+
+    final String userId = uid.trim();
+    if (userId.isEmpty) {
+      return null;
+    }
+
+    final doc = await _firestore.collection(_usersCollection).doc(userId).get();
+    if (!doc.exists || doc.data() == null) {
+      return null;
+    }
+
+    return _normalizeUserRecord(doc.id, doc.data()!);
   }
 
   Future<void> upsertUserRecord(Map<String, dynamic> userRecord) async {

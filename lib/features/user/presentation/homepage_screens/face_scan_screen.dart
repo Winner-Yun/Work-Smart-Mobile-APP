@@ -25,6 +25,12 @@ class _FaceScanScreenState extends FaceScanLogic {
         fit: StackFit.expand,
         children: [
           _buildCameraPreview(),
+          if (isFlashOverlayEnabled)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: Container(color: Colors.white.withOpacity(0.92)),
+              ),
+            ),
           Positioned(
             top: 70,
             left: 0,
@@ -100,7 +106,9 @@ class _FaceScanScreenState extends FaceScanLogic {
             padding: const EdgeInsets.symmetric(horizontal: 30),
             child: Text(
               isScanning
-                  ? AppStrings.tr('processing')
+                  ? (scanMessage.isEmpty
+                        ? AppStrings.tr('processing')
+                        : scanMessage)
                   : AppStrings.tr('face_scan_step'),
               textAlign: TextAlign.center,
               style: const TextStyle(color: Colors.white70, fontSize: 16),

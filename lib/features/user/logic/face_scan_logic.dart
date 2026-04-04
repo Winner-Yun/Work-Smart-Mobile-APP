@@ -4,12 +4,12 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/util/database/realtime_data_controller.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/face/face_attendance_verifier.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/presentation/homepage_screens/face_scan_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 abstract class FaceScanLogic extends State<FaceScanScreen>
     with WidgetsBindingObserver {
-  // --- State Variables ---
   CameraController? controller;
   List<CameraDescription>? cameras;
   bool isCameraInitialized = false;
@@ -18,15 +18,17 @@ abstract class FaceScanLogic extends State<FaceScanScreen>
   bool isScanning = false;
   double scanProgress = 0;
   Timer? _scanTimer;
+  bool isFlashOverlayEnabled = false;
+  String scanMessage = '';
   final RealtimeDataController _realtimeDataController =
       RealtimeDataController();
+  late final FaceAttendanceVerifier _faceAttendanceVerifier;
 
   @override
   void initState() {
     super.initState();
-
     WidgetsBinding.instance.addObserver(this);
-
+    _faceAttendanceVerifier = FaceAttendanceVerifier();
     initCamera();
   }
 
@@ -34,11 +36,11 @@ abstract class FaceScanLogic extends State<FaceScanScreen>
   void dispose() {
     _scanTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
+    _faceAttendanceVerifier.close();
     controller?.dispose();
     super.dispose();
   }
 
-  // Requests camera permissions and finds available cameras (prefers front camera)
   Future<void> initCamera() async {
     final status = await Permission.camera.request();
     if (!status.isGranted) return;
@@ -53,7 +55,6 @@ abstract class FaceScanLogic extends State<FaceScanScreen>
     }
   }
 
-  // Initializes the specific camera controller and listener for UI updates
   void onNewCameraSelected(CameraDescription cameraDescription) async {
     if (controller != null) await controller!.dispose();
 
@@ -85,7 +86,6 @@ abstract class FaceScanLogic extends State<FaceScanScreen>
     }
   }
 
-  // Swaps between Front and Back cameras
   Future<void> switchCamera() async {
     if (cameras == null || cameras!.isEmpty) return;
     setState(() => isCameraInitialized = false);
@@ -102,7 +102,6 @@ abstract class FaceScanLogic extends State<FaceScanScreen>
     onNewCameraSelected(newCamera);
   }
 
-  // Toggles the Flash (Torch mode) on/off, only works if Rear camera is selected
   Future<void> toggleFlash() async {
     if (controller == null || !isRearCameraSelected) return;
 
@@ -117,122 +116,189 @@ abstract class FaceScanLogic extends State<FaceScanScreen>
     }
   }
 
-  // Run scan animation for 5 seconds, persist attendance, then return success
   Future<void> takePicture() async {
     if (isScanning || controller == null || !controller!.value.isInitialized) {
       return;
     }
 
-    const int totalDurationMs = 5000;
-    const int tickMs = 16;
-    int elapsedMs = 0;
-
     setState(() {
       isScanning = true;
       scanProgress = 0;
+      scanMessage = 'Initializing secure scan...';
     });
 
-    _scanTimer?.cancel();
-    _scanTimer = Timer.periodic(const Duration(milliseconds: tickMs), (
-      timer,
-    ) async {
-      if (!mounted) {
-        timer.cancel();
-        return;
-      }
-
-      elapsedMs += tickMs;
-      final double progress = (elapsedMs / totalDurationMs).clamp(0.0, 1.0);
+    final String userId = (widget.loginData?['uid'] ?? '').toString().trim();
+    if (userId.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppStrings.tr('unable_to_resolve_user_id'))),
+      );
       setState(() {
-        scanProgress = progress;
+        isScanning = false;
+        scanProgress = 0;
       });
+      return;
+    }
 
-      if (elapsedMs >= totalDurationMs) {
-        timer.cancel();
+    late final AttendanceVerificationResult verification;
+    try {
+      verification = await _faceAttendanceVerifier
+          .verifyAttendance(
+            cameraController: controller!,
+            userId: userId,
+            onFlashOverlay: (enabled) async {
+              if (!mounted) return;
+              setState(() => isFlashOverlayEnabled = enabled);
+            },
+            onProgress: (progress) {
+              if (!mounted) return;
+              setState(() {
+                scanProgress = progress.progress;
+                scanMessage = progress.message;
+              });
+            },
+          )
+          .timeout(const Duration(seconds: 50));
+    } on TimeoutException {
+      if (!mounted) return;
+      setState(() {
+        isScanning = false;
+        scanProgress = 0;
+        isFlashOverlayEnabled = false;
+        scanMessage = 'Face verification timed out. Please try again.';
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Face verification timed out. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        isScanning = false;
+        scanProgress = 0;
+        isFlashOverlayEnabled = false;
+        scanMessage = 'Face verification failed. Please retry.';
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Face verification failed: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (!verification.success) {
+      if (mounted) {
         setState(() {
           isScanning = false;
-          scanProgress = 1;
+          scanProgress = 0;
+          isFlashOverlayEnabled = false;
+          scanMessage = verification.message;
         });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(verification.message),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
 
-        final Map<String, dynamic>? savedRecord = await _saveAttendanceRecord();
-        if (savedRecord == null) {
-          if (mounted) {
-            setState(() {
-              scanProgress = 0;
-            });
-          }
-          return;
-        }
+    final Map<String, dynamic>? savedRecord = await _saveAttendanceRecord(
+      verification: verification.toMap(),
+    );
+    if (savedRecord == null) {
+      if (mounted) {
+        setState(() {
+          isScanning = false;
+          scanProgress = 0;
+          isFlashOverlayEnabled = false;
+        });
+      }
+      return;
+    }
 
-        await showDialog<void>(
-          context: context,
-          barrierDismissible: false,
-          builder: (dialogContext) {
-            final theme = Theme.of(context);
+    if (!mounted) return;
 
-            return AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
-              ),
+    setState(() {
+      isScanning = false;
+      scanProgress = 1;
+      isFlashOverlayEnabled = false;
+      scanMessage = 'Verification passed';
+    });
 
-              icon: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer.withOpacity(0.3),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.check_circle_rounded,
-                  color: theme.colorScheme.primary,
-                  size: 48,
-                ),
-              ),
-              title: Text(
-                AppStrings.tr('scan_success'),
-                textAlign: TextAlign.center,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              content: Text(
-                AppStrings.tr('face_scan_success_desc'),
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium,
-              ),
-              actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              actions: [
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    // More visual weight than TextButton
-                    onPressed: () => Navigator.pop(dialogContext),
-                    style: FilledButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Text(
-                      AppStrings.tr('understood'),
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+    await controller?.pausePreview();
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        final theme = Theme.of(context);
+
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          icon: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primaryContainer.withOpacity(0.3),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.check_circle_rounded,
+              color: theme.colorScheme.primary,
+              size: 48,
+            ),
+          ),
+          title: Text(
+            AppStrings.tr('scan_success'),
+            textAlign: TextAlign.center,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Text(
+            '${AppStrings.tr('face_scan_success_desc')}\nSimilarity: ${verification.similarity.toStringAsFixed(2)}',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium,
+          ),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          actions: [
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                style: FilledButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-              ],
-            );
-          },
+                child: Text(
+                  AppStrings.tr('understood'),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
         );
+      },
+    );
 
-        if (mounted) {
-          Navigator.pop(context, savedRecord);
-        }
-      }
-    });
+    await controller?.resumePreview();
   }
 
-  Future<Map<String, dynamic>?> _saveAttendanceRecord() async {
+  Future<Map<String, dynamic>?> _saveAttendanceRecord({
+    Map<String, dynamic>? verification,
+  }) async {
     final String userId = (widget.loginData?['uid'] ?? '').toString().trim();
     if (userId.isEmpty) {
       if (!mounted) return null;
@@ -261,6 +327,7 @@ abstract class FaceScanLogic extends State<FaceScanScreen>
         scanType: scanType,
         scannedAt: DateTime.now(),
         latLng: latLng,
+        verification: verification,
       );
       return savedRecord;
     } catch (e) {

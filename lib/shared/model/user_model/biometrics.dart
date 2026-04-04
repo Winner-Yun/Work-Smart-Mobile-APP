@@ -16,7 +16,7 @@ class Biometrics {
       faceStatus: json['face_status'] ?? 'not_registered',
       faceCount: json['face_count'] ?? 0,
       registeredDate: json['registered_date'] ?? '',
-      faceVectors: json['face_vectors'] ?? [],
+      faceVectors: json['face_embeddings'] ?? json['face_vectors'] ?? [],
     );
   }
 }

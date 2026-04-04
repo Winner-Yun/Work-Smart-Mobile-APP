@@ -2,7 +2,9 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_worksmart_mobile_app/config/app_colors.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_img.dart';
+import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -26,6 +28,8 @@ class _SplashScreenState extends State<SplashScreen>
   late final Animation<double> _logoTilt;
   late final Animation<Offset> _titleSlide;
   late final Animation<double> _subtitleFade;
+
+  bool _devModeChecked = false;
 
   @override
   void initState() {
@@ -59,7 +63,7 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
 
-    Future<void>.delayed(widget.minDuration, _goNext);
+    _checkDeveloperModeAndProceed();
   }
 
   @override
@@ -68,10 +72,100 @@ class _SplashScreenState extends State<SplashScreen>
     super.dispose();
   }
 
-  void _goNext() {
-    if (!mounted) {
+  Future<void> _checkDeveloperModeAndProceed() async {
+    // Wait for splash duration
+    await Future<void>.delayed(widget.minDuration);
+    if (!mounted) return;
+    if (_devModeChecked) return;
+    _devModeChecked = true;
+    bool developerMode = false;
+    try {
+      // developerMode = await FlutterJailbreakDetection.developerMode;
+    } catch (_) {
+      developerMode = false;
+    }
+    if (developerMode) {
+      // Show blocking alert and exit if not closed
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) {
+          final theme = Theme.of(ctx);
+          final colorScheme = theme.colorScheme;
+          return AlertDialog(
+            backgroundColor: colorScheme.surface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            titlePadding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
+            contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+            actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            title: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: AppColors.secondary.withOpacity(0.18),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.security_rounded,
+                    color: AppColors.secondary,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    AppStrings.tr('developer_mode_alert_title'),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            content: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    AppStrings.tr('developer_mode_alert_message'),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () {
+                    SystemNavigator.pop();
+                  },
+                  icon: const Icon(Icons.exit_to_app_rounded),
+                  label: Text(AppStrings.tr('exit_app')),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    backgroundColor: AppColors.red,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+      // If dialog is somehow dismissed, exit anyway
+      SystemNavigator.pop();
       return;
     }
+    if (!mounted) return;
     Navigator.of(context).pushReplacementNamed(widget.nextRoute);
   }
 

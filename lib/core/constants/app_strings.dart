@@ -125,6 +125,10 @@ class AppStrings {
           "Your account is still using the default password. Please change it now to protect your account.",
       "change_now": "Change Now",
       "later": "Later",
+      'developer_mode_alert_title': 'Developer Mode Detected',
+      'developer_mode_alert_message':
+          'Developer mode is enabled on your device. For security, please disable developer mode to use this app.',
+      'exit_app': 'Exit App',
 
       // --- Tutorial ---
       'skip': 'Skip',
@@ -224,6 +228,11 @@ class AppStrings {
       'face_scan_success_desc':
           'You have been successfully registered for attendance.',
       'face_scan_success': 'Attendance Registered Successfully!',
+      'profile_photo_option_title': 'Profile Photo Option',
+      'profile_photo_option_desc':
+          'Would you like to crop this face image and use it as your profile photo?',
+      'crop_and_use_profile': 'Use',
+      'profile_photo_updated': 'Profile photo updated successfully.',
       'at': 'at',
       'time_placeholder': '--:--',
       'office_updated_success': 'Office information updated successfully',
@@ -483,6 +492,35 @@ class AppStrings {
       'face_training_title': 'Face ID Training',
       'take_photo_step': 'Step',
       'face_registered_success': 'Face registered successfully!',
+      'done': 'Done!',
+      'face_center_and_clear': 'Face center & clear',
+
+      'face_ok': 'Face OK',
+      'scanning': 'Scanning',
+      'no_face_detected': 'No face detected. Keep centered.',
+      'face_not_straight': 'Keep your head straight.',
+      'move_closer_full_face_required': 'Move closer. Full face is required.',
+      'face_not_centered': 'Face not centered. Look straight.',
+      'eyes_not_clear': 'Keep your eyes clear and open.',
+      'eyes_not_visible': 'Eyes not visible. Improve lighting.',
+      'keep_neutral_expression': 'Keep a neutral expression.',
+      'bad_lighting': 'Lighting is not good. Face is unclear.',
+      'face_quality_ok': 'Face quality OK. Capturing...',
+      'single_photo_mode': 'Single photo mode',
+      'taking_you_home': 'Taking you to Home...',
+      'hold_steady_seconds': 'Hold steady {seconds}s',
+      'face_confirmed': 'Face confirmed',
+      'remove_glasses_alert': 'Please remove glasses for clear scan.',
+      'remove_hat_alert': 'Please remove hat/cap for clear scan.',
+      'face_validation_error': 'Face validation failed. Please try again.',
+      'reduce_light_pollution': 'Reduce bright light. Keep face evenly lit.',
+      'photos_captured': 'photos captured',
+      'before_scanning_title': 'Before scanning',
+      'before_scanning_desc':
+          'Please make sure your face is fully visible.\nRemove glasses, hat, and mask first.',
+      'guide_remove_glasses': 'Remove glasses',
+      'guide_no_hat_mask': 'No hat and mask',
+      'start_scanning_acknowledge': 'I understand, start scanning',
 
       // --- Manage Users ---
       'manage_users_title': 'Manage Users',
@@ -981,6 +1019,10 @@ class AppStrings {
           "គណនីរបស់អ្នកកំពុងប្រើពាក្យសម្ងាត់ដើម។ សូមប្តូរពាក្យសម្ងាត់ឥឡូវនេះ ដើម្បីការពារគណនីរបស់អ្នក។",
       "change_now": "ប្តូរឥឡូវនេះ",
       "later": "ពេលក្រោយ",
+      'developer_mode_alert_title': 'រកឃើញ Developer Mode',
+      'developer_mode_alert_message':
+          'Developer mode ត្រូវបានបើកលើឧបករណ៍របស់អ្នក។ ដើម្បីសុវត្ថិភាព សូមបិទវា មុនប្រើកម្មវិធីនេះ។',
+      'exit_app': 'ចាកចេញពីកម្មវិធី',
 
       // --- Tutorial ---
       'skip': 'រំលង',
@@ -1079,6 +1121,12 @@ class AppStrings {
       'understood': 'យល់ព្រម',
       'face_scan_success_desc': 'អ្នកត្រូវបានចុះវត្តមានដោយជោគជ័យ។!',
       'face_scan_success': 'បានចុះវត្តមានជោគជ័យ!',
+      'profile_photo_option_title': 'ជម្រើសរូបភាពប្រវត្តិរូប',
+      'profile_photo_option_desc':
+          'តើអ្នកចង់កាត់រូបមុខនេះ ហើយប្រើជារូបភាពប្រវត្តិរូបរបស់អ្នកទេ?',
+      'crop_and_use_profile': 'ប្រើប្រាស់',
+      'profile_photo_updated':
+          'បានធ្វើបច្ចុប្បន្នភាពរូបភាពប្រវត្តិរូបដោយជោគជ័យ។',
       'at': 'នៅ',
       'time_placeholder': '--:--',
       'office_updated_success':
@@ -1338,6 +1386,35 @@ class AppStrings {
       'face_training_title': 'ការបង្វឹក Face ID',
       'take_photo_step': 'ជំហាន',
       'face_registered_success': 'ការចុះឈ្មោះផ្ទៃមុខបានជោគជ័យ!',
+      'done': 'រួចរាល់!',
+      'face_center_and_clear': 'មុខក្នុងចំណាប់អារម្មណ៍ & ច្បាស់',
+
+      'face_ok': 'មុខល្អ',
+      'scanning': 'កំពុងស្កេន',
+      'no_face_detected': 'មិនបានរកឃើញមុខ។ រក្សាចំណាប់អារម្មណ៍។',
+      'face_not_straight': 'សូមរក្សាក្បាលឱ្យត្រង់។',
+      'move_closer_full_face_required': 'សូមចូលកាន់តែជិត។ ត្រូវការមុខពេញលេញ។',
+      'face_not_centered': 'មុខមិនផ្ចិត។ មើលត្រង់ទៅ។',
+      'eyes_not_clear': 'សូមបើកភ្នែកឱ្យច្បាស់។',
+      'eyes_not_visible': 'ភ្នែកមិនបង្ហាញ។ ធានាលក្ខណ៍ល្អ។',
+      'keep_neutral_expression': 'រក្សាការបង្ហាញតម្រង់ទិស។',
+      'bad_lighting': 'ពន្លឺមិនល្អ។ មុខមិនច្បាស់។',
+      'face_quality_ok': 'គុណភាពមុខល្អ។ កំពុងចាប់ផ្តើម...',
+      'single_photo_mode': 'របៀបថតរូបមួយសន្លឹក',
+      'taking_you_home': 'កំពុងនាំអ្នកត្រឡប់ទៅទំព័រដើម...',
+      'hold_steady_seconds': 'កាន់ឱ្យនឹង {seconds}វិ',
+      'face_confirmed': 'បានបញ្ជាក់មុខរួចរាល់',
+      'remove_glasses_alert': 'សូមដកផ្នែកដែលមានបរិលោភន៍សម្រាប់ការស្កេនច្បាស់។',
+      'remove_hat_alert': 'សូមដោះមួកសម្រាប់ការស្កេនឱ្យច្បាស់។',
+      'face_validation_error': 'ការផ្ទៀងផ្ទាត់មុខបរាជ័យ។ សូមព្យាយាមម្តងទៀត។',
+      'reduce_light_pollution': 'កាត់បន្ថយពន្លឺខ្លាំង។ រក្សាពន្លឺលើមុខឱ្យស្មើ។',
+      'photos_captured': 'រូបថតចាប់យក',
+      'before_scanning_title': 'មុនពេលស្កេន',
+      'before_scanning_desc':
+          'សូមធានាថាមុខរបស់អ្នកបង្ហាញពេញលេញ។\nសូមដោះវ៉ែនតា មួក និងម៉ាស់ជាមុនសិន។',
+      'guide_remove_glasses': 'ដោះវ៉ែនតា',
+      'guide_no_hat_mask': 'គ្មានមួក និងម៉ាស់',
+      'start_scanning_acknowledge': 'យល់ហើយ ចាប់ផ្តើមស្កេន',
 
       // --- Admin Dashboard ---
       'real_time_attendance': 'វត្តមានក្នុងពេលវេលាជាក់ស្តែង',

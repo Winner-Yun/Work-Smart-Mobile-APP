@@ -1,8 +1,6 @@
 import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter_worksmart_mobile_app/app/routes/app_admin_route.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
 import 'package:flutter_worksmart_mobile_app/core/util/database/database_helper.dart';
 
@@ -12,23 +10,11 @@ class InitialRouteResolver {
 
     final dbHelper = DatabaseHelper();
     final cachedLogin = await dbHelper.getCachedLogin();
-    final hasFirebaseAdminSession = FirebaseAuth.instance.currentUser != null;
-
-    if (kIsWeb) {
-      if (hasFirebaseAdminSession) {
-        return AppAdminRoute.adminDashboard;
-      }
-      return AppAdminRoute.authAdminScreen;
-    }
 
     final tutorialSeen = await dbHelper.getConfig('tutorial_seen') == 'true';
 
     if (!tutorialSeen) {
       return AppRoute.tutorial;
-    }
-
-    if (hasFirebaseAdminSession) {
-      return AppAdminRoute.adminDashboard;
     }
 
     if (cachedLogin == null) {
@@ -51,7 +37,7 @@ class InitialRouteResolver {
   static String _resolveAuthenticatedRoute(Map<String, dynamic> cachedLogin) {
     final userType = cachedLogin['user_type']?.toString().toLowerCase();
     if (userType == 'admin') {
-      return kIsWeb ? AppAdminRoute.authAdminScreen : AppRoute.authScreen;
+      return AppRoute.authScreen;
     }
     return AppRoute.appmain;
   }

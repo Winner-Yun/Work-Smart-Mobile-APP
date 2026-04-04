@@ -109,9 +109,14 @@ abstract class HomePageLogic extends State<HomePageScreen> {
     final normalizedFaceStatus = currentUser.biometrics.faceStatus
         .trim()
         .toLowerCase();
+    final bool hasFaceSamples =
+        currentUser.biometrics.faceCount > 0 ||
+        currentUser.biometrics.faceVectors.isNotEmpty;
     currentFaceStatus = normalizedFaceStatus.isEmpty
         ? 'uninitialized'
-        : normalizedFaceStatus;
+        : (normalizedFaceStatus == 'pending' && hasFaceSamples
+              ? 'approved'
+              : normalizedFaceStatus);
 
     allEmployees = safeUserDataSource
         .map((json) => UserProfile.fromJson(json))

@@ -13,7 +13,8 @@ import 'package:flutter_worksmart_mobile_app/features/user/presentation/activity
 import 'package:flutter_worksmart_mobile_app/features/user/presentation/attendence_screens/attendance_stats_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/presentation/attendence_screens/leave_attendance_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/presentation/homepage_screens/homepagescreen.dart';
-import 'package:flutter_worksmart_mobile_app/features/user/presentation/profile&setting_screens/profile_screens.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/presentation/profile&setting_screens/profile_screen_web_stub.dart'
+    if (dart.library.io) 'package:flutter_worksmart_mobile_app/features/user/presentation/profile&setting_screens/profile_screens.dart';
 
 class MainScreen extends StatefulWidget {
   final Map<String, dynamic>? loginData;

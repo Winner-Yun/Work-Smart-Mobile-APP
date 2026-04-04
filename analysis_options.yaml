@@ -2,6 +2,7 @@ include: package:flutter_lints/flutter.yaml
 analyzer:
   errors:
     avoid_web_libraries_in_flutter: ignore
+    curly_braces_in_flow_control_structures: ignore
     deprecated_member_use: ignore
     file_names: ignore
     unused_field: ignore

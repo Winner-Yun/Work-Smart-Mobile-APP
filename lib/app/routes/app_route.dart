@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_worksmart_mobile_app/core/util/database/database_helper.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/auth/presentation/authscreen.dart';
@@ -11,16 +10,16 @@ import 'package:flutter_worksmart_mobile_app/features/user/presentation/attenden
 import 'package:flutter_worksmart_mobile_app/features/user/presentation/attendence_screens/attendance_detail_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/presentation/attendence_screens/leave_all_requests_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/presentation/attendence_screens/sick_leave_request_screen.dart';
-import 'package:flutter_worksmart_mobile_app/features/user/presentation/homepage_screens/assign_user_face_screen.dart';
-import 'package:flutter_worksmart_mobile_app/features/user/presentation/homepage_screens/face_scan_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/presentation/homepage_screens/assign_user_face_screen_web_stub.dart'
+    if (dart.library.io) 'package:flutter_worksmart_mobile_app/features/user/presentation/homepage_screens/assign_user_face_screen.dart';
+import 'package:flutter_worksmart_mobile_app/features/user/presentation/homepage_screens/face_scan_screen_web_stub.dart'
+    if (dart.library.io) 'package:flutter_worksmart_mobile_app/features/user/presentation/homepage_screens/face_scan_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/presentation/homepage_screens/leave_management_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/presentation/homepage_screens/notification_screens.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/presentation/mainscreen.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/presentation/profile&setting_screens/help_support_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/presentation/profile&setting_screens/setting_screen.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/presentation/profile&setting_screens/telegram_integration.dart';
-
-import 'app_admin_route.dart';
 
 /// AppRoute: Central routing configuration
 ///
@@ -58,10 +57,6 @@ class AppRoute {
       final args =
           ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
       if (args != null) {
-        final userType = args['userType']?.toString().toLowerCase();
-        if (userType == 'admin') {
-          return AppAdminRoute.routes[AppAdminRoute.adminDashboard]!(context);
-        }
         final initialIndex = args['initialIndex'] as int? ?? 0;
         return MainScreen(loginData: args, initialIndex: initialIndex);
       }
@@ -113,9 +108,6 @@ class AppRoute {
     settingScreen: _buildRoute((args) => SettingsScreen(loginData: args)),
     telegramConfig: _buildRoute((args) => TelegramIntegration(loginData: args)),
     helpSupportScreen: (context) => const HelpSupportScreen(),
-
-    // Admin Routes
-    ...AppAdminRoute.routes,
   };
 
   static WidgetBuilder _buildRoute(
@@ -134,11 +126,6 @@ class _CachedLoginGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasFirebaseAdminSession = FirebaseAuth.instance.currentUser != null;
-    if (hasFirebaseAdminSession) {
-      return AppAdminRoute.routes[AppAdminRoute.adminDashboard]!(context);
-    }
-
     return FutureBuilder<Map<String, dynamic>?>(
       future: DatabaseHelper().getCachedLogin(),
       builder: (context, snapshot) {

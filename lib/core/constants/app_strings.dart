@@ -237,6 +237,7 @@ class AppStrings {
       'time_placeholder': '--:--',
       'office_updated_success': 'Office information updated successfully',
       'office_deleted_success': 'Office deleted successfully',
+      'not_user': 'Not a registered user',
 
       // --- Attendance ---
       'my_stats': 'My Statistics',
@@ -398,13 +399,21 @@ class AppStrings {
       'avg_attendance': 'Average Attendance',
 
       // --- Face Scan ---
-      'face_scan_title': 'Please place your face in the circle',
       'face_scan_step': 'Next Step: Scan Face',
       'live_status': 'LIVE',
       'switch_camera': 'Switch',
       'ensure_light': 'Ensure enough light',
-      'scan_success': 'Scan Success!',
+
       'camera_error': 'Camera Error',
+      'face_scan_title': 'Attendance Assessment',
+      'face_pose_hint_title': 'Follow these face poses',
+      'face_pose_hint_desc': 'This is a live image scan, not a video.',
+      'face_pose_left': 'Look left',
+      'face_pose_right': 'Look right',
+      'face_pose_blink_eyes': 'Blink eyes',
+      'scan_success': 'Scan Success!',
+      'notvideo_passed':
+          'មិនមែនជាវីដេអូទេ។ នេះបញ្ជាក់ថាជាមុខមនុស្សពិត មិនមែនជារូបភាព ឬ វីដេអូទេ។',
 
       // --- Help & Support ---
       'help_support_title': 'Help & Support',
@@ -414,8 +423,14 @@ class AppStrings {
       'send_email': 'Send Email',
       'faq_title': 'FAQ',
       'faq_change_pass': 'How to change password?',
+      'faq_change_pass_answer':
+          'Go to Profile > Change Password, enter your current password, then set a new one. Use at least 8 characters for better security.',
       'faq_connect_tele': 'How to connect Telegram?',
+      'faq_connect_tele_answer':
+          'Open Settings > Telegram Integration, follow the bot link, send /start, then return to the app and confirm the connection.',
       'faq_login_issue': 'Login issues',
+      'faq_login_issue_answer':
+          'Check your internet connection and credentials first. If you still cannot login, use Forgot Password or contact support for account verification.',
 
       // --- Profile ---
       'account_title': 'Account',
@@ -1132,6 +1147,7 @@ class AppStrings {
       'office_updated_success':
           'ព័ត៌មានការិយាល័យបានធ្វើបច្ចុប្បន្នភាពដោយជោគជ័យ!',
       'office_deleted_success': 'ការិយាល័យបានលុបដោយជោគជ័យ!',
+      'not_user': 'មិនមែនជាអ្នកទេ',
 
       // --- Attendance ---
       'my_stats': 'ស្ថិតិរបស់ខ្ញុំ',
@@ -1292,13 +1308,20 @@ class AppStrings {
       'avg_attendance': 'មធ្យមភាគវត្តមាន',
 
       // --- Face Scan ---
-      'face_scan_title': 'សូមដាក់ផ្ទៃមុខឱ្យចំរង្វង់',
       'face_scan_step': 'ជំហានទី ២: ស្កេនផ្ទៃមុខ',
       'live_status': 'បន្តផ្ទាល់',
       'switch_camera': 'ប្តូរកាមេរ៉ា',
       'ensure_light': 'ធានាថាពន្លឺគ្រប់គ្រាន់',
-      'scan_success': 'ស្កេនជោគជ័យ!',
+
       'camera_error': 'មានបញ្ហាកាមេរ៉ា',
+      'face_scan_title': 'ការចុះវត្តមាន',
+      'face_pose_hint_title': 'ធ្វើតាមនេះ',
+      'face_pose_hint_desc': 'ថតរូប មិនមែនវីដេអូ',
+      'face_pose_left': 'ងាកឆ្វេង',
+      'face_pose_right': 'ងាកស្តាំ',
+      'face_pose_blink_eyes': 'ព្រិចភ្នែក',
+      'scan_success': 'ជោគជ័យ!',
+      'notvideo_passed': '',
 
       // --- Help & Support ---
       'help_support_title': 'ជំនួយ និង ការគាំទ្រ',
@@ -1308,8 +1331,14 @@ class AppStrings {
       'send_email': 'ផ្ញើអ៊ីមែល',
       'faq_title': 'សំណួរដែលសួរញឹកញាប់ (FAQ)',
       'faq_change_pass': 'របៀបប្តូរលេខសម្ងាត់?',
+      'faq_change_pass_answer':
+          'សូមចូលទៅកាន់ Profile > Change Password បញ្ចូលលេខសម្ងាត់បច្ចុប្បន្ន ហើយកំណត់លេខសម្ងាត់ថ្មី។ សូមប្រើយ៉ាងហោចណាស់ ៨ តួអក្សរ។',
       'faq_connect_tele': 'តើធ្វើដូចម្តេចដើម្បីភ្ជាប់ Telegram?',
+      'faq_connect_tele_answer':
+          'សូមចូលទៅកាន់ Settings > Telegram Integration បើកតំណ Bot ផ្ញើ /start បន្ទាប់មកត្រឡប់មក App ហើយបញ្ជាក់ការភ្ជាប់។',
       'faq_login_issue': 'បញ្ហាការចុះឈ្មោះចូលប្រើប្រាស់',
+      'faq_login_issue_answer':
+          'សូមពិនិត្យអ៊ីនធឺណិត និងព័ត៌មានចូលប្រើជាមុនសិន។ បើនៅតែមិនអាចចូលបាន សូមប្រើ Forgot Password ឬទាក់ទងផ្នែកគាំទ្រ។',
 
       // --- Profile ---
       'account_title': 'គណនី',

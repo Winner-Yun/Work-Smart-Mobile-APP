@@ -12,4 +12,7 @@ class AppImg {
   static String emptyState = 'assets/icons/nodata.png';
   static String takeofGlasses = 'assets/icons/takeoffglas.png';
   static String nohatandmask = 'assets/icons/nohatandmask.png';
+  static String closeOpenEye = 'assets/icons/close_open.png';
+  static String lookToLeft = 'assets/icons/look_left.png';
+  static String lookToRight = 'assets/icons/look_right.png';
 }

@@ -6,6 +6,7 @@ import 'package:camera/camera.dart';
 import 'package:detect_fake_location/detect_fake_location.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_jailbreak_detection/flutter_jailbreak_detection.dart';
+import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/util/database/realtime_data_controller.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:image/image.dart' as img;
@@ -14,6 +15,7 @@ import 'package:tflite_flutter/tflite_flutter.dart';
 
 enum LivenessAction { blink, turnLeft, turnRight }
 
+/// Progress tracking for verification
 class VerificationProgress {
   final String message;
   final double progress;
@@ -21,6 +23,7 @@ class VerificationProgress {
   const VerificationProgress({required this.message, required this.progress});
 }
 
+/// Attendance verification result
 class AttendanceVerificationResult {
   final bool success;
   final String message;
@@ -40,6 +43,7 @@ class AttendanceVerificationResult {
     required this.security,
   });
 
+  /// Convert to map for database storage
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
       'success': success,
@@ -54,6 +58,7 @@ class AttendanceVerificationResult {
   }
 }
 
+/// Main attendance verification: security checks → face match → liveness
 class FaceAttendanceVerifier {
   FaceAttendanceVerifier({RealtimeDataController? dataController})
     : _dataController = dataController ?? RealtimeDataController(),
@@ -69,22 +74,27 @@ class FaceAttendanceVerifier {
 
   static const String modelAssetPath = 'assets/models/mobilefacenet.tflite';
   static const int embeddingSize = 192;
+  static const double _livenessYawThreshold = 6;
+  static const double _livenessPitchMax = 25;
 
   final RealtimeDataController _dataController;
   final FaceDetector _faceDetector;
   Interpreter? _interpreter;
 
+  /// Cleanup resources
   Future<void> close() async {
     await _faceDetector.close();
     _interpreter?.close();
     _interpreter = null;
   }
 
+  /// Verify attendance: security → face match → liveness
   Future<AttendanceVerificationResult> verifyAttendance({
     required CameraController cameraController,
     required String userId,
     required Future<void> Function(bool enabled) onFlashOverlay,
     required void Function(VerificationProgress progress) onProgress,
+    bool skipLivenessChallenges = false,
   }) async {
     onProgress(
       const VerificationProgress(
@@ -99,6 +109,10 @@ class FaceAttendanceVerifier {
       return _fail('User profile not found for verification.');
     }
 
+    final Map<String, dynamic>? faceRecord = await _dataController
+        .fetchUserFaceBiometrics(userId);
+
+    /// Validate device security
     final SecurityValidationResult securityValidation = await _validateSecurity(
       userRecord: userRecord,
     );
@@ -115,6 +129,8 @@ class FaceAttendanceVerifier {
         progress: 0.15,
       ),
     );
+
+    /// Capture aligned face
     final CapturedFace? baseline = await _captureAlignedFace(cameraController);
     if (baseline == null) {
       return _fail(
@@ -122,52 +138,11 @@ class FaceAttendanceVerifier {
       );
     }
 
-    final List<LivenessAction> challenges = _randomizedChallenges();
-    for (int i = 0; i < challenges.length; i++) {
-      final LivenessAction challenge = challenges[i];
-      onProgress(
-        VerificationProgress(
-          message: 'Liveness: ${_labelForAction(challenge)}',
-          progress: 0.25 + (i * 0.2),
-        ),
-      );
-
-      final LivenessCheckResult challengeResult = await _runChallenge(
-        cameraController: cameraController,
-        baseline: baseline,
-        challenge: challenge,
-      );
-
-      if (!challengeResult.passed) {
-        return _fail(
-          challengeResult.message,
-          security: securityValidation.toMap(),
-        );
-      }
-    }
-
-    onProgress(
-      const VerificationProgress(
-        message: 'Running screen flash anti-spoof check...',
-        progress: 0.7,
-      ),
-    );
-    final bool flashPassed = await _runFlashHeuristic(
-      cameraController: cameraController,
-      onFlashOverlay: onFlashOverlay,
-      baseline: baseline,
-    );
-    if (!flashPassed) {
-      return _fail(
-        'Screen reflection test failed. Possible spoof detected.',
-        security: securityValidation.toMap(),
-      );
-    }
-
+    /// Extract face embedding first
     onProgress(
       const VerificationProgress(
         message: 'Generating face embedding...',
-        progress: 0.82,
+        progress: 0.28,
       ),
     );
     final List<double>? probeEmbedding = await extractEmbeddingFromPath(
@@ -177,8 +152,9 @@ class FaceAttendanceVerifier {
       return _fail('Failed to extract face embedding from the captured face.');
     }
 
+    /// Match against enrolled embeddings first
     final List<List<double>> storedEmbeddings = _extractStoredEmbeddings(
-      userRecord,
+      faceRecord,
     );
     if (storedEmbeddings.isEmpty) {
       return _fail(
@@ -186,21 +162,99 @@ class FaceAttendanceVerifier {
       );
     }
 
-    final double similarityThreshold = _readSimilarityThreshold(userRecord);
+    onProgress(
+      const VerificationProgress(
+        message: 'Checking registered face match...',
+        progress: 0.4,
+      ),
+    );
+
+    final double similarityThreshold = _readSimilarityThreshold(faceRecord);
     final double bestSimilarity = _maxCosineSimilarity(
       probeEmbedding,
       storedEmbeddings,
     );
 
+    /// If face mismatch, stop immediately
     if (bestSimilarity <= similarityThreshold) {
       return _fail(
-        'Face did not match the enrolled profile. Similarity: ${bestSimilarity.toStringAsFixed(2)}',
+        AppStrings.tr('not_user'),
         similarity: bestSimilarity,
         threshold: similarityThreshold,
         security: securityValidation.toMap(),
       );
     }
 
+    final String matchedUserName = _resolveDisplayName(userRecord, userId);
+    onProgress(
+      VerificationProgress(
+        message: 'Face matched: $matchedUserName. Do pose now.',
+        progress: 0.5,
+      ),
+    );
+
+    bool flashPassed = true;
+    if (!skipLivenessChallenges) {
+      /// Run liveness challenges in strict order: left -> right -> blink
+      final List<LivenessAction> challenges = _orderedChallenges();
+      for (int i = 0; i < challenges.length; i++) {
+        final LivenessAction challenge = challenges[i];
+        onProgress(
+          VerificationProgress(
+            message: 'Liveness: ${_labelForAction(challenge)}',
+            progress: 0.58 + (i * 0.12),
+          ),
+        );
+
+        final LivenessCheckResult challengeResult = await _runChallenge(
+          cameraController: cameraController,
+          baseline: baseline,
+          challenge: challenge,
+        );
+
+        if (!challengeResult.passed) {
+          return _fail(
+            challengeResult.message,
+            security: securityValidation.toMap(),
+          );
+        }
+      }
+
+      /// Anti-spoof flash check
+      onProgress(
+        const VerificationProgress(
+          message: 'Running screen flash anti-spoof check...',
+          progress: 0.9,
+        ),
+      );
+      flashPassed = await _runFlashHeuristic(
+        cameraController: cameraController,
+        onFlashOverlay: onFlashOverlay,
+        baseline: baseline,
+      );
+      if (!flashPassed) {
+        return _fail(
+          'Screen reflection test failed. Possible spoof detected.',
+          security: securityValidation.toMap(),
+        );
+      }
+
+      onProgress(
+        const VerificationProgress(
+          message: 'Liveness passed. You can retry face recognition directly.',
+          progress: 0.96,
+        ),
+      );
+    } else {
+      onProgress(
+        VerificationProgress(
+          message: 'Face matched: $matchedUserName. Liveness already verified.',
+          progress: 0.96,
+        ),
+      );
+    }
+
+    /// All checks passed - report success
     onProgress(
       const VerificationProgress(
         message: 'Verification passed.',
@@ -210,15 +264,18 @@ class FaceAttendanceVerifier {
 
     return AttendanceVerificationResult(
       success: true,
-      message: 'Face verification passed.',
+      message: 'Face verification passed for $matchedUserName.',
       similarity: bestSimilarity,
       threshold: similarityThreshold,
-      livenessSummary: 'Randomized blink/head-turn challenge passed.',
-      flashPassed: true,
+      livenessSummary: skipLivenessChallenges
+          ? 'Liveness already verified in this session.'
+          : 'Ordered liveness challenge passed (left, right, blink).',
+      flashPassed: flashPassed,
       security: securityValidation.toMap(),
     );
   }
 
+  /// Extract face embedding using MobileFaceNet
   Future<List<double>?> extractEmbeddingFromPath(String imagePath) async {
     final CapturedFace? capturedFace = await _detectSingleFaceFromPath(
       imagePath,
@@ -237,6 +294,7 @@ class FaceAttendanceVerifier {
       return null;
     }
 
+    /// Crop and resize face
     final Rect bounded = _clampRect(
       capturedFace.face.boundingBox,
       decoded.width,
@@ -251,6 +309,8 @@ class FaceAttendanceVerifier {
     );
 
     final img.Image resized = img.copyResize(faceCrop, width: 112, height: 112);
+
+    /// Normalize and create input tensor
     final List<List<List<List<double>>>> input = List.generate(
       1,
       (_) => List.generate(
@@ -265,6 +325,7 @@ class FaceAttendanceVerifier {
       ),
     );
 
+    /// Run model and L2 normalize
     final Interpreter interpreter = await _getInterpreter();
     final List<List<double>> output = List.generate(
       1,
@@ -284,6 +345,7 @@ class FaceAttendanceVerifier {
     return _interpreter!;
   }
 
+  /// Validate device security
   Future<SecurityValidationResult> _validateSecurity({
     required Map<String, dynamic> userRecord,
   }) async {
@@ -365,6 +427,7 @@ class FaceAttendanceVerifier {
     );
   }
 
+  /// Capture aligned face
   Future<CapturedFace?> _captureAlignedFace(
     CameraController cameraController,
   ) async {
@@ -388,6 +451,7 @@ class FaceAttendanceVerifier {
     return null;
   }
 
+  /// Detect single face in image
   Future<CapturedFace?> _detectSingleFaceFromPath(String path) async {
     final InputImage inputImage = InputImage.fromFilePath(path);
     final List<Face> faces = await _faceDetector.processImage(inputImage);
@@ -398,6 +462,7 @@ class FaceAttendanceVerifier {
     return CapturedFace(file: File(path), face: faces.first);
   }
 
+  /// Run liveness challenge
   Future<LivenessCheckResult> _runChallenge({
     required CameraController cameraController,
     required CapturedFace baseline,
@@ -406,24 +471,37 @@ class FaceAttendanceVerifier {
     final DateTime startedAt = DateTime.now();
     final double baselineEyes = _meanEyeOpen(baseline.face);
 
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 10; i++) {
       await Future<void>.delayed(const Duration(milliseconds: 450));
 
-      final CapturedFace? current = await _captureAlignedFace(cameraController);
+      // For liveness challenges, allow natural head motion and evaluate action
+      // directly from a single-face capture instead of strict alignment.
+      final CapturedFace? current = await _captureSingleFace(cameraController);
       if (current == null) {
         continue;
       }
 
       bool actionSatisfied = false;
       final double yaw = current.face.headEulerAngleY ?? 0;
+      final double pitch = (current.face.headEulerAngleX ?? 0).abs();
       final double currentEyes = _meanEyeOpen(current.face);
 
       if (challenge == LivenessAction.blink) {
-        actionSatisfied = baselineEyes >= 0.6 && currentEyes <= 0.35;
+        final double leftEye =
+            current.face.leftEyeOpenProbability ?? currentEyes;
+        final double rightEye =
+            current.face.rightEyeOpenProbability ?? currentEyes;
+        final bool oneEyeClosed = leftEye <= 0.35 || rightEye <= 0.35;
+        final bool bothReduced =
+            currentEyes <= 0.5 && (baselineEyes - currentEyes) >= 0.2;
+        actionSatisfied = oneEyeClosed || bothReduced;
       } else if (challenge == LivenessAction.turnLeft) {
-        actionSatisfied = yaw <= -12;
+        // Front camera is mirrored for users, so left/right yaw checks are swapped.
+        actionSatisfied =
+            yaw >= _livenessYawThreshold && pitch <= _livenessPitchMax;
       } else if (challenge == LivenessAction.turnRight) {
-        actionSatisfied = yaw >= 12;
+        actionSatisfied =
+            yaw <= -_livenessYawThreshold && pitch <= _livenessPitchMax;
       }
 
       if (!actionSatisfied) {
@@ -452,6 +530,23 @@ class FaceAttendanceVerifier {
     );
   }
 
+  /// Capture a single-face frame without strict pose constraints.
+  Future<CapturedFace?> _captureSingleFace(
+    CameraController cameraController,
+  ) async {
+    for (int i = 0; i < 3; i++) {
+      final XFile file = await cameraController.takePicture();
+      final CapturedFace? capturedFace = await _detectSingleFaceFromPath(
+        file.path,
+      );
+      if (capturedFace != null) {
+        return capturedFace;
+      }
+    }
+    return null;
+  }
+
+  /// Flash anti-spoof check
   Future<bool> _runFlashHeuristic({
     required CameraController cameraController,
     required Future<void> Function(bool enabled) onFlashOverlay,
@@ -490,10 +585,10 @@ class FaceAttendanceVerifier {
     final double avgDelta = (afterStats.mean - beforeStats.mean).abs();
     final double stdDelta = (afterStats.stdDev - beforeStats.stdDev).abs();
 
-    // Heuristic: a real face reflection should change moderately, not in a flat/sharp jump.
     return avgDelta >= 3 && avgDelta <= 80 && stdDelta <= 45;
   }
 
+  /// Calculate brightness stats for face region
   BrightnessStats _faceBrightnessStats(img.Image image, Rect box) {
     final Rect bounded = _clampRect(box, image.width, image.height);
     double sum = 0;
@@ -520,6 +615,7 @@ class FaceAttendanceVerifier {
     return BrightnessStats(mean: mean, stdDev: sqrt(variance));
   }
 
+  /// L2 normalize embedding
   List<double> _l2Normalize(List<double> embedding) {
     final double norm = sqrt(
       embedding.fold<double>(0.0, (sum, v) => sum + (v * v)),
@@ -530,12 +626,32 @@ class FaceAttendanceVerifier {
     return embedding.map((v) => v / norm).toList(growable: false);
   }
 
-  List<List<double>> _extractStoredEmbeddings(Map<String, dynamic> userRecord) {
-    final Map<String, dynamic> biometrics = _asMap(userRecord['biometrics']);
+  /// Extract enrolled embeddings
+  List<List<double>> _extractStoredEmbeddings(
+    Map<String, dynamic>? faceRecord,
+  ) {
+    final Map<String, dynamic> enrollment = _asMap(faceRecord);
     final dynamic rawEmbeddings =
-        biometrics['face_embeddings'] ?? biometrics['face_vectors'];
+        enrollment['face_embeddings'] ??
+        enrollment['face_vectors'] ??
+        enrollment['face_embedding_vector'];
     if (rawEmbeddings is! List) {
       return <List<double>>[];
+    }
+
+    if (rawEmbeddings.isNotEmpty &&
+        rawEmbeddings.every((entry) => entry is num)) {
+      final List<double> values = rawEmbeddings
+          .whereType<num>()
+          .map((v) => v.toDouble())
+          .toList(growable: false);
+      final double scale = _readEmbeddingScale(enrollment);
+      final List<double> normalized = scale > 0 && (scale - 1).abs() > 1e-9
+          ? values.map((value) => value / scale).toList(growable: false)
+          : values;
+      return normalized.length == embeddingSize
+          ? <List<double>>[normalized]
+          : <List<double>>[];
     }
 
     return rawEmbeddings
@@ -551,10 +667,22 @@ class FaceAttendanceVerifier {
             final dynamic rawVector =
                 entry['vector'] ?? entry['embedding'] ?? entry['values'];
             if (rawVector is List) {
-              return rawVector
+              final List<double> values = rawVector
                   .whereType<num>()
                   .map((v) => v.toDouble())
                   .toList(growable: false);
+
+              final dynamic rawScale = entry['scale'];
+              final double? scale = rawScale is num
+                  ? rawScale.toDouble()
+                  : double.tryParse(rawScale?.toString() ?? '');
+              if (scale != null && scale > 0 && (scale - 1).abs() > 1e-9) {
+                return values
+                    .map((value) => value / scale)
+                    .toList(growable: false);
+              }
+
+              return values;
             }
           }
 
@@ -564,6 +692,15 @@ class FaceAttendanceVerifier {
         .toList(growable: false);
   }
 
+  double _readEmbeddingScale(Map<String, dynamic> enrollment) {
+    final dynamic rawScale =
+        enrollment['face_embedding_scale'] ?? enrollment['scale'];
+    return rawScale is num
+        ? rawScale.toDouble()
+        : double.tryParse(rawScale?.toString() ?? '') ?? 1;
+  }
+
+  /// Find max similarity
   double _maxCosineSimilarity(List<double> probe, List<List<double>> enrolled) {
     double best = -1;
     for (final List<double> candidate in enrolled) {
@@ -575,6 +712,7 @@ class FaceAttendanceVerifier {
     return best;
   }
 
+  /// Calculate cosine similarity
   double _cosineSimilarity(List<double> a, List<double> b) {
     if (a.length != b.length || a.isEmpty) {
       return -1;
@@ -596,23 +734,24 @@ class FaceAttendanceVerifier {
     return dot / (sqrt(normA) * sqrt(normB));
   }
 
-  double _readSimilarityThreshold(Map<String, dynamic> userRecord) {
-    final Map<String, dynamic> biometrics = _asMap(userRecord['biometrics']);
-    final dynamic configured = biometrics['face_match_threshold'];
+  /// Get similarity threshold
+  double _readSimilarityThreshold(Map<String, dynamic>? faceRecord) {
+    final Map<String, dynamic> enrollment = _asMap(faceRecord);
+    final dynamic configured = enrollment['face_match_threshold'];
     final double threshold = configured is num ? configured.toDouble() : 0.6;
     return threshold.clamp(0.4, 0.95);
   }
 
-  List<LivenessAction> _randomizedChallenges() {
-    final List<LivenessAction> pool = <LivenessAction>[
-      LivenessAction.blink,
+  /// Fixed challenge order required by attendance flow
+  List<LivenessAction> _orderedChallenges() {
+    return <LivenessAction>[
       LivenessAction.turnLeft,
       LivenessAction.turnRight,
+      LivenessAction.blink,
     ];
-    pool.shuffle();
-    return pool.take(2).toList(growable: false);
   }
 
+  /// Label for action
   String _labelForAction(LivenessAction action) {
     switch (action) {
       case LivenessAction.blink:
@@ -624,12 +763,14 @@ class FaceAttendanceVerifier {
     }
   }
 
+  /// Mean eye openness
   double _meanEyeOpen(Face face) {
     final double left = face.leftEyeOpenProbability ?? 0.8;
     final double right = face.rightEyeOpenProbability ?? 0.8;
     return (left + right) / 2;
   }
 
+  /// Clamp rect to bounds
   Rect _clampRect(Rect source, int width, int height) {
     final double left = source.left.clamp(0, width - 1).toDouble();
     final double top = source.top.clamp(0, height - 1).toDouble();
@@ -652,6 +793,29 @@ class FaceAttendanceVerifier {
     return <String, dynamic>{};
   }
 
+  String _resolveDisplayName(Map<String, dynamic> userRecord, String userId) {
+    const List<String> nameKeys = <String>[
+      'name',
+      'full_name',
+      'fullName',
+      'display_name',
+      'displayName',
+      'username',
+      'user_name',
+      'employee_name',
+    ];
+
+    for (final String key in nameKeys) {
+      final String value = (userRecord[key] ?? '').toString().trim();
+      if (value.isNotEmpty) {
+        return value;
+      }
+    }
+
+    return userId;
+  }
+
+  /// Failed result
   AttendanceVerificationResult _fail(
     String message, {
     double similarity = 0,
@@ -670,6 +834,7 @@ class FaceAttendanceVerifier {
   }
 }
 
+/// Captured face data
 class CapturedFace {
   final File file;
   final Face face;
@@ -677,6 +842,7 @@ class CapturedFace {
   const CapturedFace({required this.file, required this.face});
 }
 
+/// Liveness challenge result
 class LivenessCheckResult {
   final bool passed;
   final String message;
@@ -684,6 +850,7 @@ class LivenessCheckResult {
   const LivenessCheckResult({required this.passed, required this.message});
 }
 
+/// Brightness stats
 class BrightnessStats {
   final double mean;
   final double stdDev;
@@ -691,6 +858,7 @@ class BrightnessStats {
   const BrightnessStats({required this.mean, required this.stdDev});
 }
 
+/// Security validation result
 class SecurityValidationResult {
   final bool passed;
   final String message;

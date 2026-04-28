@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_img.dart';
@@ -10,11 +11,15 @@ import 'package:flutter_worksmart_mobile_app/core/util/database/attendance_data.
 import 'package:flutter_worksmart_mobile_app/core/util/database/office_data.dart';
 import 'package:flutter_worksmart_mobile_app/core/util/database/realtime_data_controller.dart';
 import 'package:flutter_worksmart_mobile_app/core/util/database/user_data.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/notification/local_notification_service.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/presentation/homepage_screens/homepagescreen.dart';
 import 'package:flutter_worksmart_mobile_app/shared/model/user_model/user_profile.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+enum _PermissionResolutionAction { retry, settings, notNow }
 
 abstract class HomePageLogic extends State<HomePageScreen> {
   static String get _userLocationMarkerTitle => AppStrings.tr('map_marker_me');
@@ -33,9 +38,17 @@ abstract class HomePageLogic extends State<HomePageScreen> {
   Map<String, dynamic> _officeConfigData = Map<String, dynamic>.from(
     officeMasterData,
   );
+  Map<String, dynamic> _currentFaceBiometricsData = <String, dynamic>{};
   StreamSubscription<List<Map<String, dynamic>>>? _userRecordsSubscription;
   StreamSubscription<Map<String, dynamic>?>? _officeConfigSubscription;
+  StreamSubscription<List<Map<String, dynamic>>>?
+  _attendanceNotificationSubscription;
   String? _activeOfficeId;
+  bool _leaveWatcherPrimed = false;
+  bool _attendanceWatcherPrimed = false;
+  final Map<String, String> _leaveStatusByKey = <String, String>{};
+  final Map<String, String> _attendanceCheckInByKey = <String, String>{};
+  final Map<String, String> _attendanceCheckOutByKey = <String, String>{};
 
   // --- State Variables ---
   GoogleMapController? mapController;
@@ -79,6 +92,26 @@ abstract class HomePageLogic extends State<HomePageScreen> {
   Set<Marker> markers = {};
   final Set<Circle> circles = {};
   BitmapDescriptor? userProfileIcon;
+  bool _startupFlowStarted = false;
+
+  Stream<List<Map<String, dynamic>>> watchUserNotificationItems() {
+    final String uid = (loggedInUserId ?? '').toString().trim();
+    if (uid.isEmpty) {
+      return Stream<List<Map<String, dynamic>>>.value(
+        const <Map<String, dynamic>>[],
+      );
+    }
+    return _realtimeDataController.watchUserNotifications(uid);
+  }
+
+  bool shouldShowNotificationDot(List<Map<String, dynamic>> notifications) {
+    return notifications.any((item) {
+      final raw = item['isRead'] ?? item['is_read'];
+      if (raw is bool) return raw == false;
+      final normalized = (raw ?? '').toString().trim().toLowerCase();
+      return normalized == 'false' || normalized == '0' || normalized == 'no';
+    });
+  }
 
   @override
   void initState() {
@@ -86,10 +119,203 @@ abstract class HomePageLogic extends State<HomePageScreen> {
     loggedInUserId = widget.loginData?['uid'];
     _loadData();
     _listenRealtimeData();
-
-    initLocationTracking();
     setupOfficeMapObjects();
     generateProfileMarker();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _runStartupPermissionFlow();
+    });
+  }
+
+  Future<void> _runStartupPermissionFlow() async {
+    if (_startupFlowStarted || !mounted) {
+      return;
+    }
+
+    _startupFlowStarted = true;
+    await LocalNotificationService.instance.initialize();
+
+    final bool locationGranted = await _handleLocationPermissionStep();
+    await _handleNotificationPermissionStep();
+    await _handleCameraPermissionStep();
+
+    if (mounted) {
+      widget.onStartupFlowCompleted?.call();
+    }
+
+    if (!locationGranted && mounted) {
+      setState(() => rangeStatusText = AppStrings.tr('perm_needed'));
+    }
+  }
+
+  Future<bool> _handleLocationPermissionStep() async {
+    if (kIsWeb) {
+      return true;
+    }
+
+    bool hasRequestedOnce = false;
+    while (mounted) {
+      final LocationPermission permission = await Geolocator.checkPermission();
+
+      if (permission == LocationPermission.always ||
+          permission == LocationPermission.whileInUse) {
+        await initLocationTracking(skipPermissionRequest: true);
+        return true;
+      }
+
+      if (!hasRequestedOnce && permission == LocationPermission.denied) {
+        hasRequestedOnce = true;
+        final LocationPermission requested =
+            await Geolocator.requestPermission();
+        if (requested == LocationPermission.always ||
+            requested == LocationPermission.whileInUse) {
+          await initLocationTracking(skipPermissionRequest: true);
+          return true;
+        }
+      }
+
+      final _PermissionResolutionAction
+      action = await _showPermissionResolutionDialog(
+        title: 'Location Permission Required',
+        message:
+            'Location access is needed to verify attendance range and update your office map status.',
+        canRetry: permission != LocationPermission.deniedForever,
+      );
+
+      if (action == _PermissionResolutionAction.retry) {
+        hasRequestedOnce = false;
+        continue;
+      }
+
+      if (action == _PermissionResolutionAction.settings) {
+        await openAppSettings();
+        continue;
+      }
+
+      return false;
+    }
+
+    return false;
+  }
+
+  Future<void> _handleNotificationPermissionStep() async {
+    if (!_isNotificationEnabled() || kIsWeb) {
+      return;
+    }
+
+    await _requestPermissionWithResolution(
+      permission: Permission.notification,
+      title: 'Notification Permission Required',
+      message:
+          'Notifications keep you informed about attendance and leave status updates in real time.',
+    );
+  }
+
+  Future<void> _handleCameraPermissionStep() async {
+    if (kIsWeb) {
+      return;
+    }
+
+    await _requestPermissionWithResolution(
+      permission: Permission.camera,
+      title: 'Camera Permission Required',
+      message:
+          'Camera access is needed for face scan attendance verification from the homepage.',
+    );
+  }
+
+  Future<bool> _requestPermissionWithResolution({
+    required Permission permission,
+    required String title,
+    required String message,
+  }) async {
+    bool hasRequestedOnce = false;
+
+    while (mounted) {
+      final PermissionStatus status = await permission.status;
+      if (status.isGranted || status.isLimited) {
+        return true;
+      }
+
+      final bool canRetry =
+          !status.isPermanentlyDenied &&
+          !status.isRestricted &&
+          !status.isLimited;
+
+      if (!hasRequestedOnce && canRetry) {
+        hasRequestedOnce = true;
+        final PermissionStatus requestedStatus = await permission.request();
+        if (requestedStatus.isGranted || requestedStatus.isLimited) {
+          return true;
+        }
+      }
+
+      final _PermissionResolutionAction action =
+          await _showPermissionResolutionDialog(
+            title: title,
+            message: message,
+            canRetry: canRetry,
+          );
+
+      if (action == _PermissionResolutionAction.retry) {
+        hasRequestedOnce = false;
+        continue;
+      }
+
+      if (action == _PermissionResolutionAction.settings) {
+        await openAppSettings();
+        continue;
+      }
+
+      return false;
+    }
+
+    return false;
+  }
+
+  Future<_PermissionResolutionAction> _showPermissionResolutionDialog({
+    required String title,
+    required String message,
+    required bool canRetry,
+  }) async {
+    if (!mounted) {
+      return _PermissionResolutionAction.notNow;
+    }
+
+    final _PermissionResolutionAction? action =
+        await showDialog<_PermissionResolutionAction>(
+          context: context,
+          barrierDismissible: false,
+          builder: (dialogContext) {
+            return AlertDialog(
+              title: Text(title),
+              content: Text(message),
+              actions: [
+                if (canRetry)
+                  TextButton(
+                    onPressed: () => Navigator.of(
+                      dialogContext,
+                    ).pop(_PermissionResolutionAction.retry),
+                    child: const Text('Retry'),
+                  ),
+                TextButton(
+                  onPressed: () => Navigator.of(
+                    dialogContext,
+                  ).pop(_PermissionResolutionAction.settings),
+                  child: const Text('Open Settings'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(
+                    dialogContext,
+                  ).pop(_PermissionResolutionAction.notNow),
+                  child: const Text('Not Now'),
+                ),
+              ],
+            );
+          },
+        );
+
+    return action ?? _PermissionResolutionAction.notNow;
   }
 
   void _loadData() {
@@ -106,12 +332,19 @@ abstract class HomePageLogic extends State<HomePageScreen> {
       orElse: () => safeUserDataSource.first,
     );
     currentUser = UserProfile.fromJson(currentUserData);
-    final normalizedFaceStatus = currentUser.biometrics.faceStatus
+    final Map<String, dynamic> faceData = _currentFaceBiometricsData;
+    final normalizedFaceStatus = (faceData['face_status'] ?? '')
+        .toString()
         .trim()
         .toLowerCase();
-    final bool hasFaceSamples =
-        currentUser.biometrics.faceCount > 0 ||
-        currentUser.biometrics.faceVectors.isNotEmpty;
+
+    final int faceCount =
+        int.tryParse((faceData['face_count'] ?? 0).toString()) ?? 0;
+    final bool hasFaceVector =
+        (faceData['face_embedding_vector'] is List) ||
+        (faceData['face_embeddings'] is List) ||
+        (faceData['face_vectors'] is List);
+    final bool hasFaceSamples = faceCount > 0 || hasFaceVector;
     currentFaceStatus = normalizedFaceStatus.isEmpty
         ? 'uninitialized'
         : (normalizedFaceStatus == 'pending' && hasFaceSamples
@@ -174,6 +407,8 @@ abstract class HomePageLogic extends State<HomePageScreen> {
 
   Future<void> _listenRealtimeData() async {
     try {
+      await _refreshCurrentFaceBiometrics();
+
       final users = await _realtimeDataController.fetchUserRecords();
       _userRecordsData = users;
 
@@ -189,21 +424,45 @@ abstract class HomePageLogic extends State<HomePageScreen> {
       }
 
       _subscribeOfficeConnection(currentUser.officeId);
+      _subscribeAttendanceNotifications();
+      _primeLeaveStatusState(_userRecordsData);
+      _leaveWatcherPrimed = true;
 
       _userRecordsSubscription = _realtimeDataController
           .watchUserRecords()
           .listen((records) {
             if (!mounted) return;
 
-            setState(() {
-              _userRecordsData = records;
-              _loadData();
+            _processLeaveStatusNotifications(records);
+
+            _refreshCurrentFaceBiometrics().whenComplete(() {
+              if (!mounted) return;
+              setState(() {
+                _userRecordsData = records;
+                _loadData();
+              });
             });
 
             _subscribeOfficeConnection(currentUser.officeId);
           });
     } catch (_) {
       return;
+    }
+  }
+
+  Future<void> _refreshCurrentFaceBiometrics() async {
+    final String userId = (loggedInUserId ?? '').toString().trim();
+    if (userId.isEmpty) {
+      _currentFaceBiometricsData = <String, dynamic>{};
+      return;
+    }
+
+    try {
+      final Map<String, dynamic>? faceData = await _realtimeDataController
+          .fetchUserFaceBiometrics(userId);
+      _currentFaceBiometricsData = faceData ?? <String, dynamic>{};
+    } catch (_) {
+      _currentFaceBiometricsData = <String, dynamic>{};
     }
   }
 
@@ -226,7 +485,291 @@ abstract class HomePageLogic extends State<HomePageScreen> {
             _officeConfigData = office;
             _loadData();
           });
+
+          _resetNotificationStateForOffice();
+          _subscribeAttendanceNotifications();
         });
+  }
+
+  void _resetNotificationStateForOffice() {
+    _leaveWatcherPrimed = false;
+    _attendanceWatcherPrimed = false;
+    _leaveStatusByKey.clear();
+    _attendanceCheckInByKey.clear();
+    _attendanceCheckOutByKey.clear();
+  }
+
+  void _subscribeAttendanceNotifications() {
+    _attendanceNotificationSubscription?.cancel();
+    _attendanceNotificationSubscription = _realtimeDataController
+        .watchAttendanceRecords()
+        .listen((records) {
+          _processAttendanceNotifications(records);
+        });
+  }
+
+  void _processAttendanceNotifications(List<Map<String, dynamic>> records) {
+    if (!_attendanceWatcherPrimed) {
+      for (final record in records) {
+        final String? key = _attendanceKey(record);
+        if (key == null || !_isSameOfficeUid(record['uid']?.toString())) {
+          continue;
+        }
+        _attendanceCheckInByKey[key] = (record['check_in'] ?? '--:--')
+            .toString()
+            .trim();
+        _attendanceCheckOutByKey[key] = (record['check_out'] ?? '--:--')
+            .toString()
+            .trim();
+      }
+      _attendanceWatcherPrimed = true;
+      return;
+    }
+
+    for (final record in records) {
+      final String? key = _attendanceKey(record);
+      if (key == null || !_isSameOfficeUid(record['uid']?.toString())) {
+        continue;
+      }
+
+      final String uid = (record['uid'] ?? '').toString().trim();
+      final String name = _displayNameByUid(uid);
+      final String checkIn = (record['check_in'] ?? '--:--').toString().trim();
+      final String checkOut = (record['check_out'] ?? '--:--')
+          .toString()
+          .trim();
+
+      final String previousIn = _attendanceCheckInByKey[key] ?? '--:--';
+      final String previousOut = _attendanceCheckOutByKey[key] ?? '--:--';
+
+      if (_isAttendanceTimeSet(checkIn) && !_isAttendanceTimeSet(previousIn)) {
+        _notifyOfficeEvent(
+          title: 'Attendance Check-In',
+          body: '$name checked in at $checkIn',
+          payload: 'attendance_check_in:$uid',
+        );
+      }
+
+      if (_isAttendanceTimeSet(checkOut) &&
+          !_isAttendanceTimeSet(previousOut)) {
+        _notifyOfficeEvent(
+          title: 'Attendance Check-Out',
+          body: '$name checked out at $checkOut',
+          payload: 'attendance_check_out:$uid',
+        );
+      }
+
+      _attendanceCheckInByKey[key] = checkIn;
+      _attendanceCheckOutByKey[key] = checkOut;
+    }
+  }
+
+  void _primeLeaveStatusState(List<Map<String, dynamic>> records) {
+    _leaveStatusByKey.clear();
+    for (final record in records) {
+      final String uid = (record['uid'] ?? '').toString().trim();
+      if (!_isSameOfficeUid(uid)) {
+        continue;
+      }
+      final List<dynamic> leaveRecords =
+          (record['leave_records'] as List?) ?? const <dynamic>[];
+      for (final dynamic item in leaveRecords) {
+        if (item is! Map) continue;
+        final Map<String, dynamic> leave = Map<String, dynamic>.from(item);
+        final String requestId = (leave['request_id'] ?? '').toString().trim();
+        if (requestId.isEmpty) continue;
+        final String status = (leave['status'] ?? '')
+            .toString()
+            .trim()
+            .toLowerCase();
+        _leaveStatusByKey['$uid|$requestId'] = status;
+      }
+    }
+  }
+
+  void _processLeaveStatusNotifications(List<Map<String, dynamic>> records) {
+    if (!_leaveWatcherPrimed) {
+      _primeLeaveStatusState(records);
+      _leaveWatcherPrimed = true;
+      return;
+    }
+
+    for (final record in records) {
+      final String uid = (record['uid'] ?? '').toString().trim();
+      if (!_isSameOfficeUid(uid)) {
+        continue;
+      }
+
+      final String name = _displayNameByUid(uid);
+      final List<dynamic> leaveRecords =
+          (record['leave_records'] as List?) ?? const <dynamic>[];
+
+      for (final dynamic item in leaveRecords) {
+        if (item is! Map) continue;
+        final Map<String, dynamic> leave = Map<String, dynamic>.from(item);
+        final String requestId = (leave['request_id'] ?? '').toString().trim();
+        if (requestId.isEmpty) continue;
+
+        final String status = (leave['status'] ?? '')
+            .toString()
+            .trim()
+            .toLowerCase();
+        final String previousStatus =
+            _leaveStatusByKey['$uid|$requestId'] ?? '';
+        final String type = (leave['type'] ?? 'leave').toString().replaceAll(
+          '_',
+          ' ',
+        );
+
+        if (status != previousStatus &&
+            (status == 'approved' || status == 'rejected')) {
+          _notifyOfficeEvent(
+            title: status == 'approved' ? 'Leave Approved' : 'Leave Rejected',
+            body: '$name\'s $type request was $status.',
+            payload: 'leave_$status:$uid:$requestId',
+          );
+        }
+
+        _leaveStatusByKey['$uid|$requestId'] = status;
+      }
+    }
+  }
+
+  Future<void> _notifyOfficeEvent({
+    required String title,
+    required String body,
+    required String payload,
+  }) async {
+    final String userId = (loggedInUserId ?? '').toString().trim();
+    if (userId.isEmpty) {
+      return;
+    }
+
+    final bool notificationsEnabled = await _realtimeDataController
+        .isUserNotificationEnabled(userId);
+    if (!notificationsEnabled) {
+      return;
+    }
+
+    await _realtimeDataController.upsertUserNotification(userId, {
+      'title': title,
+      'message': body,
+      'type': _notificationTypeFromPayload(payload),
+      'isRead': false,
+      'timestamp': DateTime.now(),
+    });
+
+    await LocalNotificationService.instance.show(
+      title: title,
+      body: body,
+      payload: payload,
+    );
+  }
+
+  String _notificationTypeFromPayload(String payload) {
+    final String normalized = payload.trim().toLowerCase();
+    if (normalized.startsWith('attendance_')) {
+      return 'attendance';
+    }
+    if (normalized.startsWith('leave_')) {
+      return 'leave';
+    }
+    return 'general';
+  }
+
+  bool _isNotificationEnabled() {
+    final String userId = (loggedInUserId ?? '').toString().trim();
+    if (userId.isEmpty) {
+      return true;
+    }
+
+    final Map<String, dynamic>? record = _userRecordsData
+        .cast<Map<String, dynamic>?>()
+        .firstWhere(
+          (item) => (item?['uid'] ?? '').toString().trim() == userId,
+          orElse: () => null,
+        );
+
+    final dynamic appSettings =
+        record?['app_settings'] ?? record?['app_setting'];
+    if (appSettings is Map) {
+      return _parseBool(
+            appSettings['notifications_enabled'] ??
+                appSettings['notification_enable'] ??
+                appSettings['notification_enabled'],
+          ) ??
+          true;
+    }
+
+    return currentUser.appSettings.notificationsEnabled;
+  }
+
+  bool? _parseBool(dynamic value) {
+    if (value is bool) {
+      return value;
+    }
+
+    final String normalized = (value ?? '').toString().trim().toLowerCase();
+    if (normalized == 'true' || normalized == '1' || normalized == 'yes') {
+      return true;
+    }
+    if (normalized == 'false' || normalized == '0' || normalized == 'no') {
+      return false;
+    }
+    return null;
+  }
+
+  bool _isSameOfficeUid(String? uid) {
+    final String resolvedUid = (uid ?? '').trim();
+    if (resolvedUid.isEmpty) {
+      return false;
+    }
+
+    final String currentOffice = currentUser.officeId.trim();
+    final Map<String, dynamic>? userRecord = _userRecordsData
+        .cast<Map<String, dynamic>?>()
+        .firstWhere(
+          (item) => (item?['uid'] ?? '').toString().trim() == resolvedUid,
+          orElse: () => null,
+        );
+
+    final String userOffice = (userRecord?['office_id'] ?? '')
+        .toString()
+        .trim();
+    if (currentOffice.isEmpty) {
+      return true;
+    }
+
+    return userOffice.isNotEmpty && userOffice == currentOffice;
+  }
+
+  String _displayNameByUid(String uid) {
+    final Map<String, dynamic>? record = _userRecordsData
+        .cast<Map<String, dynamic>?>()
+        .firstWhere(
+          (item) => (item?['uid'] ?? '').toString().trim() == uid.trim(),
+          orElse: () => null,
+        );
+
+    final String display = (record?['display_name'] ?? '').toString().trim();
+    return display.isEmpty ? uid : display;
+  }
+
+  String? _attendanceKey(Map<String, dynamic> record) {
+    final String uid = (record['uid'] ?? '').toString().trim();
+    final String date = (record['date'] ?? '').toString().trim();
+    if (uid.isEmpty || date.isEmpty) {
+      return null;
+    }
+    return '$uid|$date';
+  }
+
+  bool _isAttendanceTimeSet(String value) {
+    final String normalized = value.trim();
+    if (normalized.isEmpty) {
+      return false;
+    }
+    return normalized != '--:--' && normalized != '--:-- --';
   }
 
   void _syncScanStateFromAttendanceData() {
@@ -739,6 +1282,7 @@ abstract class HomePageLogic extends State<HomePageScreen> {
     _checkOutCooldownTimer?.cancel();
     _userRecordsSubscription?.cancel();
     _officeConfigSubscription?.cancel();
+    _attendanceNotificationSubscription?.cancel();
     positionStreamSubscription?.cancel();
     mapController?.dispose();
     super.dispose();
@@ -894,19 +1438,23 @@ abstract class HomePageLogic extends State<HomePageScreen> {
     }
   }
 
-  Future<void> initLocationTracking() async {
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
+  Future<void> initLocationTracking({
+    bool skipPermissionRequest = false,
+  }) async {
+    if (!skipPermissionRequest) {
+      LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
-        setState(() => rangeStatusText = AppStrings.tr('perm_needed'));
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          setState(() => rangeStatusText = AppStrings.tr('perm_needed'));
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        setState(() => rangeStatusText = AppStrings.tr('enable_loc_settings'));
         return;
       }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      setState(() => rangeStatusText = AppStrings.tr('enable_loc_settings'));
-      return;
     }
 
     try {

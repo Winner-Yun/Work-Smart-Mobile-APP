@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_img.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/database/realtime_data_controller.dart';
 import 'package:flutter_worksmart_mobile_app/core/util/database/user_data.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/logic/leave_request_logic.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/presentation/attendence_screens/leave_all_requests_screen.dart';
@@ -38,6 +39,8 @@ class _LeaveAttendanceScreenState extends State<LeaveAttendanceScreen> {
   bool _isOpeningAllRequests = false;
 
   final DateFormat _dateFormatter = DateFormat('dd MMM yyyy');
+  final RealtimeDataController _realtimeDataController =
+      RealtimeDataController();
 
   @override
   void initState() {
@@ -278,38 +281,75 @@ class _LeaveAttendanceScreenState extends State<LeaveAttendanceScreen> {
             AppRoute.notificationScreen,
             arguments: loginData,
           ),
-          icon: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardTheme.color,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5),
-              ],
-            ),
-            child: Stack(
-              children: [
-                Icon(
-                  Icons.notifications_none,
-                  color: Theme.of(context).iconTheme.color,
-                ),
-                Positioned(
-                  right: 2,
-                  top: 2,
-                  child: Container(
-                    width: 6,
-                    height: 6,
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          icon: _buildNotificationBell(context),
         ),
       ],
+    );
+  }
+
+  Widget _buildNotificationBell(BuildContext context) {
+    final String uid = (loginData?['uid'] ?? '').toString().trim();
+    if (uid.isEmpty) {
+      return _buildNotificationBellContent(context, showDot: false);
+    }
+
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: _realtimeDataController.watchUserNotifications(uid),
+      builder: (context, snapshot) {
+        final List<Map<String, dynamic>> notifications =
+            snapshot.data ?? const <Map<String, dynamic>>[];
+        final bool hasAnyNotifications = notifications.isNotEmpty;
+        final bool hasUnreadNotifications = notifications.any((item) {
+          final dynamic raw = item['isRead'] ?? item['is_read'];
+          if (raw is bool) return raw == false;
+          final String normalized = (raw ?? '').toString().trim().toLowerCase();
+          return normalized == 'false' ||
+              normalized == '0' ||
+              normalized == 'no';
+        });
+
+        return _buildNotificationBellContent(
+          context,
+          showDot: hasAnyNotifications || hasUnreadNotifications,
+        );
+      },
+    );
+  }
+
+  Widget _buildNotificationBellContent(
+    BuildContext context, {
+    required bool showDot,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5),
+        ],
+      ),
+      child: Stack(
+        children: [
+          Icon(
+            Icons.notifications_none,
+            color: Theme.of(context).iconTheme.color,
+          ),
+          if (showDot)
+            Positioned(
+              right: 2,
+              top: 2,
+              child: Container(
+                width: 6,
+                height: 6,
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 

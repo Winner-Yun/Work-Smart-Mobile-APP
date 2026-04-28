@@ -46,6 +46,7 @@ class UserProfile {
       providedUrl: json['profile_url']?.toString(),
     );
 
+    final dynamic appSettingsJson = json['app_settings'] ?? json['app_setting'];
     return UserProfile(
       uid: json['uid'] ?? '',
       displayName: json['display_name'] ?? '',
@@ -56,7 +57,7 @@ class UserProfile {
       officeId: json['office_id'] ?? '',
       departmentId: json['department_id'] ?? '',
       gender: gender,
-      biometrics: Biometrics.fromJson(json['biometrics'] ?? {}),
+      biometrics: Biometrics.fromJson(const <String, dynamic>{}),
       telegram: TelegramAccount.fromJson(json['telegram'] ?? {}),
       leaveRecords:
           (json['leave_records'] as List<dynamic>?)
@@ -64,7 +65,11 @@ class UserProfile {
               .toList() ??
           [],
       achievements: Achievements.fromJson(json['achievements'] ?? {}),
-      appSettings: AppSettings.fromJson(json['app_settings'] ?? {}),
+      appSettings: AppSettings.fromJson(
+        appSettingsJson is Map<String, dynamic>
+            ? appSettingsJson
+            : <String, dynamic>{},
+      ),
     );
   }
 }

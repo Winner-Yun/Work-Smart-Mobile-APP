@@ -4,8 +4,15 @@ import 'package:flutter_worksmart_mobile_app/core/constants/app_img.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/appcolor.dart';
 
-class HelpSupportScreen extends StatelessWidget {
+class HelpSupportScreen extends StatefulWidget {
   const HelpSupportScreen({super.key});
+
+  @override
+  State<HelpSupportScreen> createState() => _HelpSupportScreenState();
+}
+
+class _HelpSupportScreenState extends State<HelpSupportScreen> {
+  int? _expandedFaqIndex;
 
   @override
   Widget build(BuildContext context) {
@@ -57,9 +64,24 @@ class HelpSupportScreen extends StatelessWidget {
             const SizedBox(height: 30),
             _buildSectionHeader(AppStrings.tr('faq_title'), context),
             const SizedBox(height: 15),
-            _buildFAQTile(AppStrings.tr('faq_change_pass'), context),
-            _buildFAQTile(AppStrings.tr('faq_connect_tele'), context),
-            _buildFAQTile(AppStrings.tr('faq_login_issue'), context),
+            _buildFAQTile(
+              question: AppStrings.tr('faq_change_pass'),
+              answer: AppStrings.tr('faq_change_pass_answer'),
+              index: 0,
+              context: context,
+            ),
+            _buildFAQTile(
+              question: AppStrings.tr('faq_connect_tele'),
+              answer: AppStrings.tr('faq_connect_tele_answer'),
+              index: 1,
+              context: context,
+            ),
+            _buildFAQTile(
+              question: AppStrings.tr('faq_login_issue'),
+              answer: AppStrings.tr('faq_login_issue_answer'),
+              index: 2,
+              context: context,
+            ),
             const SizedBox(height: 40),
             _buildVersionInfo(context),
           ],
@@ -155,26 +177,69 @@ class HelpSupportScreen extends StatelessWidget {
     ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2, end: 0);
   }
 
-  Widget _buildFAQTile(String question, BuildContext context) {
+  Widget _buildFAQTile({
+    required String question,
+    required String answer,
+    required int index,
+    required BuildContext context,
+  }) {
+    final bool isExpanded = _expandedFaqIndex == index;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(15),
       ),
-      child: ListTile(
-        title: Text(
-          question,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(15),
+        onTap: () {
+          setState(() {
+            _expandedFaqIndex = isExpanded ? null : index;
+          });
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(question, style: const TextStyle(fontSize: 14)),
+                  ),
+                  AnimatedRotation(
+                    duration: 220.ms,
+                    turns: isExpanded ? 0.125 : 0,
+                    child: Icon(
+                      Icons.add,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                ],
+              ),
+              AnimatedCrossFade(
+                duration: 220.ms,
+                crossFadeState: isExpanded
+                    ? CrossFadeState.showSecond
+                    : CrossFadeState.showFirst,
+                firstChild: const SizedBox(height: 0),
+                secondChild: Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Text(
+                    answer,
+                    style: const TextStyle(
+                      color: AppColors.textGrey,
+                      fontSize: 13,
+                      height: 1.35,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-        trailing: Icon(
-          Icons.add,
-          size: 20,
-          color: Theme.of(context).colorScheme.primary,
-        ),
-        onTap: () {},
       ),
     ).animate().fadeIn(delay: 400.ms);
   }

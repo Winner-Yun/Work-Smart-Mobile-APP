@@ -7,15 +7,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_worksmart_mobile_app/app/routes/app_route.dart';
 import 'package:flutter_worksmart_mobile_app/config/language_manager.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
+import 'package:flutter_worksmart_mobile_app/core/constants/default_profile_urls.dart';
 import 'package:flutter_worksmart_mobile_app/core/util/cloudinary/cloudinary_profile_image_service.dart';
 import 'package:flutter_worksmart_mobile_app/core/util/database/realtime_data_controller.dart';
 import 'package:flutter_worksmart_mobile_app/core/util/face/face_attendance_verifier.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/face/face_biometrics_repository.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/face/face_detection_util.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/presentation/homepage_screens/assign_user_face_screen.dart';
-import 'package:flutter_worksmart_mobile_app/features/user/utils/face_detection_util.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 abstract class RegisterFaceLogic extends State<RegisterFaceScanScreen>
     with WidgetsBindingObserver, SingleTickerProviderStateMixin {
+  static const int _embeddingScale = 1000;
+
   CameraController? controller;
   List<CameraDescription> cameras = [];
   bool isCameraInitialized = false;
@@ -32,13 +36,16 @@ abstract class RegisterFaceLogic extends State<RegisterFaceScanScreen>
 
   final RealtimeDataController _realtimeDataController =
       RealtimeDataController();
+  final FaceBiometricsRepository _faceBiometricsRepository =
+      FaceBiometricsRepository();
   final CloudinaryProfileImageService _cloudinaryProfileImageService =
       CloudinaryProfileImageService();
   final List<String> _capturedFaceImageUrls = <String>[];
   final List<List<double>> _capturedEmbeddings = <List<double>>[];
+  String? _lastCapturedFaceFilePath;
   late final FaceAttendanceVerifier _faceAttendanceVerifier;
 
-    String? get latestCapturedFaceImageUrl =>
+  String? get latestCapturedFaceImageUrl =>
       _capturedFaceImageUrls.isNotEmpty ? _capturedFaceImageUrls.first : null;
 
   bool get isCaptureBusy =>
@@ -67,8 +74,13 @@ abstract class RegisterFaceLogic extends State<RegisterFaceScanScreen>
   }
 
   Future<void> initCamera() async {
-    final status = await Permission.camera.request();
-    if (!status.isGranted) return;
+    final status = await Permission.camera.status;
+    if (!status.isGranted) {
+      if (mounted) {
+        await _showCameraPermissionRequiredDialog();
+      }
+      return;
+    }
 
     cameras = await availableCameras();
     if (cameras.isNotEmpty) {
@@ -95,6 +107,33 @@ abstract class RegisterFaceLogic extends State<RegisterFaceScanScreen>
     } catch (e) {
       debugPrint(e.toString());
     }
+  }
+
+  Future<void> _showCameraPermissionRequiredDialog() async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Camera Permission Required'),
+          content: const Text(
+            'Camera permission is requested on the homepage. Please grant it there or open app settings.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                openAppSettings();
+              },
+              child: const Text('Open Settings'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> toggleCamera() async {
@@ -155,6 +194,15 @@ abstract class RegisterFaceLogic extends State<RegisterFaceScanScreen>
       return;
     }
 
+    String? previousFaceImageUrl;
+    try {
+      final Map<String, dynamic>? faceRecord = await _faceBiometricsRepository
+          .fetchFaceEnrollment(userId);
+      previousFaceImageUrl = _extractPrimaryFaceImageUrl(faceRecord);
+    } catch (_) {
+      // Ignore fetch issues and continue with upload.
+    }
+
     setState(() => isUploadingFaceSample = true);
 
     try {
@@ -186,13 +234,29 @@ abstract class RegisterFaceLogic extends State<RegisterFaceScanScreen>
           'Face alignment failed. Keep your head straight and retry.',
         );
       }
+      if (embedding.length != FaceAttendanceVerifier.embeddingSize) {
+        throw Exception(
+          'Invalid face embedding length: ${embedding.length}. Please retry.',
+        );
+      }
+
+      final List<int> compressedEmbedding = embedding
+          .map((value) => (value * _embeddingScale).round())
+          .toList(growable: false);
+
+      final List<double> normalizedEmbedding = compressedEmbedding
+          .map((value) => value / _embeddingScale)
+          .toList(growable: false);
 
       final String imageUrl = await _cloudinaryProfileImageService
           .uploadFaceSampleImage(
             imageFile: File(captured.path),
             userId: userId,
             sampleIndex: currentPhotoCount + 1,
+            previousImageUrl: previousFaceImageUrl,
           );
+
+      _lastCapturedFaceFilePath = captured.path;
 
       // Only save the face sample and embedding, no matching or approval.
       _capturedFaceImageUrls
@@ -200,7 +264,7 @@ abstract class RegisterFaceLogic extends State<RegisterFaceScanScreen>
         ..add(imageUrl);
       _capturedEmbeddings
         ..clear()
-        ..add(embedding);
+        ..add(normalizedEmbedding);
 
       if (!mounted) return;
 
@@ -256,11 +320,32 @@ abstract class RegisterFaceLogic extends State<RegisterFaceScanScreen>
     }
 
     try {
-      final Map<String, dynamic> updateData = {
-        'biometrics': _buildBiometricsPayload('approved'),
-      };
+      final List<int> embeddingVector = _capturedEmbeddings.isNotEmpty
+          ? _capturedEmbeddings.first
+                .map((value) => (value * _embeddingScale).round())
+                .toList(growable: false)
+          : <int>[];
 
-      await _realtimeDataController.updateUserRecord(userId, updateData);
+      if (embeddingVector.isEmpty) {
+        throw Exception(
+          'Missing face embedding. Please capture the face again.',
+        );
+      }
+
+      final String registeredDate = DateTime.now().toIso8601String();
+      final Map<String, dynamic> biometricsSummary = _faceBiometricsRepository
+          .buildFaceMetadata(
+            status: 'approved',
+            registeredDate: registeredDate,
+            imageUrl: _capturedFaceImageUrls.first,
+          );
+
+      await _faceBiometricsRepository.saveFaceEnrollment(
+        userId: userId,
+        embeddingVector: embeddingVector,
+        embeddingScale: _embeddingScale,
+        metadata: biometricsSummary,
+      );
       if (!mounted) return;
       await onFaceRegistrationCompleted();
     } catch (e) {
@@ -295,27 +380,107 @@ abstract class RegisterFaceLogic extends State<RegisterFaceScanScreen>
     await returnToHomepage();
   }
 
+  Future<bool> shouldOfferFaceAsProfileImage() async {
+    final String userId = _resolveUserId();
+    if (userId.isEmpty) {
+      return false;
+    }
+
+    try {
+      final Map<String, dynamic>? userRecord = await _realtimeDataController
+          .fetchUserRecordById(userId);
+      final String? currentProfileUrl = _extractCurrentProfileImageUrl(
+        userRecord,
+      );
+
+      if (currentProfileUrl == null || currentProfileUrl.isEmpty) {
+        return true;
+      }
+
+      final String gender =
+          (userRecord?['gender'] ??
+                  userRecord?['sex'] ??
+                  widget.loginData?['gender'] ??
+                  '')
+              .toString();
+
+      final Set<String> defaultUrls = <String>{
+        DefaultProfileUrls.male,
+        DefaultProfileUrls.female,
+        DefaultProfileUrls.byGender(gender),
+      };
+
+      final String normalizedCurrent = _normalizeUrlForCompare(
+        currentProfileUrl,
+      );
+      return defaultUrls
+          .map(_normalizeUrlForCompare)
+          .contains(normalizedCurrent);
+    } catch (_) {
+      // If profile cannot be resolved, avoid prompting unexpectedly.
+      return false;
+    }
+  }
+
   Future<void> applyRegisteredFaceAsProfileImage(String imageUrl) async {
     final String userId = _resolveUserId();
     if (userId.isEmpty || imageUrl.trim().isEmpty) {
       return;
     }
 
+    String profileImageUrl = imageUrl;
+
+    try {
+      final Map<String, dynamic>? userRecord = await _realtimeDataController
+          .fetchUserRecordById(userId);
+      final String? existingProfileUrl = _extractCurrentProfileImageUrl(
+        userRecord,
+      );
+
+      final String? localFacePath = _lastCapturedFaceFilePath;
+      if (localFacePath != null && localFacePath.trim().isNotEmpty) {
+        final File localFaceFile = File(localFacePath);
+        if (await localFaceFile.exists()) {
+          profileImageUrl = await _cloudinaryProfileImageService
+              .uploadProfileImage(
+                imageFile: localFaceFile,
+                userId: userId,
+                previousImageUrl: existingProfileUrl,
+              );
+        }
+      }
+    } catch (_) {
+      // Fallback to the face image URL if profile upload fails.
+    }
+
     await _realtimeDataController.updateUserRecord(userId, {
-      'profile_url': imageUrl,
-      'profile_image_url': imageUrl,
+      'profile_url': profileImageUrl,
+      'profile_image_url': profileImageUrl,
     });
   }
 
-  Map<String, dynamic> _buildBiometricsPayload(String status) {
-    final hasFace = _capturedFaceImageUrls.isNotEmpty;
-    return {
-      'face_status': status,
-      'face_count': hasFace ? 1 : 0,
-      'face_image_urls': hasFace
-          ? <String>[_capturedFaceImageUrls.first]
-          : <String>[],
-      'registered_date': DateTime.now().toIso8601String(),
-    };
+  String? _extractPrimaryFaceImageUrl(Map<String, dynamic>? faceRecord) {
+    final Object? rawUrls = faceRecord?['face_image_urls'];
+    if (rawUrls is List) {
+      for (final Object? value in rawUrls) {
+        final String url = (value ?? '').toString().trim();
+        if (url.isNotEmpty) {
+          return url;
+        }
+      }
+    }
+    return null;
+  }
+
+  String? _extractCurrentProfileImageUrl(Map<String, dynamic>? userRecord) {
+    final String profileUrl =
+        (userRecord?['profile_url'] ?? userRecord?['profile_image_url'] ?? '')
+            .toString()
+            .trim();
+    return profileUrl.isEmpty ? null : profileUrl;
+  }
+
+  String _normalizeUrlForCompare(String url) {
+    return url.trim().toLowerCase().replaceFirst(RegExp(r'/$'), '');
   }
 }

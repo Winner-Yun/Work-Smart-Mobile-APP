@@ -36,6 +36,7 @@ class _MainScreenState extends State<MainScreen> {
   bool _hasShownPasswordChangeAlert = false;
   bool _isShowingPasswordChangeAlert = false;
   bool _cachedPasswordUsesDefault = false;
+  bool _isHomeStartupFlowCompleted = false;
   Map<String, dynamic>? _latestUserRecord;
 
   @override
@@ -169,7 +170,8 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   void _maybePromptPasswordChange(Map<String, dynamic>? userRecord) {
-    if (_isHandlingSuspendedAccount ||
+    if (!_isHomeStartupFlowCompleted ||
+        _isHandlingSuspendedAccount ||
         _hasShownPasswordChangeAlert ||
         _isShowingPasswordChangeAlert) {
       return;
@@ -233,11 +235,15 @@ class _MainScreenState extends State<MainScreen> {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => ChangePasswordScreen(
-          isFromProfile: false,
+          isFromProfile: true,
           userId: uid.isEmpty ? null : uid,
         ),
       ),
     );
+
+    if (!mounted || _isHandlingSuspendedAccount) {
+      return;
+    }
   }
 
   Future<void> _forceLogoutForSuspendedAccount() async {
@@ -290,6 +296,13 @@ class _MainScreenState extends State<MainScreen> {
     final List<Widget> screens = [
       HomePageScreen(
         loginData: widget.loginData,
+        onStartupFlowCompleted: () {
+          if (_isHomeStartupFlowCompleted) {
+            return;
+          }
+          _isHomeStartupFlowCompleted = true;
+          _maybePromptPasswordChange(_latestUserRecord);
+        },
         onProfileTap: () {
           setState(() {
             _currentIndex = 4;
@@ -398,35 +411,71 @@ class _MainScreenState extends State<MainScreen> {
             AppRoute.notificationScreen,
             arguments: widget.loginData,
           ),
-          icon: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardTheme.color,
-              shape: BoxShape.circle,
-            ),
-            child: Stack(
-              children: [
-                Icon(
-                  Icons.notifications_none,
-                  color: Theme.of(context).iconTheme.color,
-                ),
-                Positioned(
-                  right: 1,
-                  top: 1,
-                  child: Container(
-                    width: 6,
-                    height: 6,
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          icon: _buildNotificationBell(context),
         ),
       ],
+    );
+  }
+
+  Widget _buildNotificationBell(BuildContext context) {
+    final String uid = (widget.loginData?['uid'] ?? '').toString().trim();
+    if (uid.isEmpty) {
+      return _buildNotificationBellContent(context, showDot: false);
+    }
+
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: _realtimeDataController.watchUserNotifications(uid),
+      builder: (context, snapshot) {
+        final List<Map<String, dynamic>> notifications =
+            snapshot.data ?? const <Map<String, dynamic>>[];
+        final bool hasAnyNotifications = notifications.isNotEmpty;
+        final bool hasUnreadNotifications = notifications.any((item) {
+          final dynamic raw = item['isRead'] ?? item['is_read'];
+          if (raw is bool) return raw == false;
+          final String normalized = (raw ?? '').toString().trim().toLowerCase();
+          return normalized == 'false' ||
+              normalized == '0' ||
+              normalized == 'no';
+        });
+        return _buildNotificationBellContent(
+          context,
+          showDot: hasAnyNotifications || hasUnreadNotifications,
+        );
+      },
+    );
+  }
+
+  Widget _buildNotificationBellContent(
+    BuildContext context, {
+    required bool showDot,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        shape: BoxShape.circle,
+      ),
+      child: Stack(
+        children: [
+          Icon(
+            Icons.notifications_none,
+            color: Theme.of(context).iconTheme.color,
+          ),
+          if (showDot)
+            Positioned(
+              right: 1,
+              top: 1,
+              child: Container(
+                width: 6,
+                height: 6,
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

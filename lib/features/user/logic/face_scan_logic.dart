@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
 import 'package:flutter_worksmart_mobile_app/core/util/database/realtime_data_controller.dart';
 import 'package:flutter_worksmart_mobile_app/core/util/face/face_attendance_verifier.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/face/face_detection_util.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/presentation/homepage_screens/face_scan_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -20,6 +21,14 @@ abstract class FaceScanLogic extends State<FaceScanScreen>
   Timer? _scanTimer;
   bool isFlashOverlayEnabled = false;
   String scanMessage = '';
+  String? lastFaceQualityMessage;
+  bool faceQualityPassed = false;
+  LivenessAction? activeLivenessAction;
+  final Set<LivenessAction> completedLivenessActions = <LivenessAction>{};
+  bool _livenessPassedInSession = false;
+  bool _livenessSuccessSnackShown = false;
+  Timer? _validationLoopTimer;
+  bool _validationTickRunning = false;
   final RealtimeDataController _realtimeDataController =
       RealtimeDataController();
   late final FaceAttendanceVerifier _faceAttendanceVerifier;
@@ -35,6 +44,7 @@ abstract class FaceScanLogic extends State<FaceScanScreen>
   @override
   void dispose() {
     _scanTimer?.cancel();
+    _stopValidationLoop();
     WidgetsBinding.instance.removeObserver(this);
     _faceAttendanceVerifier.close();
     controller?.dispose();
@@ -42,8 +52,13 @@ abstract class FaceScanLogic extends State<FaceScanScreen>
   }
 
   Future<void> initCamera() async {
-    final status = await Permission.camera.request();
-    if (!status.isGranted) return;
+    final status = await Permission.camera.status;
+    if (!status.isGranted) {
+      if (mounted) {
+        await _showCameraPermissionRequiredDialog();
+      }
+      return;
+    }
 
     cameras = await availableCameras();
     if (cameras != null && cameras!.isNotEmpty) {
@@ -80,9 +95,133 @@ abstract class FaceScanLogic extends State<FaceScanScreen>
           isRearCameraSelected =
               cameraDescription.lensDirection == CameraLensDirection.back;
         });
+        _ensureValidationLoop();
       }
     } catch (e) {
       debugPrint('$e');
+    }
+  }
+
+  Future<void> _showCameraPermissionRequiredDialog() async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Camera Permission Required'),
+          content: const Text(
+            'Camera permission is requested on the homepage. Please grant it there or open app settings.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                openAppSettings();
+              },
+              child: const Text('Open Settings'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _ensureValidationLoop() {
+    if (!isCameraInitialized ||
+        controller == null ||
+        _validationLoopTimer != null) {
+      return;
+    }
+
+    _validationLoopTimer = Timer.periodic(
+      const Duration(milliseconds: 900),
+      (_) => _runValidationTick(),
+    );
+    _runValidationTick();
+  }
+
+  void _stopValidationLoop() {
+    _validationLoopTimer?.cancel();
+    _validationLoopTimer = null;
+    _validationTickRunning = false;
+  }
+
+  Future<void> _runValidationTick() async {
+    if (!mounted ||
+        _validationTickRunning ||
+        isScanning ||
+        controller == null ||
+        !controller!.value.isInitialized) {
+      return;
+    }
+
+    _validationTickRunning = true;
+    try {
+      await _validateFaceAndAutoScan(controller!);
+    } finally {
+      _validationTickRunning = false;
+    }
+  }
+
+  Future<void> _validateFaceAndAutoScan(CameraController controller) async {
+    if (isScanning) {
+      return;
+    }
+
+    try {
+      void resetPoseHintState() {
+        activeLivenessAction = null;
+        completedLivenessActions.clear();
+      }
+
+      final XFile imageFile = await controller.takePicture();
+      final faces = await FaceDetectionUtil.detectFacesInImage(imageFile);
+
+      if (faces.isEmpty) {
+        setState(() {
+          lastFaceQualityMessage = AppStrings.tr('no_face_detected');
+          faceQualityPassed = false;
+          resetPoseHintState();
+        });
+        await Future.delayed(const Duration(milliseconds: 800));
+        return;
+      }
+
+      final face = faces.first;
+      final imageSize = await FaceDetectionUtil.getImageSize(imageFile);
+
+      // Validate face quality
+      final validationError = await FaceDetectionUtil.validateFaceQuality(
+        face,
+        imageSize,
+      );
+
+      if (validationError != null) {
+        setState(() {
+          lastFaceQualityMessage = AppStrings.tr(validationError);
+          faceQualityPassed = false;
+          resetPoseHintState();
+        });
+        await Future.delayed(const Duration(milliseconds: 800));
+        return;
+      }
+
+      // Face quality passed
+      setState(() {
+        lastFaceQualityMessage = AppStrings.tr('face_quality_ok');
+        faceQualityPassed = true;
+      });
+
+      // Auto-trigger scan after good face detected
+      await Future.delayed(const Duration(milliseconds: 600));
+      if (mounted && !isScanning) {
+        takePicture();
+      }
+    } catch (e) {
+      debugPrint('Face validation error: $e');
     }
   }
 
@@ -103,17 +242,9 @@ abstract class FaceScanLogic extends State<FaceScanScreen>
   }
 
   Future<void> toggleFlash() async {
-    if (controller == null || !isRearCameraSelected) return;
-
-    try {
-      final newMode = flashMode == FlashMode.off
-          ? FlashMode.torch
-          : FlashMode.off;
-      await controller!.setFlashMode(newMode);
-      setState(() => flashMode = newMode);
-    } catch (e) {
-      debugPrint("$e");
-    }
+    setState(() {
+      flashMode = flashMode == FlashMode.off ? FlashMode.torch : FlashMode.off;
+    });
   }
 
   Future<void> takePicture() async {
@@ -125,6 +256,16 @@ abstract class FaceScanLogic extends State<FaceScanScreen>
       isScanning = true;
       scanProgress = 0;
       scanMessage = 'Initializing secure scan...';
+      activeLivenessAction = null;
+      if (_livenessPassedInSession) {
+        completedLivenessActions
+          ..clear()
+          ..add(LivenessAction.blink)
+          ..add(LivenessAction.turnLeft)
+          ..add(LivenessAction.turnRight);
+      } else {
+        completedLivenessActions.clear();
+      }
     });
 
     final String userId = (widget.loginData?['uid'] ?? '').toString().trim();
@@ -146,15 +287,64 @@ abstract class FaceScanLogic extends State<FaceScanScreen>
           .verifyAttendance(
             cameraController: controller!,
             userId: userId,
+            skipLivenessChallenges: _livenessPassedInSession,
             onFlashOverlay: (enabled) async {
               if (!mounted) return;
               setState(() => isFlashOverlayEnabled = enabled);
             },
             onProgress: (progress) {
+              if (progress.message.toLowerCase().startsWith(
+                    'liveness passed.',
+                  ) &&
+                  !_livenessPassedInSession) {
+                _livenessPassedInSession = true;
+                if (!_livenessSuccessSnackShown && mounted) {
+                  _livenessSuccessSnackShown = true;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        AppStrings.tr('notvideo_passed'),
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                    ),
+                  );
+                }
+              }
+
               if (!mounted) return;
               setState(() {
                 scanProgress = progress.progress;
                 scanMessage = progress.message;
+
+                if (_livenessPassedInSession) {
+                  activeLivenessAction = null;
+                  completedLivenessActions
+                    ..clear()
+                    ..add(LivenessAction.blink)
+                    ..add(LivenessAction.turnLeft)
+                    ..add(LivenessAction.turnRight);
+                  return;
+                }
+
+                final LivenessAction? nextAction = _parseLivenessAction(
+                  progress.message,
+                );
+                if (nextAction != null) {
+                  if (activeLivenessAction != null &&
+                      activeLivenessAction != nextAction) {
+                    completedLivenessActions.add(activeLivenessAction!);
+                  }
+                  activeLivenessAction = nextAction;
+                }
+
+                if (progress.progress >= 1) {
+                  completedLivenessActions
+                    ..add(LivenessAction.blink)
+                    ..add(LivenessAction.turnLeft)
+                    ..add(LivenessAction.turnRight);
+                  activeLivenessAction = null;
+                }
               });
             },
           )
@@ -166,6 +356,16 @@ abstract class FaceScanLogic extends State<FaceScanScreen>
         scanProgress = 0;
         isFlashOverlayEnabled = false;
         scanMessage = 'Face verification timed out. Please try again.';
+        activeLivenessAction = null;
+        if (_livenessPassedInSession) {
+          completedLivenessActions
+            ..clear()
+            ..add(LivenessAction.blink)
+            ..add(LivenessAction.turnLeft)
+            ..add(LivenessAction.turnRight);
+        } else {
+          completedLivenessActions.clear();
+        }
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -181,6 +381,16 @@ abstract class FaceScanLogic extends State<FaceScanScreen>
         scanProgress = 0;
         isFlashOverlayEnabled = false;
         scanMessage = 'Face verification failed. Please retry.';
+        activeLivenessAction = null;
+        if (_livenessPassedInSession) {
+          completedLivenessActions
+            ..clear()
+            ..add(LivenessAction.blink)
+            ..add(LivenessAction.turnLeft)
+            ..add(LivenessAction.turnRight);
+        } else {
+          completedLivenessActions.clear();
+        }
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -192,12 +402,29 @@ abstract class FaceScanLogic extends State<FaceScanScreen>
     }
 
     if (!verification.success) {
+      final bool isNotUser =
+          verification.message.toLowerCase().trim() ==
+          AppStrings.tr('not_user');
       if (mounted) {
         setState(() {
+          if (isNotUser) {
+            _livenessPassedInSession = false;
+            _livenessSuccessSnackShown = false;
+          }
           isScanning = false;
           scanProgress = 0;
           isFlashOverlayEnabled = false;
           scanMessage = verification.message;
+          activeLivenessAction = null;
+          if (_livenessPassedInSession) {
+            completedLivenessActions
+              ..clear()
+              ..add(LivenessAction.blink)
+              ..add(LivenessAction.turnLeft)
+              ..add(LivenessAction.turnRight);
+          } else {
+            completedLivenessActions.clear();
+          }
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -218,6 +445,16 @@ abstract class FaceScanLogic extends State<FaceScanScreen>
           isScanning = false;
           scanProgress = 0;
           isFlashOverlayEnabled = false;
+          activeLivenessAction = null;
+          if (_livenessPassedInSession) {
+            completedLivenessActions
+              ..clear()
+              ..add(LivenessAction.blink)
+              ..add(LivenessAction.turnLeft)
+              ..add(LivenessAction.turnRight);
+          } else {
+            completedLivenessActions.clear();
+          }
         });
       }
       return;
@@ -226,10 +463,17 @@ abstract class FaceScanLogic extends State<FaceScanScreen>
     if (!mounted) return;
 
     setState(() {
+      _livenessPassedInSession = true;
       isScanning = false;
       scanProgress = 1;
       isFlashOverlayEnabled = false;
       scanMessage = 'Verification passed';
+      activeLivenessAction = null;
+      completedLivenessActions
+        ..clear()
+        ..add(LivenessAction.blink)
+        ..add(LivenessAction.turnLeft)
+        ..add(LivenessAction.turnRight);
     });
 
     await controller?.pausePreview();
@@ -273,7 +517,10 @@ abstract class FaceScanLogic extends State<FaceScanScreen>
             SizedBox(
               width: double.infinity,
               child: FilledButton(
-                onPressed: () => Navigator.pop(dialogContext),
+                onPressed: () {
+                  Navigator.pop(dialogContext);
+                  Navigator.of(context).pop(savedRecord);
+                },
                 style: FilledButton.styleFrom(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -294,6 +541,25 @@ abstract class FaceScanLogic extends State<FaceScanScreen>
     );
 
     await controller?.resumePreview();
+  }
+
+  LivenessAction? _parseLivenessAction(String message) {
+    final String normalized = message.toLowerCase();
+    if (!normalized.startsWith('liveness:')) {
+      return null;
+    }
+
+    if (normalized.contains('left')) {
+      return LivenessAction.turnLeft;
+    }
+    if (normalized.contains('right')) {
+      return LivenessAction.turnRight;
+    }
+    if (normalized.contains('blink')) {
+      return LivenessAction.blink;
+    }
+
+    return null;
   }
 
   Future<Map<String, dynamic>?> _saveAttendanceRecord({

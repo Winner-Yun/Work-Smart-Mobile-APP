@@ -1,0 +1,16 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Format homepage logic",
+			"type": "shell",
+			"command": "dart",
+			"args": [
+				"format",
+				"lib/features/user/logic/homepage_logic.dart",
+				"lib/core/util/face/face_attendance_verifier.dart"
+			],
+			"isBackground": false
+		}
+	]
+}

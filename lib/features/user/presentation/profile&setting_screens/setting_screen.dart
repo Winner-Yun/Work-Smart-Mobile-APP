@@ -51,6 +51,7 @@ class _SettingsScreenState extends SettingLogic {
                   Colors.orange,
                   isNotification,
                   isSavingNotification ? null : handleNotificationChange,
+                  isLoading: isSavingNotification,
                 ),
               ]),
               const SizedBox(height: 24),
@@ -238,30 +239,58 @@ class _SettingsScreenState extends SettingLogic {
     String title,
     Color color,
     bool value,
-    ValueChanged<bool>? onChanged,
-  ) {
-    return _buildAnimatedTileContainer(
-      context: context,
-      onTap: () {
-        if (onChanged != null) {
-          onChanged(!value);
-        }
-      },
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-        leading: _buildSoftIcon(context, icon, color),
-        title: Text(
-          title,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 15,
-            color: Theme.of(context).textTheme.bodyLarge?.color,
+    ValueChanged<bool>? onChanged, {
+    bool isLoading = false,
+  }) {
+    final ValueChanged<bool>? effectiveOnChanged = isLoading ? null : onChanged;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 2),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: effectiveOnChanged == null
+            ? null
+            : () => effectiveOnChanged(!value),
+        child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 4,
           ),
-        ),
-        trailing: Switch.adaptive(
-          value: value,
-          onChanged: onChanged,
-          activeColor: const Color(0xFF004C4C),
+          leading: _buildSoftIcon(context, icon, color),
+          title: Text(
+            title,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 15,
+              color: Theme.of(context).textTheme.bodyLarge?.color,
+            ),
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isLoading)
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                ),
+              if (isLoading) const SizedBox(width: 8),
+              Switch.adaptive(
+                value: value,
+                onChanged: effectiveOnChanged,
+                activeColor: const Color(0xFF004C4C),
+              ),
+            ],
+          ),
         ),
       ),
     );

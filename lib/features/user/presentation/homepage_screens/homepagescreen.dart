@@ -10,9 +10,15 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class HomePageScreen extends StatefulWidget {
   final VoidCallback? onProfileTap;
+  final VoidCallback? onStartupFlowCompleted;
   final Map<String, dynamic>? loginData;
 
-  const HomePageScreen({super.key, this.onProfileTap, this.loginData});
+  const HomePageScreen({
+    super.key,
+    this.onProfileTap,
+    this.onStartupFlowCompleted,
+    this.loginData,
+  });
 
   @override
   State<HomePageScreen> createState() => _HomePageScreenState();
@@ -467,6 +473,8 @@ class _HomePageScreenState extends HomePageLogic {
                     color: Theme.of(context).colorScheme.primary,
                     fontWeight: FontWeight.bold,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -544,35 +552,48 @@ class _HomePageScreenState extends HomePageLogic {
             AppRoute.notificationScreen,
             arguments: widget.loginData,
           ),
-          icon: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardTheme.color,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5),
-              ],
-            ),
-            child: Stack(
-              children: [
-                Icon(
-                  Icons.notifications_none,
-                  color: Theme.of(context).iconTheme.color,
-                ),
-                Positioned(
-                  right: 2,
-                  top: 2,
-                  child: Container(
-                    width: 6,
-                    height: 6,
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
+          icon: StreamBuilder<List<Map<String, dynamic>>>(
+            stream: watchUserNotificationItems(),
+            builder: (context, snapshot) {
+              final List<Map<String, dynamic>> notifications =
+                  snapshot.data ?? const <Map<String, dynamic>>[];
+              final bool showDot = shouldShowNotificationDot(notifications);
+
+              return Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardTheme.color,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 5,
                     ),
-                  ),
+                  ],
                 ),
-              ],
-            ),
+                child: Stack(
+                  children: [
+                    Icon(
+                      Icons.notifications_none,
+                      color: Theme.of(context).iconTheme.color,
+                    ),
+                    if (showDot)
+                      Positioned(
+                        right: 2,
+                        top: 2,
+                        child: Container(
+                          width: 6,
+                          height: 6,
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            },
           ).animate().shake(delay: 1.seconds, duration: 500.ms),
         ),
       ],

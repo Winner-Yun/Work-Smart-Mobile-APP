@@ -1,4 +1,4 @@
-      import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 class RestartWidget extends StatefulWidget {
   final Widget child;
@@ -21,13 +21,9 @@ class _RestartWidgetState extends State<RestartWidget> {
       key = UniqueKey();
     });
   }
-  
 
   @override
   Widget build(BuildContext context) {
     return KeyedSubtree(key: key, child: widget.child);
   }
-
-
-  
 }

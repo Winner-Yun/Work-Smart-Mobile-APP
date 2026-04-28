@@ -9,6 +9,7 @@ class CloudinaryProfileImageService {
   static const String _profileFolder = 'worksmart/profile_images';
   static const String _stableProfilePublicId = 'profile';
   static const String _faceFolder = 'worksmart/face_images';
+  static const String _stableFacePublicIdPrefix = 'face';
 
   Future<String> uploadProfileImage({
     required File imageFile,
@@ -112,6 +113,7 @@ class CloudinaryProfileImageService {
     required File imageFile,
     required String userId,
     required int sampleIndex,
+    String? previousImageUrl,
   }) async {
     final String cloudName = Env.cloudinaryCloudName.trim();
     final String apiKey = Env.cloudinaryApiKey.trim();
@@ -119,8 +121,8 @@ class CloudinaryProfileImageService {
     final String normalizedUserId = _normalizeUserIdSegment(userId);
     final String folder = '$_faceFolder/$normalizedUserId';
     final int timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    final String publicId =
-        'face_${sampleIndex}_${DateTime.now().millisecondsSinceEpoch}';
+    final String publicId = '$_stableFacePublicIdPrefix$sampleIndex';
+    final String expectedPublicId = '$folder/$publicId';
 
     if (cloudName.isEmpty) {
       throw Exception('Cloudinary cloud name is missing.');
@@ -139,18 +141,36 @@ class CloudinaryProfileImageService {
     final String signature = _generateSignature(
       params: <String, String>{
         'folder': folder,
+        'overwrite': 'true',
         'public_id': publicId,
         'timestamp': timestamp.toString(),
       },
       apiSecret: apiSecret,
     );
 
+    final String? oldPublicId = _extractPublicIdFromCloudinaryUrl(
+      previousImageUrl,
+      cloudName: cloudName,
+    );
+
+    if (oldPublicId != null &&
+        oldPublicId.startsWith('$_faceFolder/') &&
+        oldPublicId != expectedPublicId) {
+      await _deleteImageByPublicId(
+        cloudName: cloudName,
+        apiKey: apiKey,
+        apiSecret: apiSecret,
+        publicId: oldPublicId,
+      );
+    }
+
     final request = http.MultipartRequest('POST', url)
       ..fields['api_key'] = apiKey
       ..fields['timestamp'] = timestamp.toString()
       ..fields['signature'] = signature
       ..fields['folder'] = folder
-      ..fields['public_id'] = publicId;
+      ..fields['public_id'] = publicId
+      ..fields['overwrite'] = 'true';
 
     request.files.add(
       await http.MultipartFile.fromPath('file', imageFile.path),

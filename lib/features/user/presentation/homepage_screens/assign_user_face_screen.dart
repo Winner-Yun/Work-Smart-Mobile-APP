@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_worksmart_mobile_app/config/language_manager.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_img.dart';
 import 'package:flutter_worksmart_mobile_app/core/constants/app_strings.dart';
+import 'package:flutter_worksmart_mobile_app/core/util/face/face_detection_util.dart';
 import 'package:flutter_worksmart_mobile_app/features/user/logic/assign_user_face_logic.dart';
-import 'package:flutter_worksmart_mobile_app/features/user/utils/face_detection_util.dart';
 
 class RegisterFaceScanScreen extends StatefulWidget {
   final Map<String, dynamic>? loginData;
@@ -62,7 +62,11 @@ class _RegisterFaceScanScreenState extends RegisterFaceLogic {
     if (!mounted) return;
 
     final String? faceImageUrl = latestCapturedFaceImageUrl;
-    if (faceImageUrl != null) {
+    final bool shouldOfferProfilePrompt = await shouldOfferFaceAsProfileImage();
+
+    if (!mounted) return;
+
+    if (faceImageUrl != null && shouldOfferProfilePrompt) {
       final String? result = await showDialog<String>(
         context: context,
         barrierDismissible: false,
@@ -450,9 +454,7 @@ class _RegisterFaceScanScreenState extends RegisterFaceLogic {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Instruction panel
-          const SizedBox(height: 16),
-          // Status indicator
+          const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -480,7 +482,6 @@ class _RegisterFaceScanScreenState extends RegisterFaceLogic {
             ],
           ),
           const SizedBox(height: 16),
-          // Feedback message
           if (_lastFaceClearanceMessage != null)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -505,7 +506,28 @@ class _RegisterFaceScanScreenState extends RegisterFaceLogic {
               ),
             ),
           const SizedBox(height: 16),
-          // Progress indicator
+          Row(
+            children: [
+              Text(
+                'Progress',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.78),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '${_buildProgressPercentage()}%',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: SizedBox(
@@ -526,7 +548,7 @@ class _RegisterFaceScanScreenState extends RegisterFaceLogic {
                         alignment: Alignment.centerLeft,
                         child: Container(
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary,
+                            color: Colors.white,
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
@@ -536,11 +558,6 @@ class _RegisterFaceScanScreenState extends RegisterFaceLogic {
                 ],
               ),
             ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            AppStrings.tr('single_photo_mode'),
-            style: const TextStyle(color: Colors.white70, fontSize: 12),
           ),
         ],
       ),
@@ -824,23 +841,18 @@ class _RegisterFaceScanScreenState extends RegisterFaceLogic {
       return AppStrings.tr('processing');
     }
 
-    if (_faceQualityPassed && _greenSince != null) {
-      final int remainingMs =
-          _greenHoldDuration.inMilliseconds -
-          DateTime.now().difference(_greenSince!).inMilliseconds;
-      final int remainingSec = (remainingMs <= 0
-          ? 0
-          : (remainingMs / 1000).ceil());
-      return AppStrings.tr(
-        'hold_steady_seconds',
-      ).replaceAll('{seconds}', remainingSec.toString());
-    }
-
     if (_faceQualityPassed) {
       return AppStrings.tr('face_confirmed');
     }
 
     return AppStrings.tr('scanning');
+  }
+
+  int _buildProgressPercentage() {
+    final double progress = _buildTrainingProgressValue()
+        .clamp(0, 1)
+        .toDouble();
+    return (progress * 100).round();
   }
 }
 

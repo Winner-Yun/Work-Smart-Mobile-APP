@@ -286,7 +286,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: IconButton(
             onPressed: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const SettingsScreen()),
+              MaterialPageRoute(
+                builder: (context) =>
+                    SettingsScreen(loginData: widget.loginData),
+              ),
             ),
             icon: const Icon(Icons.settings_outlined, color: Colors.white),
           ),
